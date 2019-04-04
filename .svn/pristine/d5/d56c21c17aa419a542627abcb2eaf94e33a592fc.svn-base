@@ -1,0 +1,6 @@
+/**
+ * 获取状态
+ */
+export default{
+    getModelBox: state => state.modelBox,//模型状态
+}

@@ -1,0 +1,110 @@
+.flex-between
+  display flex
+  justify-content space-between
+
+.flex
+  display flex
+
+.time
+  .line
+    padding 0 4px
+  >>>
+    .el-input__inner
+      background #F8F8F8
+
+    .el-input__prefix
+      left inherit
+      right 10px
+
+.select-david
+  >>>
+    .el-select
+      width 176px
+
+    .el-select .el-input__inner
+      color #fff
+      border-radius 5px
+      overflow hidden
+      text-align center
+      background #fff!important
+      color #333
+      text-align left
+
+    .el-select__caret
+      color #fff
+    .el-input__suffix
+      right 0
+      width 50px
+      background #44508a
+      border-radius 0 5px 5px 0
+
+    .el-input__suffix-inner .el-select__caret::before
+      content "\e60c"
+      font-size 24px
+
+    .el-input--suffix
+      overflow hidden
+
+    .el-select .el-input .el-select__caret
+      color #fff
+
+.radio-color
+  >>>
+    .is-checked
+      .el-radio__original, .el-radio__label
+        color: #FDA143
+      .el-radio__inner
+        border-color: #FDA143
+        background: #FDA143
+
+.model-wrapper, .form-wrapper
+  width 50%
+
+.form-wrapper
+  background #fff
+
+  .title
+    position relative
+    background #435089
+    text-align center
+    color #fff
+    font-size 20px
+    line-height 40px
+    height 40px
+
+    .hiden-material
+      position absolute
+      right 10px
+      top 50%
+      transform translateY(-50%)
+
+  .content
+    padding 20px
+
+    .teble-wrapper
+
+        tr th
+          background #435089
+
+          .cell
+            color #fff
+
+.timeline .ico-wrapper .line
+    height: 1px
+.el-button--success
+  background: #4775CA !important
+.el-button
+  padding: 10px 30px
+
+.el-button--text
+  padding 0
+  color #333333
+  font-size 18px
+
+.el-icon-refresh
+  color #435089
+
+.table-input
+  >>>
+    .el-input__inner,.el-checkbox__inner
+      background #F0F0F0

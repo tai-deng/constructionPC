@@ -1,0 +1,902 @@
+<!-- 3dView 三维浏览 -->
+<template>
+ <div class='container-3d-view'>
+   <!-- 3d图片 -->
+   <div class="three_d"><img src="../../assets/imgs/upload_model.png" alt=""></div>
+   <!-- 结构树 -->
+   <div class="tree" :class="treeStatus?'trees':''">
+     <div v-if="treeStatus" class="tree_box">
+       <div class="tree_title">
+         <div class="">构件清单 <span @click="colseTree">收起</span></div>
+         <div class="tree_title_select">
+           <div class="row" @click="switchTreeItem">
+             <span>{{treeList[treeCurrent].name}}</span><span class="el-icon-arrow-down"></span>
+           </div>
+           <ul v-if="treeListStatus" class="tree_title_item">
+             <li 
+              v-for='(item,index) in treeList' 
+              class="" :key="index" 
+              @click='selectTree(index)'
+              :class="treeCurrent==index?'tree_title_item_select1':'tree_title_item_select2'">{{item.name}}</li>
+           </ul>
+         </div>
+       </div>
+       <!-- 结构树box -->
+       <div class="tree_content">
+         <div class="row tree_item_name tree_item_name1"><span class="tree_check">-</span>整体模型</div>
+         <ul class="tree_item">
+           <li @click="getOneIndex(index)" v-for='(item,index) in treeDate' :key='index'>
+             <div class="row tree_item_name"><div v-if="item.children" class="row tree_node"><span @click="getThis()" v-if="item.status" class="tree_check">-</span><span @click="getThis()" v-else class="tree_check">+</span></div><span class="tree_check"></span>{{item.label}}</div>
+             <ul v-if='item.children && item.status'>
+                <li @click="getTwoIndex(index)" v-for='(item,index) in item.children' :key='index'>
+                  <div class="row tree_item_name"><div v-if="item.children" class="row tree_node"><span @click="getThis()" v-if="item.status" class="tree_check">-</span><span @click="getThis()" v-else class="tree_check">+</span></div><span class="tree_check"></span>{{item.label}}</div>
+                  <ul v-if='item.children && item.status'>
+                    <li @click="getThreeIndex(index)" v-for='(item,index) in item.children' :key='index'>
+                      <div class="row tree_item_name"><div v-if="item.children" class="row tree_node"><span @click="getThis()" v-if="item.status" class="tree_check">-</span><span @click="getThis()" v-else class="tree_check">+</span></div><span class="tree_check"></span>{{item.label}}</div>
+                      <ul v-if='item.children && item.status'>
+                        <li v-for='(item,index) in item.children' :key='index'>
+                          <div class="row tree_item_name"><div v-if="item.children" class="row tree_node"><span @click="getThis()" v-if="item.status" class="tree_check">-</span><span @click="getThis()" v-else class="tree_check">+</span></div><span class="tree_check"></span>{{item.label}}</div>
+                          <ul :class="item.children?'':'no_border_left'" v-if='item.children && item.status'>
+                              <li v-for='(item,index) in item.children' :key='index'>
+
+                              </li>
+                          </ul>
+                        </li>
+                      </ul>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+           </li>
+         </ul>
+       </div>
+     </div>
+     <div v-else class="tree_img" @click='showTree'><img src="../../assets/imgs/tree.png" alt=""></div>
+   </div>
+   <!-- 表单 -->
+   <div class="my_other_from">
+      <!-- 表单box -->
+      <div v-if="fromStatus" class="froms">
+             <div v-if="fromCurrent==1" class="from">
+                 <div class="row froms_title">
+                     发起沟通
+                     <span class="el-icon-close" @click="closeFrom"></span>
+                 </div>
+                 <div class="froms_content">
+                    <el-form 
+                            label-position="center"
+                            :model="ruleForm" 
+                            :rules="rules" 
+                            ref="ruleForm" 
+                            label-width="100px" 
+                            class="demo-ruleForm"
+                            :hide-required-asterisk='true'
+                            :inline-message='false'
+                            >
+                            <el-form-item class="from_one1" label="主题：" prop="name">
+                                <el-input placeholder="请输入主题" v-model="ruleForm.name"></el-input>
+                            </el-form-item>
+                            <el-form-item class="from_one2" label="类型：" prop="region">  
+                                <el-select v-model="ruleForm.region" placeholder="请选择活动区域">
+                                    <el-option label="区域一" value="shanghai"></el-option>
+                                    <el-option label="区域二" value="beijing"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item class="from_one3" label="描述：" prop="desc">
+                              <!-- <textarea name="" id="" cols="30" rows="50"></textarea> -->
+                              <el-input rows="4" type="textarea" v-model="ruleForm.desc"></el-input>
+                            </el-form-item>
+                            <el-form-item class="from_one4" label="视点: " prop="desc">
+                              <label for="">
+                                <span class=""><img src="../../assets/imgs/camera.png" alt=""></span>
+                              </label>
+                            </el-form-item>
+                            <el-form-item class="from_one4" label="视点: " prop="desc">
+                              <label for="">
+                                <span class="el-icon-plus"></span>
+                              </label>
+                            </el-form-item>
+                            <el-form-item class="from_one5" label="构建关联：" prop="name">
+                              <el-button class="col" round><img src="../../assets/imgs/unlock.png" alt=""></el-button>
+                            </el-form-item>
+                            <el-form-item class="from_one6" label="设置工作流程" prop="name">
+                              <div class="row">
+                                <div class=""><span></span><span class="el-icon-caret-bottom"></span></div>
+                              </div>
+                            </el-form-item>
+                            <!-- <el-form-item class="el-form-item-box" label="活动区域" prop="region">
+                                <el-select size='small' v-model="value5" multiple placeholder="请选择">
+                                    <el-option
+                                    v-for="item in options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value">
+                                    </el-option>
+                                </el-select>
+
+                                <el-select
+                                    v-model="value11"
+                                    multiple
+                                    collapse-tags
+                                    size='medium'
+                                    style="margin-left: 20px;"
+                                    placeholder="请选择">
+                                    <el-option
+                                    v-for="item in options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value">
+                                    </el-option>
+                                </el-select>
+
+                                <el-select
+                                    v-model="value11"
+                                    multiple
+                                    size='medium'
+                                    collapse-tags
+                                    style="margin-left: 20px;"
+                                    placeholder="请选择">
+                                    <el-option
+                                    v-for="item in options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value">
+                                    </el-option>
+                                </el-select>
+
+                                <el-select
+                                    v-model="value11"
+                                    multiple
+                                    size='mini'
+                                    collapse-tags
+                                    style="margin-left: 20px;"
+                                    placeholder="请选择">
+                                    <el-option
+                                    v-for="item in options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item> -->
+                    </el-form>
+                 </div>
+             </div>
+             <div v-else-if="fromCurrent==2" class="from">
+                 <div class="row froms_title">
+                     工程变更
+                     <span class="el-icon-close" @click="closeFrom"></span>
+                 </div>
+                 <div class="froms_content">
+                    <el-form 
+                            label-position="right" 
+                            :model="ruleForm" 
+                            :rules="rules" 
+                            ref="ruleForm" 
+                            label-width="100px" 
+                            class="demo-ruleForm"
+                            :hide-required-asterisk='false'
+                            >
+                            <el-form-item label="主题：" prop="name">
+                                <el-input v-model="ruleForm.name"></el-input>
+                            </el-form-item>
+                            <el-form-item label="主题：" prop="name">
+                                <el-input v-model="ruleForm.name"></el-input>
+                            </el-form-item>
+                            <el-form-item class="el-form-item-box" label="活动区域" prop="region">
+                                <el-select  v-model="ruleForm.region" placeholder="请选择活动区域">
+                                    <el-option label="区域一" value="shanghai"></el-option>
+                                    <el-option label="区域二" value="beijing"></el-option>
+                                </el-select>
+                                <el-select v-model="ruleForm.region" placeholder="请选择活动区域">
+                                    <el-option label="区域一" value="shanghai"></el-option>
+                                    <el-option label="区域二" value="beijing"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="活动形式" prop="desc">
+                                <el-input type="textarea" v-model="ruleForm.desc"></el-input>
+                            </el-form-item>
+                            <el-form-item label="主题：" prop="name">
+                                <el-input v-model="ruleForm.name"></el-input>
+                            </el-form-item>
+                            <el-form-item label="活动形式" prop="desc">
+                                <el-input type="textarea" v-model="ruleForm.desc"></el-input>
+                            </el-form-item>
+                            <el-form-item class="el-form-item-box"  label="活动时间">
+                                <el-date-picker
+                                    v-model="ruleForm.value1"
+                                    type="date"
+                                    placeholder="选择日期">
+                                </el-date-picker>
+                            </el-form-item>
+                            <el-form-item class="el-form-item-box" label="活动形式" prop="desc">
+                                <el-upload
+                                    action="https://jsonplaceholder.typicode.com/posts/"
+                                    list-type="picture-card"
+                                    :on-preview="handlePictureCardPreview"
+                                    :on-remove="handleRemove">
+                                    <i class="el-icon-plus"></i>
+                                </el-upload>
+                                <el-dialog :visible.sync="dialogVisible">
+                                    <img width="100%" :src="dialogImageUrl" alt="">
+                                </el-dialog>
+                            </el-form-item>
+                            <el-form-item class="el-form-item-box" label="活动形式" prop="desc">
+                                <el-upload
+                                    action="https://jsonplaceholder.typicode.com/posts/"
+                                    list-type="picture-card"
+                                    :on-preview="handlePictureCardPreview"
+                                    :on-remove="handleRemove">
+                                    <i class="el-icon-plus"></i>
+                                    </el-upload>
+                                    <el-dialog :visible.sync="dialogVisible">
+                                    <img width="100%" :src="dialogImageUrl" alt="">
+                                </el-dialog>
+                            </el-form-item>
+                            <el-form-item class="el-form-item-box" label="主题：" prop="name">
+                                <el-input class="el-form-item_input4" v-model="ruleForm.name"></el-input>
+                            </el-form-item>
+                    </el-form>
+                 </div>
+             </div>
+             <div v-else-if="fromCurrent==3" class="from">
+                 <div class="row froms_title">
+                     风险控制
+                     <span class="el-icon-close" @click="closeFrom"></span>
+                 </div>
+                 <div class="froms_content">
+                    <el-form 
+                            label-position="right" 
+                            :model="ruleForm" 
+                            :rules="rules" 
+                            ref="ruleForm" 
+                            label-width="100px" 
+                            class="demo-ruleForm"
+                            :hide-required-asterisk='false'
+                            :inline-message='false'
+                            >
+                            <el-form-item label="主题" prop="name">
+                                <el-input placeholder="请输入主题" v-model="ruleForm.name"></el-input>
+                            </el-form-item>
+                            <el-form-item label="问题类型" prop="region">
+                                <el-select style="width:100%;" v-model="ruleForm.region" placeholder="请选择问题类型">
+                                    <el-option label="区域一" value="shanghai"></el-option>
+                                    <el-option label="区域二" value="beijing"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="发起人" prop="name">
+                                <el-input placeholder="请输入发起人的姓名" v-model="ruleForm.name"></el-input>
+                            </el-form-item>
+                            <el-form-item label="发起人" prop="name">
+                                <el-date-picker
+                                    style="width:100%;"
+                                    v-model="value1"
+                                    type="date"
+                                    placeholder="选择日期">
+                                </el-date-picker>
+                            </el-form-item>
+                            <el-form-item label="问题描述" prop="desc">
+                                <el-input type="textarea" placeholder="请输入问题描述" v-model="ruleForm.desc"></el-input>
+                            </el-form-item>
+                            <el-form-item class="el-form-item-box" label="活动形式" prop="desc">
+                                <el-upload
+                                    action="https://jsonplaceholder.typicode.com/posts/"
+                                    list-type="picture-card"
+                                    :on-preview="handlePictureCardPreview"
+                                    :on-remove="handleRemove">
+                                    <i class="el-icon-plus"></i>
+                                </el-upload>
+                            </el-form-item>
+                            <el-form-item class="el-form-item-box" label="活动形式" prop="desc">
+                                <el-upload
+                                    action="https://jsonplaceholder.typicode.com/posts/"
+                                    list-type="picture-card"
+                                    :on-preview="handlePictureCardPreview"
+                                    :on-remove="handleRemove">
+                                    <i class="el-icon-plus"></i>
+                                    </el-upload>
+                            </el-form-item>
+                            <el-form-item class="el-form-item-box" label="主题：" prop="name">
+                                <el-input class="el-form-item_input4" v-model="ruleForm.name"></el-input>
+                            </el-form-item>
+                    </el-form>
+                 </div>
+             </div>
+      </div>
+      <!-- 表单btns -->
+      <div v-else class="row btn">
+        <el-button type="info" @click="showFrom(3)">风险控制</el-button>
+        <el-button type="success" @click="showFrom(2)">过程变更</el-button> 
+        <el-button  type="primary" @click="showFrom(1)">发起沟通</el-button>
+      </div>
+   </div>
+ </div>
+</template>
+
+<script type='textecmascript-6'>
+
+export default {
+ data() {
+   return {
+      // 结构树的状态
+      treeStatus:false,
+      //选择结构树
+      proTrees: [{
+          value: '选项1',
+          label: '黄金糕'
+        }, {
+          value: '选项2',
+          label: '双皮奶'
+        }, {
+          value: '选项3',
+          label: '蚵仔煎'
+        }, {
+          value: '选项4',
+          label: '龙须面'
+        }, {
+          value: '选项5',
+          label: '北京烤鸭'
+        }
+      ],
+      proTreesValue: '',
+      // 结构树列表
+      treeList:[
+        {name:'XXX易地扶贫搬迁项目-整体模型',id:1},
+        {name:'搬迁项目-整体模型',id:1},
+        {name:'XXX贫搬迁项目-整模型',id:1},
+        {name:'XXX贫整体模型',id:1},
+      ],
+      treeCurrent:0,
+      treeListStatus:false,
+      //结构树数据
+      treeDate: [
+        {
+          id: 1,
+          label: '一级 2',
+          status:false,
+          children: [
+            {
+              id: 3,
+              label: '二级 2-1',
+              status:false,
+              children: [
+                {
+                  id: 4,
+                  label: '三级 3-1-1',
+                  status:false,
+                  children:[
+                    {
+                      id: 5,
+                      label: '四级 4-1-2',
+                      status:false,
+                      footer:true,
+                    },
+                    {
+                      id: 5,
+                      label: '四级 4-1-2',
+                      status:false,
+                      footer:true,
+                    },
+                  ]
+                }, 
+                 {
+                  id: 5,
+                  label: '三级 3-1-2',
+                  status:false,
+                }
+              ]
+            }, 
+            {
+              id: 2,
+              label: '二级 2-2',
+              status:false,
+              children: [
+                {
+                  id: 6,
+                  label: '三级 3-2-1',
+                  status:false,
+                }, 
+                {
+                  id: 7,
+                  label: '三级 3-2-2',
+                  status:false,
+                }
+              ]
+            }
+          ]
+        },
+        {
+          id: 1,
+          label: '一级 2',
+          status:false,
+          children: [
+            {
+              id: 3,
+              label: '二级 2-1',
+              status:false,
+              children: [
+                {
+                  id: 3,
+              label: '二级 2-1',
+              status:false,
+              children: [
+                {
+                  id: 4,
+                  label: '三级 3-1-1',
+                  status:false, 
+                }, 
+                 {
+                  id: 5,
+                  label: '三级 3-1-2',
+                  status:false,
+                }
+                ]
+                }, 
+                 {
+                  id: 5,
+                  label: '三级 3-1-2',
+                  status:false,
+                }
+              ]
+            }, 
+            {
+              id: 2,
+              label: '二级 2-2',
+              status:false,
+              children: [
+                {
+                  id: 6,
+                  label: '三级 3-2-1',
+                  status:false,
+                }, 
+                {
+                  id: 7,
+                  label: '三级 3-2-2',
+                  status:false,
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      
+      treeIndx:[],
+      //from状态管理、数据
+      fromStatus:false,
+      fromCurrent:1,
+      ruleForm: {
+                name: '',
+                region: '',
+                date1: '',
+                date2: '',
+                delivery: false,
+                type: [],
+                resource: '',
+                desc: '',
+                value1:''
+      },
+      rules: {
+                name: [
+                        { required: true, message: '请输入活动名称', trigger: 'blur' },
+                        { min: 3, max: 5, message: '长度在 3 到 5 个字符', trigger: 'blur' }
+                    ],
+                region: [
+                    { required: true, message: '请选择活动区域', trigger: 'change' }
+                ],
+                date1: [
+                    { type: 'date', required: true, message: '请选择日期', trigger: 'change' }
+                ],
+                date2: [
+                    { type: 'date', required: true, message: '请选择时间', trigger: 'change' }
+                ],
+                type: [
+                    { type: 'array', required: true, message: '请至少选择一个活动性质', trigger: 'change' }
+                ],
+                resource: [
+                    { required: true, message: '请选择活动资源', trigger: 'change' }
+                ],
+                desc: [
+                    { required: true, message: '请填写活动形式', trigger: 'blur' }
+                ]
+      },
+      dialogImageUrl: '',
+      dialogVisible: false,
+      value1:'',
+      value5: [],
+      value11: [],
+      options: [
+            {
+                value: '选项1',
+                label: '黄金糕'
+            }, 
+            {
+                value: '选项2',
+                label: '双皮奶'
+            },    
+            {
+                value: '选项3',
+                label: '蚵仔煎'
+            }, 
+            {
+                value: '选项4',
+                label: '龙须面'
+            }, 
+            {
+                value: '选项5',
+                label: '北京烤鸭'
+            }
+      ],
+    }
+ },
+ mounted(){
+  //  console.log(this.treeDate[0].children[0].children[0].children)
+ },
+ methods:{
+   //显示隐藏tree-box
+   showTree(){
+     this.treeStatus=true;
+   },
+   colseTree(){
+     this.treeStatus=false;
+   },
+   //treeList管理
+   switchTreeItem(){
+     this.treeListStatus=!this.treeListStatus
+   },
+   selectTree(index){
+     this.treeCurrent=index
+   },
+   //结构树的舒展处理
+   getOneIndex(index){
+     this.treeIndx[0]=index
+    //  console.log('a='+index)
+   },
+   getTwoIndex(index){
+     this.treeIndx[1]=index
+    //  console.log('b='+index)
+   },
+   getThreeIndex(index){
+     this.treeIndx[2]=index
+    //  console.log('c='+index)
+   },
+   getThis(){
+    //  console.log(this.treeIndx)
+    //  console.log(index,n)
+    setTimeout(() => {
+      let length=this.treeIndx.length
+      if(length==1){
+        this.treeDate[this.treeIndx[0]].status=!this.treeDate[this.treeIndx[0]].status
+      }
+      else if(length==2){
+        this.treeDate[this.treeIndx[0]].children[this.treeIndx[1]].status=!this.treeDate[this.treeIndx[0]].children[this.treeIndx[1]].status
+      }
+      else if(length==3){
+        this.treeDate[this.treeIndx[0]].children[this.treeIndx[1]].children[this.treeIndx[2]].status=!this.treeDate[this.treeIndx[0]].children[this.treeIndx[1]].children[this.treeIndx[2]].status
+      }
+    }, 100);
+    this.treeIndx=[]
+   },
+  //  切换表单
+   showFrom(n){
+      this.fromStatus=true;
+      this.fromCurrent=n
+    }, 
+    selectProject(index){
+      this.projectCurent=index
+    },
+    switchProject(){
+      this.projectStatus=!this.projectStatus
+    },
+    closeFrom(){
+      this.fromStatus=false;
+    },
+    submitForm(formName) {
+        this.$refs[formName].validate((valid) => {
+          if (valid) {
+            alert('submit!');
+          } else {
+            console.log('error submit!!');
+            return false;
+          }
+        });
+    },
+    resetForm(formName) {
+        this.$refs[formName].resetFields();
+    },
+    handleRemove(file, fileList) {
+        console.log(file, fileList);
+    },
+    handlePictureCardPreview(file) {
+        this.dialogImageUrl = file.url;
+        this.dialogVisible = false;
+    },
+    handleNodeClick(data) {
+      console.log(data);
+    }
+ }
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+@import "../../assets/stylus/variable"
+.container-3d-view
+  width 100%
+  height 100%
+  font-size $font-size-18
+.from_one_note{
+  font-size $font-size-16
+}
+</style>
+<style scoped>
+  .container-3d-view{
+    position: relative;
+    width:100%;
+    height:100%;
+  }
+  .three_d,.three_d>img{
+    width: 100%;
+    height: 100%;
+  }
+  .tree{
+    position: absolute;
+    width: 360px;
+    top:20px;
+    left: 20px;
+    height: 96%;
+    overflow-y: scroll;
+  }
+  .tree::-webkit-scrollbar {display:none}
+  .trees{
+    background:rgba(255,255,255,1);
+    box-shadow:0px 3px 7px 0px rgba(216,223,238,1);
+  }
+  .tree_img>img{
+    width: 50px;
+    display: block;
+    height: auto;
+  }
+  .tree_title{
+    position: fixed;
+    width: 360px;
+    height: 100px;
+    z-index: 1000;
+    /* background: red; */
+  }
+  .tree_content{
+    padding: 90px 10px 20px 10px;
+  }
+  .tree_title>div:first-child{
+    position: relative;
+    height:40px;
+    background:rgba(67,80,137,1);
+    line-height: 40px;
+    color:rgba(255,255,255,1);
+    text-align: center;
+  }
+  .tree_title>div:first-child>span{
+    position: absolute;
+    right: 20px;
+  }
+  .tree_title_select{
+    position: relative;
+    width: 86%;
+    padding: 0 7%;
+    height: 50px;
+    text-align: left;
+    line-height: 50px;
+    font-family:SourceHanSansCN-Normal;
+    font-weight:400;
+    color:rgba(102,102,102,1);
+    border-bottom: 1px solid #eeeeee;
+    background: white;
+    z-index:1000;
+  }
+  .col{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .row{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+  .tree_title_select>div:first-child{
+    justify-content: space-between;
+  }
+  .tree_title_item{
+    position: absolute;
+    left: 0;
+    top:51px;
+    width: 100%;
+  }
+  .tree_title_item>li{
+    width: 86%;
+    padding: 0 7%;
+    height: 46px;
+    text-align: left;
+    line-height: 46px;
+    font-family:SourceHanSansCN-Normal;
+    font-weight:400;
+    border-bottom: 1px solid #eeeeee;
+  }
+  .tree_title_item_select2{
+    color:rgba(102,102,102,1);
+    background: white;
+  }
+  .tree_title_item_select1{
+    background: blue;
+    color:white;
+  }
+  .tree_content li{
+    margin: 10px 0;
+    
+  }
+  .tree_content span{
+    background: white;
+  }
+  .tree_content ul{
+    margin-left: 40px
+  }
+  .tree_content>ul{
+    margin-left: 20px
+  }
+  .tree_content ul{
+    border-left: 1px solid #eeeeee
+  }
+  .no_border_left{
+    border-left: none
+  }
+  .tree_content>ul>li li::before{
+    display: inline-block;
+    position: relative;
+    left: -20px;
+    top:20px;
+    content: '';
+    width:20px;
+    height: 2px;
+    background: #eeeeee
+  }
+  .tree_content>ul ul::before{
+    display: inline-block;
+    position: absolute;
+    left: 30px;
+    content: '';
+    width:22px;
+    height: 22px;
+    background: white;
+    margin-top: 2px;
+  }
+  .tree_content ul::after{
+    display: inline-block;
+    position: absolute;
+    margin: -14px 0 0 -10px;
+    content: '';
+    width:20px;
+    height: 20px;
+    background: white;
+  }
+  .tree_content li {
+    position: relative;
+    left: -10px;
+  }
+  .tree_item_name>span{
+    margin-right: 12px;
+  }
+  .tree_node{
+    margin-right: 10px;
+  }
+  .tree_item_name{
+    height: 30px;
+    line-height: 30px;
+  }
+  .tree_check{
+    text-align: center;
+    line-height: 20px;
+    width: 20px;
+    height: 20px;
+    border:1px solid #eeeeee;
+  }
+  /* 表单 */
+  .my_other_from{
+    position: absolute;
+    height: 96%;
+    width: 800px;
+    top:20px;
+    right:20px;
+    overflow: auto;
+    background: yellowgreen
+  }
+  .other_from{
+    background:rgba(255,255,255,1);
+    box-shadow:0px 3px 7px 0px rgba(229,229,229,1);
+  }
+  .my_other_from::-webkit-scrollbar {display:none}
+
+  /* 合并复制过来的 */
+  .froms{
+    background: white;
+    height: 100%;
+  }
+  .btn{
+    flex-direction: row-reverse
+  }
+  .btn>button:nth-child(1){
+        background:rgba(71,117,202,1);
+  }
+  .btn>button:nth-child(2){
+        background:rgba(69,128,255,1);
+  }
+  .btn>button:nth-child(3){
+        background:rgba(253,161,67,1);
+  }
+  .btn>button{
+        margin-left: 20px;
+  }
+  .from{
+
+  }
+  .froms_title>span{
+        position: absolute;
+        right: 20px;
+  }
+  .froms_title{
+        position: fixed;
+        width: 800px;
+        justify-content: center;
+        height: 50px;
+        border-radius: 0px;
+        background-color: rgba(153, 153, 153, 1);
+        color: rgba(255, 255, 255, 1);
+        box-shadow: 0px 0px 1px 0px rgba(170, 170, 170, 1);
+        font-family: Roboto;
+        border: 1px solid rgba(255, 255, 255, 0);
+        z-index: 1000;
+  }
+  .froms_content{
+    padding-top: 70px;
+    height: 100%;
+  }
+  .tree_item_name1{
+      position: relative;
+      left: 10px;
+      top: 10px;
+  }
+  /* 重置element ui 样式 */
+  .from_one1{
+    width: 400px;
+  }
+  .from_one2{
+    width: 315px;
+  }
+  .from_one3{
+    width: 696px;
+  }
+  .from_one4 span{
+    display: inline-block;
+    text-align: center;
+    width: 120px;
+    height: 90px;
+    line-height: 90px;
+    border-radius: 10px;
+    border:1px #999999 dashed
+  }
+  .from_one5 button{
+    width:64px;
+    height:40px;
+    /* line-height: 40px; */
+    background:rgba(248,248,248,1);
+    border-radius:4px;
+    border:1px solid rgba(229,229,229,1);
+  }
+  .from_one_note{
+    display: inline;
+    color: rgba(153, 153, 153, 1);
+    font-family: SourceHanSansSC-regular;
+    position: absolute;
+    left: 160px;
+    bottom: 0px;
+  }
+</style>

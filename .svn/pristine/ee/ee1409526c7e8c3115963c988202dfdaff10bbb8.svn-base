@@ -1,0 +1,554 @@
+<!-- 智能报表-资料员intelligenceReports -->
+<template>
+ <div class='container-intelligence-reports'>
+
+    <div class='intelligenec_left'>
+      <div class='intelligenec_left_head'>
+        <img class="intelligenec_left_head_img" src="../../assets/imgs/AI_img.png" alt="">AI报表
+      </div>
+      <div class="intelligenec_left_body">
+        <ul  class="intelligenec_jump">
+          <li @click="showFrom(1)" :class="fromCurrent==1?'active':''">施工日志</li>
+          <li @click="showFrom(2)" :class="fromCurrent==2?'active':''">施工方案</li>
+          <li @click="showFrom(3)" :class="fromCurrent==3?'active':''">技术交底</li>
+          <li @click="showFrom(4)" :class="fromCurrent==4?'active':''">节点对比</li>
+          <li @click="showFrom(5)" :class="fromCurrent==5?'intelligenec_left_border active':'intelligenec_left_border'">自定义表格</li>
+        </ul>
+        <div v-if="fromCurrent==1" >
+          <!-- 施工日志 -->
+          <alltable></alltable>
+        </div>
+        <div v-if="fromCurrent==2" >
+          <!-- 施工方案 -->
+           <alltable></alltable>
+        </div>
+        <div v-if="fromCurrent==3">
+          <!-- 技术交底 -->
+          <alltable></alltable>
+        </div>
+        <div v-if="fromCurrent==4">
+          <!-- 节点对比 -->
+          <alltable></alltable>
+        </div>
+        <div v-if="fromCurrent==5" class="intelligenec_left_div">
+          <!-- 自定义表格 -->
+          
+          <el-row>
+              <el-col class="intell_margin_top intell_text_right" :span="4">
+                资料类型
+              </el-col>
+              <el-col class="intell_margin_top" :span='7'>
+                  <el-select v-model="buildingType.text" placeholder="资料类型">
+                      <el-option v-for="item in  textType"
+                            :key="item.value" :label="item.label" :value="item.value"></el-option>
+                  </el-select>
+              </el-col>
+              <el-col class="intell_margin_top intell_text_right" :span="4" :offset="1">
+                内容配置
+              </el-col>
+              <el-col class="intell_margin_top" :span='7'>
+                  <el-select v-model="buildingType.context" placeholder="内容配置">
+                      <el-option v-for="item in  contextList"
+                            :key="item.value" :label="item.label" :value="item.value"></el-option>
+                  </el-select>
+              </el-col>
+          </el-row>
+
+          <el-row>
+              <el-col class="intell_margin_top intell_text_right" :span="4">
+                楼栋
+              </el-col>
+              <el-col class="intell_margin_top" :span='7'>
+                  <el-select v-model="buildingType.build" placeholder="楼栋">
+                      <el-option v-for="item in  allBuild"
+                            :key="item.value" :label="item.label" :value="item.value"></el-option>
+                  </el-select>
+              </el-col>
+              <el-col class="intell_margin_top intell_text_right" :span="4" :offset="1">
+                楼层
+              </el-col>
+              <el-col class="intell_margin_top" :span='7'>
+                  <el-select v-model="buildingType.class" placeholder="楼层">
+                      <el-option v-for="item in  allClass"
+                            :key="item.value" :label="item.label" :value="item.value"></el-option>
+                  </el-select>
+              </el-col>
+          </el-row>
+          <el-row>
+              <el-col class="intell_margin_top intell_text_right" :span="4">
+                开始时间
+              </el-col>
+              <el-col class="intell_margin_top" :span='7'>
+                  <el-date-picker v-model="buildingType.beginTime" style="width:100%;"
+                        type="date" placeholder="开始时间"></el-date-picker>
+              </el-col>
+              <el-col class="intell_margin_top intell_text_right" :span="4" :offset="1">
+                结束时间
+              </el-col>
+              <el-col class="intell_margin_top" :span='7'>
+                   <el-date-picker v-model="buildingType.beginTime" style="width:100%;"
+                        type="date" placeholder="结束时间"></el-date-picker>
+              </el-col>
+          </el-row>
+          <div class="intell_building_type_btn">
+                <el-button class="correct-btn">检索</el-button>
+          </div>
+
+
+           <el-table    style="width:100%;"   ref="buildingTable"  :header-cell-style="{'background-color':'#435089','color':'#ffffff'}"
+                    :data="buildingTypeTable">
+                    <el-table-column type="selection" width="65" align="center"> </el-table-column>
+                    <el-table-column type="index" label="序号" width="55" align="center" :index="indexMethod" ></el-table-column>
+                    <el-table-column  prop="name"  label="资料名称"   width="315" align="center"></el-table-column>
+                    <el-table-column  label="预览"  width="85" align="center">
+                        <template slot-scope="scope">
+                            <img src="../../assets/imgs/blue_eye.png" @click="buildingTypeClick(scope.$index, scope.row)" alt="">
+                        </template>  
+                    </el-table-column>
+                    <el-table-column  label="下载" width="85" align="center">
+                        <template slot-scope="scope">
+                            <img src="../../assets/imgs/down_blue.png" @click="buildingTypeDown(scope.$index, scope.row)" alt="">
+                        </template>
+                    </el-table-column>
+                    
+                </el-table>
+        </div>
+        <div class="intelligenec_left_foot">
+          <el-button class='intelligenec_down_btn'>批量下载</el-button>
+        </div>
+        
+      
+      </div>
+
+      
+    </div>
+
+
+    <div class='intelligenec_right'>
+      <div class='intelligenec_left_head'>
+        <img class="intelligenec_left_head_img " src="../../assets/imgs/number_looking.png" alt="">数据预览
+      </div>
+      <!-- 表格切换的时候--切换表格标题 -->
+      <div class="intelligenec_right_title">{{tableTitle}}</div>
+      <div v-if="fromCurrent==1" class="intelligenec_right_table_div">
+          <div class="intelligenec_right_table_div1">
+            <div>栋号</div>
+            <div></div>
+            <div>日期</div>
+            <div></div>
+          </div>
+          <div class="intelligenec_right_table_div2">
+            <div>天气</div>
+            <div>
+              <ul class="intelligenec_right_list">
+                <li class="intelligenec_right_list_border">
+                  <span class="intelligenec_right_span_border"></span>
+                  <span class="intelligenec_right_span_border">白天</span>
+                  <span>夜晚</span>
+                </li>
+                <li class="intelligenec_right_list_border">
+                  <span class="intelligenec_right_span_border">天气情况</span>
+                  <span class="intelligenec_right_span_border"></span>
+                  <span></span>
+                </li>
+                <li class="intelligenec_right_list_border">
+                  <span class="intelligenec_right_span_border">风力</span>
+                  <span class="intelligenec_right_span_border"></span>
+                  <span></span>
+                </li>
+                <li >
+                  <span class="intelligenec_right_span_border">最高/最低温度</span>
+                  <span class="intelligenec_right_span_border"></span>
+                  <span></span>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div class="intelligenec_right_table_div3">
+            <div>生产情况</div>
+            <div>
+              <p>项目总进度：</p>
+              <p>作业任务详情：</p>
+              <p class="intelligenece_margin_top">人员配置:</p>
+            </div>
+          </div>
+          <div class="intelligenec_right_table_div4">
+            <div>技术质量安全</div>
+            <div>
+              <p>施工方案（ 项）：</p>
+              <p>技术交底（ 项）：</p>
+              <p>工序验收（ 项）：</p>
+              <br>
+              <p>质量问题（ 项）：</p>
+              <p>安全问题（ 项）：</p>
+            </div>
+          </div>
+          <div class="intelligenec_right_table_div5">
+            <div>物资管理</div>
+            <div>
+              <p>材料入库：</p>
+              <p>材料出库：</p>
+              <p>材料退还：</p>
+            </div>
+          </div>
+          <div class="intelligenec_right_table_div6">
+            <div>项目负责人</div>
+            <div></div>
+            <div>记录人</div>
+            <div></div>
+          </div>
+
+      </div>
+
+    </div>
+ </div>
+</template>
+
+<script type='textecmascript-6'>
+import alltable from './intelligenceReports_components/alltable'
+export default {
+  components:{alltable},
+ data() {
+   return {
+    //  跳转显示
+    fromCurrent:1,
+    tableTitle:'施工日志',//表格预览的--表格标题
+
+    //自定义表格
+    textType:[{value:'1',label:'全部'},{value:'2',label:'施工日志'},{value:'3',label:'施工组织'},{value:'4',label:'施工方案'},
+        {value:'5',label:'节点对比'},{value:'6',label:'工作汇报'},{value:'7',label:'日常巡检'},{value:'8',label:'物资采购'}], //资料类型
+    contextList:[{value:'1',label:'全部'},{value:'2',label:'进度计划'},{value:'3',label:'物资计划'},{value:'2',label:'质量管理'},{value:'3',label:'风险管理'},
+        {value:'3',label:'人力资源'}],//内容配置
+    allBuild:[],//楼栋
+    allClass:[],//楼层
+    buildingType:{
+      context:'',//内容配置
+      text:'',//资料类型
+      build:"",//楼栋
+      class:"",//楼层
+      beginTime:'',//开始时间
+      endTime:'',//接受时间
+    },
+    buildingTypeTable:[{id:1,name:'施工方案2019/01/01'},{id:1,name:'施工方案2019/01/01'},{id:1,name:'施工方案2019/01/01'},
+        {id:1,name:'施工方案2019/01/01'}],//自定义表格数据
+
+   }
+ },
+ methods:{
+    //点击左边的菜单--切换
+    showFrom(a){
+      this.fromCurrent=a;
+      console.log(this.fromCurrent);
+    },
+    //表格序号
+    indexMethod(index){
+      return index+1;
+    },
+
+    //自定义表格--点击预览
+    buildingTypeClick(index,row){
+      console.log(index);
+      console.log(row);
+    },
+    //自定义表格--点击下载
+    buildingTypeDown(index,row){
+      console.log(index);
+      console.log(row);
+    },
+
+
+
+
+
+    },
+ 
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-intelligence-reports
+  width 100%
+  height 100%
+  font-size 18px
+  padding 20px
+  box-sizing border-box
+  background-color #F5F6FA
+  .intelligenec_left
+    width 886px
+    box-sizing border-box
+    height 968px
+    border-right 1px solid #DFDFE2
+    float left
+    padding-top 12px
+    padding-right 20px
+
+  .intelligenec_left_head
+    font-weight  bold
+  .intelligenec_left_head_img
+    display inline-block
+    width 23px
+    height 23px
+    margin-right 16px
+  .intelligenec_left_body
+    height 680px
+    
+    padding-top 20px
+  .intelligenec_jump li
+    display inline-block
+    width 20%
+    height 40px
+    box-sizing border-box
+    border 1px solid #4775CA
+    border-right 0
+    color #4775CA
+    font-weight bold
+    font-size 18px
+    line-height 40px
+    text-align center
+    cursor pointer
+
+  // 表格最上面的样式
+  .intelligenec_left_div .intelligenec_building li
+    display inline-block
+    background-color  #435089
+    color #ffffff
+    height 40px
+    line-height 40px
+    text-align center
+  .intelligenec_expand
+    width 100%
+    height 40px
+    line-height 40px
+    background-color #ffffff
+    border 1px solid #EEEFF1
+    box-sizing border-box
+    padding-left 30px
+  .intelligenec_expand i 
+    margin-right 40px
+  .el-table .success-row 
+    background: #F4F6FF;
+  
+  .intelligenec_down_btn
+    margin-top 30px
+    color #ffffff
+    background rgba(71,117,202,1)
+    box-shadow 0px 3px 7px 0px rgba(161,192,250,1)
+    border-radius 4px
+    font-size 18px
+    padding 11px 24px
+    border 0
+
+  .intelligenec_left_div .el-table td,.intelligenec_left_div .el-table th 
+    padding  5px 0 
+
+  .intelligenec_left_body li.active 
+    color #ffffff
+    background-color #4775CA
+
+  .intelligenec_left_body .intelligenec_left_border
+    border-right 1px solid #4775CA
+  .intelligenec_left_div
+    overflow-x hidden
+    overflow-y scroll
+    margin-top 30px
+    width 100%
+    height 730px
+    box-sizing border-box
+  .el-table .cell  
+    text-align center
+
+  .intelligenec_right
+    width 869px
+    box-sizing border-box
+    height 968px
+    float left
+    padding-top 12px
+    padding-left 20px
+  .intell_margin_top
+    margin-top 20px
+  .intell_text_right
+    text-align right
+    padding-right 15px
+    line-height 33px
+  .intell_building_type_btn
+    margin 40px 0px
+    padding-right 20px 
+    padding-bottom 40px
+    text-align center
+    border-bottom 1px solid #E3E4E6
+    .correct-btn 
+      padding 12px 44px
+      font-size 16px
+      font-family SourceHanSansCN-Normal
+      font-weight 400
+      color rgba(255,254,254,1)
+      background rgba(253,161,67,1)
+      border 0
+      box-shadow 0px 3px 7px 0px rgba(253,161,67,1)
+      border-radius 4px
+  .intelligenec_right_title
+    height 50px
+    width 830px
+    background-color #435089
+    color #ffffff
+    font-size 18px
+    font-weight bold
+    line-height 50px
+    text-align center
+    margin-top 20px
+
+  .intelligenec_right_table_div
+    width 830px
+    height 830px
+    box-sizing border-box
+  .intelligenec_right_table_div div 
+    box-sizing border-box
+  .intelligenec_right_table_div1,.intelligenec_right_table_div6
+    width 100%
+    border 1px solid #D0D1D4
+    border-top 0
+    background-color #F4F6FF
+    height 48px
+    line-height 48px
+  .intelligenec_right_table_div1>div,.intelligenec_right_table_div6>div
+    display inline-block
+    text-align center
+  .intelligenec_right_table_div1>div:nth-child(2),.intelligenec_right_table_div6>div:nth-child(2)
+    width 230px
+    height 100%
+    box-sizing border-box
+    float left
+    border-right 1px solid #D0D1D4
+  .intelligenec_right_table_div1>div:nth-child(3),.intelligenec_right_table_div6>div:nth-child(3)
+    width 168px
+    height 100%
+    box-sizing border-box
+    float left
+    border-right 1px solid #D0D1D4
+  .intelligenec_right_table_div1>div:nth-child(4),.intelligenec_right_table_div6>div:nth-child(4)
+    width 230px
+    height 100%
+    box-sizing border-box
+    float left
+  .intelligenec_right_table_div1>div:nth-child(1),.intelligenec_right_table_div6>div:nth-child(1)
+    width 168px
+    float left
+    display inline-block
+    text-align center
+    border-right 1px solid #D0D1D4
+  .intelligenec_right_table_div2
+    width 100%
+    border 1px solid #D0D1D4
+    border-top 0
+    height 130px
+  .intelligenec_right_table_div2>div:first-child
+    width 168px
+    display inline-block
+    text-align center
+    background-color #F4F6FF
+    box-sizing border-box
+    border-right 1px solid #D0D1D4
+    line-height 128px
+    height 128px
+    float left
+
+  .intelligenec_right_table_div2>div:last-child   
+    display inline-block
+    width 660px
+    height 130px
+    overflow hidden
+  .intelligenec_right_list
+    display inline-block
+    width 100%
+    height 100%
+    box-sizing border-box
+  .intelligenec_right_list li
+    display inline-block
+    width 25%
+    height 100%
+    box-sizing border-box
+  .intelligenec_right_list_border
+    border-right 1px solid #D0D1D4  
+  .intelligenec_right_list span 
+    display inline-block
+    float left 
+    width 100%
+    height 32%
+    text-align center
+    box-sizing border-box
+    line-height 42px
+  .intelligenec_right_span_border  
+    border-bottom 1px solid #D0D1D4  
+
+  .intelligenec_right_table_div3
+    width 100%
+    border 1px solid #D0D1D4
+    border-top 0
+    height 216px
+  .intelligenec_right_table_div3>div:first-child
+    width 168px
+    display inline-block
+    text-align center
+    background-color #F4F6FF
+    box-sizing border-box
+    border-right 1px solid #D0D1D4
+    line-height 216px
+    height 215px
+    float left
+  .intelligenec_right_table_div3>div:last-child 
+    display inline-block
+    width 660px
+    height 216px
+    padding 10px 20px
+    
+
+   .intelligenec_right_table_div4
+    width 100%
+    border 1px solid #D0D1D4
+    border-top 0
+    height 216px
+  .intelligenec_right_table_div4>div:first-child
+    width 168px
+    display inline-block
+    text-align center
+    background-color #F4F6FF
+    box-sizing border-box
+    border-right 1px solid #D0D1D4
+    line-height 216px
+    height 214px
+    float left
+  .intelligenec_right_table_div4>div:last-child 
+    display inline-block
+    width 660px
+    height 216px
+    padding 10px 20px
+
+   .intelligenec_right_table_div5
+    width 100%
+    border 1px solid #D0D1D4
+    border-top 0
+    height 216px
+  .intelligenec_right_table_div5>div:first-child
+    width 168px
+    display inline-block
+    text-align center
+    background-color #F4F6FF
+    box-sizing border-box
+    border-right 1px solid #D0D1D4
+    line-height 216px
+    height 214px
+    float left
+  .intelligenec_right_table_div5>div:last-child 
+    display inline-block
+    width 660px
+    height 216px
+    padding 10px 20px
+  
+  .intelligenec_right_table_div p
+    line-height 27px
+  .intelligenece_margin_top
+    margin-top 30px
+    
+
+</style>

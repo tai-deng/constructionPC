@@ -1,0 +1,1255 @@
+<!-- artifactsAssociated构件关联 -->
+<template>
+  <div class="container-artifacts-associated">
+    <el-row>
+      <el-col :span="12">
+        <div>
+          <el-button @click="selected=false" :class="{selected:!selected}">清单关联</el-button>
+          <el-button @click="selected=true" :class="{selected:selected}">构件关联</el-button>
+          <el-button type="warning" @click="getCheckedKeys" style="float:right">确认关联</el-button>
+        </div>
+        <el-row :gutter="20">
+          <el-col :span="10">
+            <header>构件清单</header>
+            <el-select v-model="value" placeholder="请选择" id="select1">
+              <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value"></el-option>
+            </el-select>
+            <el-tree
+              :data="data2"
+              show-checkbox
+              default-expand-all
+              node-key="id"
+              ref="tree"
+              highlight-current
+              :props="defaultProps"
+            ></el-tree>
+          </el-col>
+          <el-col :span="14" v-show="!selected">
+            <el-select v-model="value2" placeholder="请选择">
+              <el-option
+                v-for="item in options2"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+            <el-editable
+              v-if="value2!=1"
+              ref="editable"
+              :edit-config="{trigger: 'manual', mode: 'row'}"
+              :edit-rules="validRules"
+              :data.sync="list"
+              @row-click="rowClickEvent"
+            >
+              <el-editable-column label width="45">
+                <template slot-scope="scope">
+                  <i :class="treeIcons(scope.row)" @click="toggleCollapseNode(scope.row)"></i>
+                  <el-checkbox
+                    v-model="scope.row.isCheck"
+                    :indeterminate="scope.row.indeterminate"
+                    @change="treeNodeChange(scope.row)"
+                    v-show="~~scope.row.type==0"
+                  ></el-checkbox>
+                </template>
+              </el-editable-column>
+              <el-editable-column prop="name" label="构件名称" :edit-render="{name: 'ElInput'}"></el-editable-column>
+              <el-editable-column
+                prop="m1"
+                label="混凝土砌块(m³)"
+                :edit-render="{name: 'ElInputNumber'}"
+              ></el-editable-column>
+              <el-editable-column prop="m2" label="模板面积（㎡）" :edit-render="{name: 'ElInputNumber'}"></el-editable-column>
+              <el-editable-column width="50">
+                <template slot-scope="scope">
+                  <!-- hasActiveRow 判断当前是否活动行 -->
+                  <template v-if="$refs.editable.hasActiveRow(scope.row)">
+                    <i class="el-icon-check" @click="saveRowEvent(scope.row,'editable')"></i>
+                    <i class="el-icon-close" @click="cancelRowEvent(scope.row,'editable')"></i>
+                  </template>
+                  <template v-else>
+                    <i
+                      class="el-icon-plus"
+                      @click="insertEvent(scope.row,'editable')"
+                      v-show="scope.row.type==1&scope.row.expandNode"
+                    ></i>
+                    <i
+                      class="el-icon-delete"
+                      @click="removeEvent(scope.row,'editable')"
+                      v-show="~~scope.row.type==0"
+                    ></i>
+                  </template>
+                </template>
+              </el-editable-column>
+            </el-editable>
+            <el-editable
+              v-if="value2==1"
+              ref="editable2"
+              :edit-config="{trigger: 'manual', mode: 'row'}"
+              :edit-rules="validRules2"
+              :data.sync="list"
+              @clear-active="clearActiveEvent"
+              @selection-change="handleSelectionChange"
+            >
+              <el-editable-column label width="45">
+                <template slot-scope="scope">
+                  <i :class="treeIcons(scope.row)" @click="toggleCollapseNode(scope.row)"></i>
+                  <el-checkbox
+                    v-model="scope.row.isCheck"
+                    :indeterminate="scope.row.indeterminate"
+                    @change="treeNodeChange(scope.row)"
+                    v-show="scope.row.parentId"
+                  ></el-checkbox>
+                </template>
+              </el-editable-column>
+              <el-editable-column prop="projectCode" label="项目编码" :edit-render="{name: 'ElInput'}"></el-editable-column>
+              <el-editable-column prop="projectName" label="项目名称" :edit-render="{name: 'ElInput'}"></el-editable-column>
+              <el-editable-column
+                prop="workQuantity"
+                label="工程量"
+                :edit-render="{name: 'ElInputNumber'}"
+              ></el-editable-column>
+              <el-editable-column width="50">
+                <template slot-scope="scope">
+                  <template v-if="$refs.editable2.hasActiveRow(scope.row)">
+                    <i class="el-icon-check" @click="saveRowEvent(scope.row,'editable2')"></i>
+                    <i class="el-icon-close" @click="cancelRowEvent(scope.row,'editable2')"></i>
+                  </template>
+                  <template v-else>
+                    <i
+                      class="el-icon-plus"
+                      @click="insertEvent(scope.row,'editable2',1)"
+                      v-show="scope.row.type==1&scope.row.expandNode&!scope.row.parentId"
+                    ></i>
+                    <i
+                      class="el-icon-more-outline"
+                      @click="split(scope.row,'editable2')"
+                      v-show="scope.row.type==1&~~scope.row.parentId!=0"
+                    ></i>
+                    <i
+                      class="el-icon-delete"
+                      @click="removeEvent(scope.row,'editable2')"
+                      v-show="~~scope.row.type==0"
+                    ></i>
+                  </template>
+                </template>
+              </el-editable-column>
+            </el-editable>
+          </el-col>
+          <el-col :span="14" v-show="selected">
+            <el-table
+              :data="tableData2"
+              highlight-current-row
+              @row-click="clickItem"
+              :header-cell-class-name="tableheaderClassName"
+              style="width: 100%"
+            >
+              <el-table-column label width="50">
+                <template slot-scope="scope">
+                  <el-radio v-model="radio" :label="scope.row.id">
+                    <i></i>
+                  </el-radio>
+                </template>
+              </el-table-column>
+              <el-table-column prop="name" label="任务名称"></el-table-column>
+              <el-table-column prop="date" label="计划完成时间"></el-table-column>
+              <el-table-column prop="duration" label="工期" show-overflow-tooltip></el-table-column>
+            </el-table>
+          </el-col>
+        </el-row>
+      </el-col>
+      <el-col :span="12">
+        <div>
+          <el-button type="primary" @click="centerDialogVisible = true" style="float:right;">
+            <img src="../../../assets/icons/match.png"> 清单一键匹配
+          </el-button>
+        </div>
+        <!-- 模型box -->
+        <div></div>
+      </el-col>
+    </el-row>
+
+    <el-dialog title="字段映射" :visible.sync="centerDialogVisible" width="40%" center>
+      <el-row>
+        <el-col :offset="5" :span="9">
+          <div class="grid-content bg-purple">模型</div>
+        </el-col>
+        <el-col :span="10">
+          <div class="grid-content bg-purple-light">工程量清单</div>
+        </el-col>
+      </el-row>
+      <el-form ref="form" label-width="80px">
+        <el-form-item label="楼层匹配">
+          <el-select v-model="floorType.floor" placeholder="请选择">
+            <el-option
+              v-for="item in options3"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            ></el-option>
+          </el-select>
+          <el-select v-model="floorType.floor2" placeholder="请选择">
+            <el-option
+              v-for="item in options4"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            ></el-option>
+          </el-select>
+          <div @click="addFloor()" class="add_btn"></div>
+        </el-form-item>
+        <!-- 新增的楼层匹配 -->
+        <el-form-item label v-for="(list) in addFloorType" :key="list.index">
+          <el-select v-model="list.floor" placeholder="请选择">
+            <el-option
+              v-for="item in options3"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            ></el-option>
+          </el-select>
+          <el-select v-model="list.floor2" placeholder="请选择">
+            <el-option
+              v-for="item in options4"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            ></el-option>
+          </el-select>
+          <div @click="addFloorType.splice(index, 1)" class="delete_btn"></div>
+        </el-form-item>
+        <el-form-item label="构件匹配">
+          <el-select v-model="form.artifact" placeholder="请选择">
+            <el-option
+              v-for="item in options3"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            ></el-option>
+          </el-select>
+          <el-select v-model="form.artifact2" placeholder="请选择">
+            <el-option
+              v-for="item in options4"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            ></el-option>
+          </el-select>
+          <div @click="addArtifact()" class="add_btn"></div>
+        </el-form-item>
+        <!-- 新增的构件匹配 -->
+        <el-form-item label v-for="(list) in addArtifactType" :key="list.index">
+          <el-select v-model="list.artifact" placeholder="请选择">
+            <el-option
+              v-for="item in options4"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            ></el-option>
+          </el-select>
+          <el-select v-model="list.artifact2" placeholder="请选择">
+            <el-option
+              v-for="item in options4"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            ></el-option>
+          </el-select>
+          <div @click="addArtifactType.splice(index, 1)" class="delete_btn"></div>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="centerDialogVisible = false">取 消</el-button>
+        <el-button class="selected" @click="centerDialogVisible = false">一键匹配</el-button>
+      </span>
+    </el-dialog>
+    <el-dialog title="拆分" :visible.sync="splitDialogVisible" width="40%" center class="split">
+      <el-row type="flex" justify="center">
+        <el-col :span="8">项目编码 : {{splitProjectCode}}</el-col>
+        <el-col :span="8">项目名称 : {{splitProjectName}}</el-col>
+        <el-col :span="5">工作量 : {{splitWorkQuantity}}</el-col>
+      </el-row>
+      <el-row type="flex" justify="center">
+        <el-col :span="21">
+          <el-form ref="form" label-width="59px">
+            <el-form-item label="拆分项 : " class="fancy">
+              <el-radio-group v-model="form.resource">
+                <el-radio label="按楼层拆分"></el-radio>
+                <el-radio label="按数量拆分"></el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <hr>
+            <el-form-item label="数量 : " class="fancy" v-if="form.resource =='按数量拆分'">
+              <el-input v-model="form.quantity" type="number" :placeholder="splitWorkQuantity"></el-input>
+            </el-form-item>
+            <el-form-item :label="item.label" v-for="(item) in splitArr" :key="item.index">
+              <el-input v-model="item.value" type="number" placeholder="17.41"></el-input>
+            </el-form-item>
+          </el-form>
+        </el-col>
+      </el-row>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="splitDialogVisible = false">取 消</el-button>
+        <el-button class="selected" @click="comfirmSplit">确认</el-button>
+      </span>
+    </el-dialog>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import Vue from "vue";
+import VueElementExtends from "vue-element-extends";
+import "vue-element-extends/lib/index.css";
+Vue.use(VueElementExtends);
+import XEUtils from "xe-utils";
+
+export default {
+  data() {
+    return {
+      splitArr: [
+        { value: "", label: "-2F" },
+        { value: "", label: "-1F" },
+        { value: "", label: "1F" }
+        // { value: "", label: "2F" },
+        // { value: "", label: "3F" },
+        // { value: "", label: "4F" },
+        // { value: "", label: "5F" },
+        // { value: "", label: "6F" },
+        // { value: "", label: "7F" },
+        // { value: "", label: "8F" },
+        // { value: "", label: "9F" },
+        // { value: "", label: "10F" }
+      ], //拆分之后的数组
+      valueArr: [], //存储拆分之后多个拆分值的数组 // 点击拆分之后的表格数据
+      floorType: {
+        floor: "", //楼层匹配 模型
+        floor2: "" //楼层匹配 工程量清单
+      },
+      artifactType: {
+        artifact: "", //构件匹配 模型
+        artifact2: "" //构件匹配 工程量清单
+      },
+      addFloorType: [], // 楼层匹配（增减部分）
+      addArtifactType: [], // 构件匹配（增减部分）
+      radio: "", //构件关联 单选
+      selected: false, //控制显示清单关联还是构件关联
+      centerDialogVisible: false, //控制一键匹配模态框显示与否
+      splitDialogVisible: false, //控制拆分模态框显示与否
+      loading: false,
+      currentRow: null,
+      validRules: {
+        //新增行验证规则
+        name: [{ required: true, message: "请输入构件名称", trigger: "blur" }],
+        m1: [{ required: true, message: "请输入混凝土砌块", trigger: "blur" }],
+        m2: [{ required: true, message: "请输入模板面积", trigger: "blur" }]
+      },
+      validRules2: {
+        //新增行验证规则
+        projectCode: [
+          { required: true, message: "请输入项目编码", trigger: "blur" }
+        ],
+        projectName: [
+          { required: true, message: "请输入项目名称", trigger: "blur" }
+        ],
+        workQuantity: [
+          { required: true, message: "请输入工程量", trigger: "blur" }
+        ]
+      },
+      list: [],
+      treeNode: [],
+      treeList: [],
+      data2: [
+        {
+          label: "整体模型",
+          children: [
+            {
+              label: "建筑专业",
+              children: [
+                {
+                  id: 1,
+                  label: "1F"
+                },
+                {
+                  id: 2,
+                  label: "2F"
+                },
+                {
+                  id: 3,
+                  label: "3F"
+                },
+                {
+                  id: 4,
+                  label: "4F"
+                },
+                {
+                  id: 5,
+                  label: "5F"
+                },
+                {
+                  id: 6,
+                  label: "6F"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      defaultProps: {
+        children: "children",
+        label: "label"
+      },
+      options: [
+        {
+          value: "选项1",
+          label: "整体模型-XXX易地扶贫搬迁项目"
+        },
+        {
+          value: "选项2",
+          label: "整体模型-XXX易地扶贫搬迁项目1"
+        },
+        {
+          value: "选项3",
+          label: "整体模型-XXX易地扶贫搬迁项目2"
+        },
+        {
+          value: "选项4",
+          label: "整体模型-XXX易地扶贫搬迁项目3"
+        },
+        {
+          value: "选项5",
+          label: "整体模型-XXX易地扶贫搬迁项目4"
+        }
+      ],
+      value: "",
+      options2: [
+        {
+          value: "1",
+          label: "全部项目"
+        },
+        {
+          value: "选项1",
+          label: "A1栋-施工图预算工程量清单-墙"
+        },
+        {
+          value: "选项2",
+          label: "A1栋-施工图预算工程量清单-家具"
+        },
+        {
+          value: "选项3",
+          label: "整A1栋-施工图预算工程量清单-房间"
+        },
+        {
+          value: "选项4",
+          label: "A1栋-施工图预算工程量清单-门"
+        },
+        {
+          value: "选项5",
+          label: "A1栋-施工图预算工程量清单-窗"
+        }
+      ],
+      value2: "",
+      tableData2: [
+        {
+          id: 1,
+          date: "2019.01.07",
+          name: "1F主体结构",
+          duration: "6"
+        },
+        {
+          id: 2,
+          date: "2019.01.08",
+          name: "2F主体结构",
+          duration: "9"
+        },
+        {
+          id: 3,
+          date: "2019.01.09",
+          name: "3F主体结构",
+          duration: "5"
+        },
+        {
+          id: 4,
+          date: "2019.01.10",
+          name: "4F主体结构",
+          duration: "6"
+        },
+        {
+          id: 5,
+          date: "2019.01.11",
+          name: "5F主体结构",
+          duration: "5"
+        },
+        {
+          id: 6,
+          date: "2019.01.12",
+          name: "6F主体结构",
+          duration: "6"
+        }
+      ],
+      // currentRow: null, //单选
+      options3: [
+        {
+          value: "选项1",
+          label: "1F"
+        },
+        {
+          value: "选项2",
+          label: "2F"
+        },
+        {
+          value: "选项3",
+          label: "3F"
+        },
+        {
+          value: "选项4",
+          label: "4F"
+        },
+        {
+          value: "选项5",
+          label: "5F"
+        }
+      ],
+      value3: "",
+      options4: [
+        {
+          value: "选项1",
+          label: "第一层"
+        },
+        {
+          value: "选项2",
+          label: "第二层"
+        },
+        {
+          value: "选项3",
+          label: "第三层"
+        },
+        {
+          value: "选项4",
+          label: "第四层"
+        },
+        {
+          value: "选项5",
+          label: "第五层"
+        }
+      ],
+      value4: "",
+      form: {
+        floor: "",
+        artifact: "",
+        floor2: "",
+        artifact2: ""
+      },
+      treeData: {},
+      splitRow: "",
+      splitProjectName: "", //拆分模态框
+      splitProjectCode: "", //拆分模态框
+      splitWorkQuantity: "" //拆分模态框
+    };
+  },
+  created() {
+    this.init();
+  },
+  methods: {
+    //点击拆分之后
+    split(row, ref) {
+      this.splitRow = row;
+      this.splitDialogVisible = true;
+      this.splitProjectName = row.projectName;
+      this.splitProjectCode = row.projectCode;
+      this.splitWorkQuantity = row.workQuantity;
+    },
+    //在拆分模态框内点击确定时校验数据
+    comfirmSplit() {
+      console.log(this.splitRow);
+      for (let i = 0; i < this.splitArr.length; i++) {
+        if (!this.splitArr[i].value) {
+          alert("第" + (i + 1) + "项不能为空");
+          this.splitDialogVisible = true;
+          return;
+        }
+      }
+      this.splitArr
+        .map(item => item.value) //动态添加属性值数组
+        .map((item, index) => {
+          this.valueArr.push(
+            Object.assign(
+              {},
+              {},
+              {
+                projectCode: this.splitProjectCode,
+                projectName: this.splitProjectName,
+                workQuantity: item
+              }
+            )
+          );
+        });
+      console.log(this.valueArr);
+      this.splitArr.map(item => (item.value = "")); //拆分之后,再次点击进入拆分模态框,表单
+      this.splitDialogVisible = false; //关闭拆分模态框
+      this.valueArr.map(item => {
+        console.log(item);
+        console.log(this.splitRow);
+        this.insertEvent(this.splitRow, "editable2", 0, item);
+      });
+      this.valueArr = [];
+      return;
+    },
+    // 添加楼层匹配
+    addFloor() {
+      this.addFloorType.push({
+        floor: "", //楼层匹配 模型
+        floor2: "" //楼层匹配 工程量清单
+      });
+    },
+    // 添加构件匹配
+    addArtifact() {
+      this.addArtifactType.push({
+        artifact: "", //楼层匹配 模型
+        artifact2: "" //楼层匹配 工程量清单
+      });
+    },
+    //获取选中的树节点组成的数组
+    getCheckedKeys() {
+      console.log(this.$refs.tree.getCheckedKeys(true)); //(leafOnly) 接收一个 boolean 类型的参数，若为 true 则仅返回被选中的叶子节点的 keys，默认值为 false
+      this.multipleSelection = this.$refs.tree.getCheckedKeys(true);
+      console.log(this.multipleSelection);
+    },
+    //获取选中表格中的数据组成的数组
+    handleSelectionChange(val) {
+      this.multipleSelection = val.map(val => val.id);
+      console.log(this.multipleSelection);
+    },
+    // resetChecked() {
+    //   this.$refs.tree.setCheckedKeys([]);
+    // }
+    //修改表格表头的背景颜色
+    tableheaderClassName() {
+      return "table-head-th";
+    },
+    setCurrent(row) {
+      this.$refs.singleTable.setCurrentRow(row);
+    },
+    // 	当某一行被点击时会触发该事件
+    clickItem(row) {
+      this.radio = row.id === this.radio ? "" : row.id;
+    },
+    // 树表格的逻辑
+    init() {
+      this.findList();
+    },
+    findList() {
+      this.loading = true;
+      return this.loadList()
+        .then(() => {
+          this.loading = false;
+        })
+        .catch(() => {
+          this.loading = false;
+        });
+    },
+    //
+    loadList() {
+      if (this.value2 != 1) {
+        return this.getDataJSON().then(data => {
+          this.initTreeList(data);
+          console.log(this.treeNode);
+          console.log(this.treeList);
+        });
+      } else {
+        return this.getData2JSON().then(data => {
+          this.initTreeList(data);
+          console.log(this.treeNode);
+          console.log(this.treeList);
+        });
+      }
+    },
+    //获取该目录下所有文件
+    getChildren(row) {
+      return this.treeList.filter(item => item.parentId === row.id);
+    },
+    //
+    // hasDirectory(row) {
+    //   return this.getChildren(row).length > 0;
+    // },
+    reloedTreeList(data) {
+      this.initTreeList(data, true);
+    },
+    // 将一个带层级的数据列表转成树结构
+    initTreeList(data, isReload) {
+      // toArrayTree ( array, options ) 一个高性能的树结构转换函数，将一个带层级的数据列表转成树结构
+      // 自定义数据存放属性
+      let treeNode = XEUtils.toArrayTree(data, {
+        key: "id",
+        parentKey: "parentId",
+        children: "children"
+      });
+      // toTreeArray ( array, options ) 将一个树结构转成数组列表
+      let treeList = XEUtils.toTreeArray(treeNode, { children: "children" });
+      if (!isReload) {
+        treeList.forEach(item => {
+          Object.assign(item, {
+            expandNode: false,
+            showNode: false,
+            isCheck: false,
+            indeterminate: false
+          });
+        });
+      }
+      this.treeNode = treeNode; // 目录节点
+      this.treeList = treeList; // 全部节点
+      if (!isReload) {
+        treeNode.forEach((item, index) => {
+          Object.assign(item, {
+            treeLevel: 0,
+            treeIndex: index,
+            showNode: true
+          });
+        });
+      }
+      this.loadTree();
+    },
+    // 判断表格展开与否的图标样式
+    treeIcons(row) {
+      let clsName =
+        row.type === 1 //
+          ? row.expandNode //
+            ? "el-icon-caret-bottom"
+            : "el-icon-caret-top"
+          : "";
+      return clsName;
+    },
+    //判断一条数据是否被选中
+    treeNodeChange(row) {
+      if (row.isCheck) {
+        row.indeterminate = false;
+      }
+      // this.treeCheckChildNode(row, row.isCheck);
+      this.treeCheckParentNode(row);
+    },
+    // 切换 展开目录的逻辑
+    treeCollapseNode(parent, expand) {
+      let children = this.treeList.filter(item => item.parentId === parent.id);
+      parent.expandNode = !!(expand && children.length);
+      children.forEach((child, index) => {
+        child.treeIndex = index;
+        child.treeLevel = parent.treeLevel + 1;
+        child.showNode = expand !== null ? expand : false;
+        this.treeCollapseNode(child, null);
+      });
+    },
+    loadTree() {
+      this.list = this.treeList.filter(item => item.showNode); // 目录 list
+    },
+    // 切换 目录的样式
+    treeRowClassName({ row }) {
+      let clsName = `tree-level_${row.treeLevel}`;
+      if (this.currentRow && this.currentRow.id === row.id) {
+        clsName += " current-row";
+      }
+      return clsName;
+    },
+    // 切换 展开目录
+    toggleCollapseNode(row) {
+      this.treeCollapseNode(row, !row.expandNode);
+      this.loadTree();
+    },
+    rowClickEvent(row) {
+      this.currentRow = row;
+    },
+
+    /**
+    selectRow:新增的一行数据的父级数据
+    file:新增的一行数据
+    type:0->目录,1->文件
+    */
+    insertEvent(selectRow, ref, type = 0, file) {
+      console.log(file);
+      if (!this.$refs[ref].checkValid().error) {
+        let children = [];
+        let isAppand = false;
+        let index = selectRow
+          ? XEUtils.findIndexOf(this.list, item => item.id === selectRow.id)
+          : 0;
+        let data = Object.assign(
+          {
+            isNew: true,
+            id: Date.now(),
+            type: type,
+            parentId: null,
+            treeLevel: 0,
+            treeIndex: 0,
+            expandNode: false,
+            showNode: true,
+            isCheck: false,
+            indeterminate: false
+          },
+          file
+        );
+
+        if (selectRow) {
+          children = this.getChildren(selectRow);
+          isAppand =
+            selectRow.type === 1 && (selectRow.expandNode || !children.length);
+          if (isAppand) {
+            selectRow.expandNode = true; //展开
+            data.parentId = selectRow.id; //被选中行数据的id就是插入数据的父id
+            data.treeLevel = selectRow.treeLevel + 1;
+          } else {
+            data.parentId = selectRow.parentId;
+            data.treeLevel = selectRow.treeLevel;
+          }
+        }
+        console.log(data);
+
+        let row = this.$refs[ref].insertAt(
+          data,
+          isAppand ? index + children.length + 1 : index
+        ); //第二个参数如果是 row 或 $index 则在指定位置新增一条数据，如果是 -1 则从最后新增一条数据
+        // console.log(row);
+        // let row = this.$refs[ref].insert(data);
+        this.currentRow = row;
+        this.$nextTick(() => {
+          if (selectRow) {
+            let dataIndex = XEUtils.findIndexOf(
+              this.treeList,
+              item => item.id === selectRow.id
+            );
+            this.treeList.splice(
+              isAppand ? dataIndex + children.length + 1 : dataIndex,
+              0,
+              row
+            );
+          } else {
+            this.treeList.push(row);
+          }
+          this.reloedTreeList(this.treeList);
+          if (!file) {
+            this.$nextTick(() => this.$refs[ref].setActiveRow(row)); //   只对 mode=row 有效，激活指定行行为可编辑状态
+          }
+        });
+      }
+    },
+    // 取消保存当前编辑行 🙂
+    cancelRowEvent(row, ref) {
+      let activeInfo = this.$refs[ref].getActiveRow(); // getActiveRow 获取当前活动行或列的信息
+      if (activeInfo && activeInfo.isUpdate) {
+        MessageBox.confirm("该数据未保存，是否移除?", "温馨提示", {
+          confirmButtonText: "移除数据",
+          cancelButtonText: "返回继续",
+          type: "warning"
+        })
+          .then(action => {
+            if (action === "confirm") {
+              this.treeList = this.treeList.filter(item => item.id !== row.id); // 从缓存树中移除
+              this.reloedTreeList(this.treeList); //重新加载缓存树
+            } else {
+              this.$refs[ref].setActiveRow(row); //  只对 mode=row 有效，激活指定行行为可编辑状态
+            }
+          })
+          .catch(e => e)
+          .then(() => {
+            // this.isClearActiveFlag = true
+          });
+      } else {
+        this.$refs[ref].clearActive();
+      }
+    },
+    // 移除当前行 🙂
+    removeEvent(row, ref) {
+      MessageBox.confirm("确定删除该行数据?", "温馨提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      })
+        .then(() => {
+          // this.$refs[ref].remove(row); // 首先在 ref 中删除 row
+          this.treeList = this.treeList.filter(item => item.id !== row.id); // 然后一定要在 this.treeList 中删除 row  // 解决无法成功删除数据
+          // this.updateRowEvent(row);
+          this.reloedTreeList(this.treeList); //重新加载缓存树
+        })
+        .catch(e => e);
+    },
+    clearActiveEvent(row) {
+      this.updateRowEvent(row);
+    },
+    //更新树表格数据
+    updateRowEvent(row) {
+      // this.$refs[ref].reloadRow(row); // reloadRow() 初始化指定行数据
+      Message({ message: "保存成功", type: "success" });
+    },
+    //保存当前编辑行
+    saveRowEvent(row, ref) {
+      console.log(row);
+      this.$refs[ref].validateRow(row, valid => {
+        if (valid) {
+          this.$refs[ref].clearActive(); //清除所有活动行或列为不可编辑状态
+          this.$refs[ref].reloadRow(row); //初始化指定行数据
+          Message({ message: "保存成功", type: "success" });
+        } else {
+          this.$refs[ref].revert(row); // 放弃更改，还原指定行 row 或者整个表格的数据
+        }
+      });
+    },
+    // 模拟数据
+    getDataJSON() {
+      return new Promise(resolve => {
+        setTimeout(
+          () =>
+            resolve([
+              {
+                id: 1,
+                name: "基础墙1",
+                type: 1,
+                parentId: null
+              },
+              {
+                id: 11,
+                name: "砌体墙-11",
+                type: 0,
+                parentId: 1,
+                m1: "69.65",
+                m2: "69.65"
+              },
+              {
+                id: 12,
+                name: "砌体墙-12",
+                type: 0,
+                parentId: 1,
+                m1: "69.95",
+                m2: "69.65"
+              },
+              {
+                id: 2,
+                name: "基础墙2",
+                type: 1,
+                parentId: null
+              },
+              {
+                id: 21,
+                name: "砌体墙-21",
+                type: 0,
+                parentId: 2,
+                m1: "69.65",
+                m2: "69.65"
+              },
+              {
+                id: 22,
+                name: "砌体墙-22",
+                type: 0,
+                parentId: 2,
+                m1: "69.95",
+                m2: "69.65"
+              },
+              {
+                id: 23,
+                name: "砌体墙-23",
+                type: 0,
+                parentId: 2,
+                m1: "69.95",
+                m2: "69.65"
+              },
+              {
+                id: 24,
+                name: "砌体墙-24",
+                parentId: 2,
+                type: 0,
+                m1: "69.95",
+                m2: "69.65"
+              },
+              {
+                id: 25,
+                name: "砌体墙-25",
+                parentId: 2,
+                type: 0,
+                m1: "69.95",
+                m2: "69.65"
+              },
+              {
+                id: 26,
+                name: "砌体墙-26",
+                parentId: 2,
+                type: 0,
+                m1: "69.95",
+                m2: "69.65"
+              }
+            ]),
+          350
+        );
+      });
+    },
+    getData2JSON() {
+      return new Promise(resolve => {
+        setTimeout(
+          () =>
+            resolve([
+              {
+                id: 1,
+                projectCode: "砌体部分",
+                type: 1,
+                parentId: null
+              },
+              {
+                id: 11,
+                projectCode: "11111111111-11",
+                type: 1,
+                parentId: 1,
+                projectName: "多孔砖",
+                workQuantity: "69.65"
+              },
+              {
+                id: 12,
+                projectCode: "11111111111-2",
+                type: 1,
+                parentId: 1,
+                projectName: "砌块砖",
+                workQuantity: "69.65"
+              },
+              {
+                id: 13,
+                projectCode: "11111111111-3",
+                type: 1,
+                parentId: 1,
+                projectName: "砌块砖",
+                workQuantity: "69.65"
+              },
+              {
+                id: 2,
+                projectCode: "22222222222",
+                type: 1,
+                parentId: null
+              },
+              {
+                id: 21,
+                projectCode: "22222222222-1",
+                type: 1,
+                parentId: 2,
+                projectName: "砌块砖",
+                workQuantity: "69.65"
+              },
+              {
+                id: 22,
+                projectCode: "22222222222-2",
+                type: 1,
+                parentId: 2,
+                projectName: "砌块砖",
+                workQuantity: "69.65"
+              },
+              {
+                id: 23,
+                projectCode: "22222222222-3",
+                type: 1,
+                parentId: 2,
+                projectName: "砌块砖",
+                workQuantity: "69.65"
+              },
+              {
+                id: 24,
+                projectCode: "22222222222-4",
+                parentId: 2,
+                type: 1,
+                projectName: "砌块砖",
+                workQuantity: "69.65"
+              },
+              {
+                id: 25,
+                projectCode: "22222222222-5",
+                parentId: 2,
+                type: 1,
+                projectName: "砌块砖",
+                workQuantity: "69.65"
+              },
+              {
+                id: 26,
+                projectCode: "22222222222-6",
+                parentId: 2,
+                type: 1,
+                projectName: "69.95",
+                workQuantity: "69.65"
+              }
+            ]),
+          350
+        );
+      });
+    }
+    //拆分
+  },
+  watch: {
+    value2: function(val) {
+      this.loadList();
+    }
+  }
+};
+</script>
+
+<style>
+.container-artifacts-associated * {
+  font-size: 28px; /*px*/
+}
+.container-artifacts-associated
+  .el-col-14
+  .el-select
+  .el-input
+  .el-select__caret {
+  color: #fff;
+}
+.container-artifacts-associated .el-col-14 .el-input__inner::placeholder {
+  color: #fff;
+}
+
+.container-artifacts-associated
+  .el-row:nth-child(2)
+  .el-col:nth-child(2)
+  .el-input--suffix
+  .el-input__inner {
+  background: #435089;
+  color: #fff;
+}
+
+.container-artifacts-associated .el-table .table-head-th {
+  background-color: #435089;
+  color: white;
+}
+/* select 下拉按按钮 */
+.container-artifacts-associated .el-dialog .el-select {
+  flex: 1;
+  height: 40px;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+  border-radius: 4px;
+}
+.container-artifacts-associated .el-dialog .el-input--suffix .el-input__inner {
+  border: none;
+}
+.container-artifacts-associated .el-dialog .el-input__suffix {
+  background: rgba(67, 80, 137, 1);
+  border-radius: 0px 4px 4px 0px;
+  right: 0;
+  width: 40px;
+}
+.container-artifacts-associated .el-dialog .el-icon-arrow-up:before {
+  /* content: "\e60b"; */
+  content: "\e60c";
+  /* font-size: 20px; */
+  color: rgba(255, 255, 255, 1);
+}
+.container-artifacts-associated .el-dialog .center-select {
+  margin: 0 20px;
+}
+.container-artifacts-associated
+  .input-number
+  .el-input-group--append
+  .el-input__inner,
+.container-artifacts-associated .el-input-group__prepend {
+  height: 40px;
+  background: rgba(248, 248, 248, 1);
+  border-radius: 4px;
+  border: 1px solid rgba(229, 229, 229, 1);
+  border-right: 1px dashed #979797;
+}
+.container-artifacts-associated .editable-required-icon,
+.container-artifacts-associated .el-icon-edit-outline {
+  display: none;
+}
+tbody .el-table__row:nth-child(1) {
+  background: #f4f6ff;
+}
+.split .fancy {
+  display: block;
+}
+.split .el-form-item:not(.fancy) {
+  display: inline-block;
+}
+.split .el-input {
+  width: 110px;
+}
+.container-artifacts-associated .el-dialog__header {
+  background: linear-gradient(
+    225deg,
+    rgba(105, 86, 255, 1) 0%,
+    rgba(84, 138, 255, 1) 100%
+  );
+}
+.container-artifacts-associated .el-dialog__title {
+  color: #fff;
+}
+.container-artifacts-associated .el-radio__input.is-checked .el-radio__inner {
+  border-color: #fca141;
+  background: #fca141;
+}
+
+.container-artifacts-associated .el-radio__input.is-checked + .el-radio__label {
+  color: #fca141;
+}
+
+.container-artifacts-associated .el-checkbox__input.is-checked .el-checkbox__inner,
+.container-artifacts-associated .el-checkbox__input.is-indeterminate .el-checkbox__inner {
+  background-color: #fca141;
+  border-color: #fca141;
+}
+</style>
+
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+* {
+  font-size: 18px;
+}
+
+.container-artifacts-associated {
+  // width: 100%;
+  height: 100%;
+  padding: 0 20px;
+}
+
+.container-artifacts-associated .el-row {
+  margin: 20px 0;
+}
+
+.container-artifacts-associated .el-row:nth-child(2) .el-col:nth-child(1), .container-artifacts-associated .el-row:nth-child(2) .el-col:nth-child(2) {
+  height: 100%;
+  background: rgba(255, 255, 255, 1);
+}
+
+.container-artifacts-associated .el-row:nth-child(2) .el-col header {
+  width: 100%;
+  background: #435089;
+  color: white;
+  text-align: center;
+  padding: 0.1rem 0;
+}
+
+.container-artifacts-associated .el-row:nth-child(2) .el-col .el-select {
+  width: 100%;
+  height: 50px;
+  color: white;
+  text-align: center;
+}
+
+.selected {
+  background: #4775CA;
+  color: white;
+}
+
+.el-form-item div {
+  margin: 0.1rem 0.6rem;
+}
+
+.add_btn, .delete_btn {
+  background: url('../../../assets/icons/add.png') center 60% no-repeat;
+  width: 0.5rem;
+  height: 0.5rem;
+  display: inline-block;
+  float: right;
+}
+
+.delete_btn {
+  background: url('../../../assets/icons/reduce.png') center 60% no-repeat;
+}
+
+.container-artifacts-associated .el-dialog__head {
+  background: linear-gradient(
+    225deg,
+    rgba(105, 86, 255, 1) 0%,
+    rgba(84, 138, 255, 1) 100%
+  );
+  color: white;
+  /* height: 40px; */
+}
+</style>

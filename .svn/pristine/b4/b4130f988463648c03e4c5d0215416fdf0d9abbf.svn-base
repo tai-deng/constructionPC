@@ -1,0 +1,226 @@
+<!-- model模型 -->
+<template>
+  <div class="container-model">
+    <!-- <button class="demo-btn" @click="consoleViewer">打印视点</button>
+    <button class="demo-btn1" @click="zoomIn">放大模型</button>
+    <button class="demo-btn2" @click="zoomOut">缩小模型</button>
+     <button class="demo-btn3" @click="render">重新渲染</button>
+     <button class="demo-btn4" @click="toComponents">定位构件</button>
+     <button class="demo-btn5" @click="toComponents2">定位构件2</button>
+     <button class="demo-btn6" @click="showC">显示构件</button>
+     <button class="demo-btn6" @click="consoleViewer">打印视点</button> -->
+    <div class="wrapper">
+      <div ref="model" class="model"></div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+//接口
+import { GetViewToken, GetDefaultModelID } from "@/api/api.js";
+import method from './module/methods.js'
+import watchs from './module/watch.js'
+// vuex
+import { mapMutations } from "vuex";
+export default {
+  mixins:[method,watchs],
+  props: {
+    ElementIDs: {
+      type: Array
+    },
+    // 函数序号
+    functionNumber:{
+      type:Array
+    },
+    //模型大小
+    widthAndHeight:{
+      type:Object
+    },
+    highLightElementIDs:{type:Array},//高亮某构件的ID数组
+  },
+  data() {
+    return {
+      viewer3D: {}, // 3D模型实例
+      viewToken: "", //binface视图token，12小时过期
+      projectID:'12345678',//临时项目ID
+      
+    };
+  },
+  created() {
+    console.log(this.widthAndHeight)
+    this._initData();
+  },
+  methods: {
+    /**
+     * 初始化
+     */
+    async _initData() {
+      this.load()
+      //获取默认模型ID
+      // let defaultModelId = await this.getDataBySessionStorage(
+      //   GetDefaultModelID,
+      //   {},
+      //   "defaultModelId"
+      // );
+      // // 获取viewToken
+      this.viewToken = await this.getDataBySessionStorage(
+        GetViewToken,
+        { projectID: this.projectID },
+        "viewToken",
+        true
+      );
+      // /* eslint-disable */
+      let options = new BimfaceSDKLoaderConfig();
+      console.log("BIMface 模型DOM", options);
+      options.viewToken = this.viewToken;
+      BimfaceSDKLoader.load(
+        options,
+        this.successCallback,
+        this.failureCallback
+      );
+    },
+    /* eslint-disable */
+    successCallback(viewMetaData) {
+      if (viewMetaData.viewType == "dwgView") {
+        console.log("2D模型");
+      } else if (viewMetaData.viewType == "3DView") {
+        console.log("3D模型");
+        // 配置参数
+        var config = new Glodon.Bimface.Viewer.Viewer3DConfig()
+        config.domElement = this.$refs.model;
+        // 创建viewer3D对象
+        var viewer3D = new Glodon.Bimface.Viewer.Viewer3D(config)
+        // 添加模型
+        viewer3D.addView(this.viewToken);
+        // 监听模型加载中
+        viewer3D.addEventListener(
+          Glodon.Bimface.Viewer.Viewer3DEvent.ViewLoading,
+          e => {
+            this.modelLoading() // 模型加载中...
+          }
+        );
+        // 监听添加view完成的事件
+        viewer3D.addEventListener(
+          Glodon.Bimface.Viewer.Viewer3DEvent.ViewAdded,() => {
+            // 渲染3D模型
+            viewer3D.render();
+            viewer3D.enableMouseHoverHighlight(); //允许鼠标hover构件时高亮
+            this.viewer3D = viewer3D;
+            // this.isViewAdded = true; //模型加载完成状态
+            this.$store.commit('IS_VIEW_ADDED', true)
+            // 将模型实例放在状态管理，全局可访问
+            // this.getview3d(1)
+            this.setCameraStatus()
+          }
+        );
+        /**
+         * 鼠标左键点击事件
+         * 返回点击对象
+         */
+        viewer3D.addEventListener(
+          Glodon.Bimface.Viewer.Viewer3DEvent.MouseClicked,
+          e => {
+            console.log(e);
+            this.$store.commit("VIEWER_3D", e);
+          }
+        );
+
+        
+
+      } else if (viewMetaData.viewType == "drawingView") {
+        console.log("矢量图纸");
+      } else if (viewMetaData.viewType == "rfaView") {
+        consolej.log("族文件");
+      }
+    },
+
+    failureCallback(error) {
+      console.log("失败");
+      this.$message({ type: "error", message: "模型加载失败", center: "true" });
+    },
+    ...mapMutations({
+      getview3d: "VIEWER_3D"
+    }),
+
+    // //打钱视点
+    // consoleViewer(){
+    //   var viewer3D = this.$store.state.viewer3D
+    //   let Viewer = viewer3D.getCameraStatus() // 获取当前模型初始视点位置信息
+    //   console.log(JSON.stringify(Viewer))
+    // },
+    // zoomIn(){
+    //   this.viewer3D.zoomIn()
+    // },
+    // zoomOut(){
+    //   this.viewer3D.zoomOut()
+    // },
+    // render(){
+    //   this.viewer3D.resize(1500, 1000)
+    //   this.viewer3D.render()
+    // },
+    // toComponents(){
+    //   console.log(this.ElementIDs)
+    //   this._positioningComponents(this.ElementIDs)
+    // },
+    // toComponents2(){
+    //   console.log(this.ElementIDs)
+    //   this.positioningComponentsHidden(this.ElementIDs)
+    // },
+    // showC(){
+    //   this.showComponentsById(this.ElementIDs)
+    // }
+  },
+  computed:{
+    isViewAdded(){
+      return this.$store.getters.getIsViewAdded
+    }
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-model
+  width 100%
+  height 100%
+  font-size 16px
+  .wrapper
+    width 100%
+    height 100%
+    .model
+      width 100%
+      height 100%
+  .demo-btn
+    position absolute
+    top 20px
+    right 300px
+    z-index 99
+  .demo-btn1
+    position absolute
+    top 20px
+    right 400px
+    z-index 99
+  .demo-btn2
+    position absolute
+    top 20px
+    right 500px
+    z-index 99
+  .demo-btn3
+    position absolute
+    top 20px
+    right 600px
+    z-index 99
+  .demo-btn4
+    position absolute
+    top 20px
+    right 700px
+    z-index 99
+  .demo-btn5
+    position absolute
+    top 20px
+    right 800px
+    z-index 99
+  .demo-btn6
+    position absolute
+    top 20px
+    right 900px
+    z-index 99
+</style>

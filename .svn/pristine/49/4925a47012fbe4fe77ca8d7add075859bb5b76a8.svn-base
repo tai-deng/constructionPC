@@ -1,0 +1,559 @@
+<!-- navigatorBar导航栏 -->
+<template>
+  <div class="container-navigator-bar">
+    <div style="height:100%">
+      <el-container>
+        <el-header>
+          <div class="header-t">
+            <div class="head-l">
+              <p>
+                <span class="project-title">工程项目PM协同管理平台</span>
+                <span class="project-note">— XXX市易地扶贫搬迁项目</span>
+              </p>
+            </div>
+            <div class="head-r">
+              <p>
+                <span class="el-icon-question"></span>
+                <span class="icon-30">
+                  <el-badge :value="999" :max="99" ></el-badge>
+                </span>
+                <span class="icon-29 user-avatar"></span>
+                <span class="user-name">项目经理-刘祥</span>
+              </p>
+            </div>
+          </div>
+        </el-header>
+        <el-container>
+          <el-aside>
+            <div class="nav-d">
+              <ul class="layui-nav layui-nav-tree" lay-filter="test">
+                <!-- 侧边导航: <ul class="layui-nav layui-nav-tree layui-nav-side">mainItem=='PM节点'?'layui-nav-itemed':'','layui-nav-item' -->
+                <!-- 渲染主类名 -->
+                <li
+                  :class="['layui-nav-item',classIndex==index?'class-index layui-nav-itemed':'']"
+                  @click="toMainClass(index)"
+                  v-for="(mainItem,index) in mainsClass"
+                  :key="mainItem.index"
+                >
+                  <a>
+                    <span :class="[['icon-3','icon-15','icon-22','icon-D','icon-4','icon-PM','icon-21','icon-14'][index],'icon-size']"></span>
+                    &nbsp;{{mainItem.split('-')[0]}}<span class="small-suffix">{{mainItem.split('-').length>1?'-'+mainItem.split('-')[1]:''}}</span>
+                  </a>
+                  <!-- 渲染虚拟建造 -->
+                  <dl class="layui-nav-child" v-if="mainItem=='智慧工地'">
+                    <dd
+                      :class="[site_index==siteIndex?'layui-this':'']"
+                      v-for="(wisdomSite,siteIndex) in wisdomSiteClass"
+                      :key="wisdomSite.siteIndex"
+                      @click.stop="toWisdomSiteClass(index,siteIndex)"
+                    >
+                      <a>&nbsp;&nbsp;•&nbsp;{{wisdomSite}}</a>
+                    </dd>
+                  </dl>
+                  <dl class="layui-nav-child" v-if="mainItem=='虚拟建造-技术员'">
+                    <dd
+                      :class="[virtua_index==virtuaIndex?'layui-this':'']"
+                      v-for="(virtualItem,virtuaIndex) in virtualClass"
+                      :key="virtualItem.virtuaIndex"
+                      @click.stop="toVirtualClass(index,virtuaIndex)"
+                    >
+                      <a>&nbsp;&nbsp;•&nbsp;{{virtualItem}}</a>
+                    </dd>
+                  </dl>
+                  <dl class="layui-nav-child" v-if="mainItem=='PM节点'">
+                    <dd
+                      :class="[pm_index==pmIndex?'layui-this':'']"
+                      v-for="(PMnode,pmIndex) in PMnodeClass"
+                      :key="PMnode.pmIndex"
+                      @click.stop="toPMnodeClass(index,pmIndex)"
+                    >
+                      <a>&nbsp;&nbsp;•&nbsp;{{PMnode.split('-')[0]}}<span class="small-suffix">{{PMnode.split('-').length>1?'-'+PMnode.split('-')[1]:''}}</span></a>
+                     
+                    </dd>
+                  </dl>
+                  <dl class="layui-nav-child" v-if="mainItem=='功能配置'">
+                    <dd
+                      :class="[c_index==cIndex?'layui-this':'']"
+                      v-for="(configuration_class,cIndex) in configurationClass"
+                      :key="configuration_class.cIndex"
+                      @click.stop="toConfigurationClass(index,cIndex)"
+                    >
+                      <a>&nbsp;&nbsp;•&nbsp;{{configuration_class}}</a>
+                     
+                    </dd>
+                  </dl>
+                </li>
+              </ul>
+            </div>
+          </el-aside>
+          <el-main>
+            <!-- 内容区 -->
+            <keep-alive>
+              <router-view v-if="$route.meta.keepAlive"/>
+            </keep-alive>
+            <router-view v-if="!$route.meta.keepAlive"/>
+          </el-main>
+        </el-container>
+      </el-container>
+    </div>
+
+    <!-- 导航栏 -->
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+export default {
+  data() {
+    return {
+      // active: 0 // tab导航下标
+      mainsClass: [
+        "项目主页",
+        "智慧工地",
+        "虚拟建造-技术员",
+        "三维浏览",
+        "PM节点",
+        "5D模拟",
+        "智能报表-资料员",
+        "功能配置"
+      ], //主类
+      wisdomSiteClass: [
+        "数据总览",
+        "劳务实名制",
+        "视频监控",
+        "环境监测",
+        "塔吊监测",
+        "升降机监测"
+      ], //智慧工地子类
+      virtualClass: [
+        "step1 模型上传",
+        "step2 信息配置",
+        "step3 协同设定",
+        "step4 进度规划",
+        "step5 清单导入",
+        "step6 构件关联",
+        "step7 清单调优",
+        "step8 认证设定"
+      ], //虚拟建造子类
+      PMnodeClass: [
+        "集成管理-工作台",
+        "时间管理-施工员",
+        "范围管理-施工员",
+        "采购管理-材料员",
+        "成本管理-预算员",
+        "质量管理-质量员",
+        "风险管理-质安员",
+        "人力资源-劳资员",
+        "沟通管理-资料员"
+      ], // PM节点子类
+      configurationClass:[
+        '进度配置',
+        '数据字典',
+        '周期管理',
+        '项目开通',
+        '组织管理',
+        '系统日志'
+      ],//功能配置子类
+      classIndex: 0, //所选大类目下标，默认PM节点
+      site_index:-1,//智慧工地子下标
+      virtua_index:-1,//虚拟建造子下标
+      pm_index:-1,//PM节点子下标
+      c_index:-1,//功能配置 子下标
+    };
+  },
+  created() {
+    console.log(this.$router.history.current.path);
+    //获取路由路径
+    let path = this.$router.history.current.path;
+    // 获取没有下级的主导航菜单下标
+    let classI = [
+      "/nav/to/index",
+      "/nav/to/threedView",
+      "/nav/to/fiveDsimulation",
+      "/nav/to/intelligenceReports",
+      "/nav/to/configuration"
+    ].indexOf(path);
+    console.log(classI);
+    //下标分别对应layui导航菜单组件的主菜单下标
+    switch (classI) {
+      case 0:
+        this.classIndex = 0; //项目主页
+        break;
+      case 1:
+        this.classIndex = 3; // 三维浏览
+        break;
+      case 2:
+        this.classIndex = 5; //5D模拟
+        break;
+      case 3:
+        this.classIndex = 6; //智能报表
+        break;
+      // case 4:
+      //   this.classIndex = 7; //功能配置
+      //   break;
+    }
+    if(classI!=-1) return
+    //智慧工地
+    this.classIndex = 1; 
+    this.site_index = ["/nav/to/dataOverView",
+      "/nav/to/laborRealName",
+      "/nav/to/monitoring",
+      "/nav/to/environmentalMonitoring",
+      "/nav/to/towerCrane",
+      "/nav/to/elevator"].indexOf(path)
+    if(this.site_index!=-1) return
+    //虚拟建造
+    this.classIndex = 2; 
+    this.virtua_index = ["/nav/to/uploadModel",
+          "/nav/to/information",
+          "/nav/to/collaborativeSetting",
+          "/nav/to/schedulePlanning",
+          "/nav/to/listingImport",
+          "/nav/to/artifactsAssociated",
+          "/nav/to/qingDrab",
+          "/nav/to/SetAuthentication"].indexOf(path)
+          if(this.virtua_index!=-1) return
+          //PM节点
+    this.classIndex = 4; 
+    this.pm_index = ["/nav/to/integration",
+          "/nav/to/time",
+          "/nav/to/scope",
+          "/nav/to/procurement",
+          "/nav/to/cost",
+          "/nav/to/quality",
+          "/nav/to/risk",
+          "/nav/to/human",
+          "/nav/to/communication"].indexOf(path)
+          if(this.pm_index!=-1) return
+    // 功能配置
+    this.classIndex = 7; 
+    this.c_index = [
+          "/nav/to/progress",
+          "/nav/to/dataDictionary",
+          "/nav/to/cycle",
+          "/nav/to/project",
+          "/nav/to/organization",
+          "/nav/to/systemlog",
+          ].indexOf(path)
+          console.log(this.c_index)
+          if(this.c_index!=-1) return
+
+  },
+  mounted() {
+    this.$nextTick(() => {
+      /* eslint-disable */
+      console.log(layui);
+      //注意：导航 依赖 element 模块，否则无法进行功能性操作
+      layui.use("element", () => {
+        let element = layui.element;
+
+        //…
+      });
+    });
+  },
+  methods: {
+    /**
+     * 点击主类
+     */
+    toMainClass(index) {
+      console.log(index);
+      this.classIndex = index;
+      this.$router.push({
+        path: [
+          "/nav/to/index",
+          // "/nav/to/wisdomSite",
+          "",
+          // "/nav/to/uploadModel",
+          "",
+          "/nav/to/threedView",
+          // "/nav/to/PMnode",
+          "",
+          "/nav/to/fiveDsimulation",
+          "/nav/to/intelligenceReports",
+          "/nav/to/configuration"
+        ][index]
+      });
+      if([0,3,5,6,7].indexOf(index)!=-1){
+        this.closeModel()
+      }
+    },
+    /**
+     * 点击智慧工地子类
+     */
+    toWisdomSiteClass(index, siteIndex) {
+      this.classIndex = index;
+      this.$router.push({
+        path: [
+          "/nav/to/dataOverView",
+          "/nav/to/laborRealName",
+          "/nav/to/monitoring",
+          "/nav/to/environmentalMonitoring",
+          "/nav/to/towerCrane",
+          "/nav/to/elevator"
+        ][siteIndex]
+      });
+      this.closeModel()
+    },
+    /**
+     * 点击虚拟建造子类
+     */
+    toVirtualClass(index, virtuaIndex) {
+      this.classIndex = index;
+      this.$router.push({
+        path: [
+          "/nav/to/uploadModel",
+          "/nav/to/information",
+          "/nav/to/collaborativeSetting",
+          "/nav/to/schedulePlanning",
+          "/nav/to/listingImport",
+          "/nav/to/artifactsAssociated",
+          "/nav/to/qingDrab",
+          "/nav/to/SetAuthentication"
+        ][virtuaIndex]
+      });
+      this.closeModel()
+    },
+    /**
+     * 点击PM节点子类
+     */
+    toPMnodeClass(index, pmIndex) {
+      console.log(index);
+      this.classIndex = index;
+      this.$router.push({
+        path: [
+          "/nav/to/integration",
+          "/nav/to/time",
+          "/nav/to/scope",
+          "/nav/to/procurement",
+          "/nav/to/cost",
+          "/nav/to/quality",
+          "/nav/to/risk",
+          "/nav/to/human",
+          "/nav/to/communication"
+        ][pmIndex]
+      });
+      this.closeModel()
+    },
+    /**
+     * 点击功能配置子类
+     */
+    toConfigurationClass(index, cIndex) {
+      console.log(index);
+      this.classIndex = index;
+      this.$router.push({
+        path: [
+          "/nav/to/progress",
+          "/nav/to/dataDictionary",
+          "/nav/to/cycle",
+          "/nav/to/project",
+          "/nav/to/organization",
+          "/nav/to/systemlog"
+        ][cIndex]
+      });
+      this.closeModel()
+    },
+
+    closeModel(){
+      /**
+       * 直接关闭模型
+       */
+      this.$store.commit('GET_MODEL_BOX',{
+        isShowModel:false,//是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+        isLoadModel:false,//是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+        top: 0,//距离顶部距离‘px'
+        left: 0,//距离左边距离‘px'
+        width: 0,//模型宽‘px'
+        height: 0,//模型高 ‘px'
+        zIndex:0,//模型层级
+        background:'rgba(0,0,0,0)',
+        ElementIDs:[],// 所有要显示的构件数组，包括半隐藏构件
+        highLightElementIDs: [],// 高亮显示的构件
+        functionNumber:[],// 需要模型调用的函数编号数组
+      })
+    }
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+@import '../../assets/stylus/variable.styl'
+
+.container-navigator-bar
+  width 100%
+  height 100%
+  overflow hidden
+  .header-t
+    box-sizing border-box
+    height 100%
+    display flex
+    justify-content space-between
+    background-color #eff3ff
+    .head-l
+      height 100%
+      line-height 60px
+      box-sizing border-box
+      padding-left 20px
+      .project-title
+        font-size $font-size-24
+        font-family SourceHanSansCN-Medium
+        font-weight 500
+        color $font-color-11
+        line-height $font-size-24
+        padding-right 20px
+      .project-note
+        font-size $font-size-20
+        font-family SourceHanSansCN-Medium
+        font-weight 500
+        color $font-color-09
+        line-height $font-size-20
+    .head-r
+      height 100%
+      line-height 60px
+      box-sizing border-box
+      padding-right 20px
+      p
+        span
+          display inline-block
+          width 80px
+          font-size $font-size-24
+          .el-badge
+            margin-top -26px
+            margin-left -5px
+        .user-name
+          font-size $font-size-16
+          font-family SourceHanSansCN-Normal
+          font-weight 400
+          color $font-color-10
+          line-height 60px
+          width initial
+          float right
+        .user-avatar
+          width 40px
+  .nav-d
+    .icon-size
+      font-size $font-size-16
+    .small-suffix
+      font-size $font-size-14
+      display inline-block
+      font-weight 100
+</style>
+<style>
+.class-index {
+  box-sizing: border-box;
+  background: -moz-radial-gradient(
+    rgba(55, 55, 55, 0.2),
+    rgba(55, 52, 55, 0.2),
+    rgba(71, 117, 202, 0.3)
+  );
+  background: -webkit-radial-gradient(
+    rgba(55, 55, 55, 0.2),
+    rgba(55, 52, 55, 0.2),
+    rgba(71, 117, 202, 0.3)
+  );
+      background-size: 100% 60px;
+}
+.class-index::before {
+  content: "▏";
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 60px;
+  color: #4580ff;
+  line-height: 60px;
+  overflow: hidden;
+}
+.navigator-bar .van-tabbar-item {
+  font-size: 24px;
+}
+.navigator-bar .van-icon:before {
+  font-size: 40px;
+}
+.container-navigator-bar .van-tabbar {
+  height: 100px;
+  border-top: 1px solid #e5e5e5;
+}
+[class^="icon-"],
+[class*=" icon-"] {
+  font-size: 42px;
+}
+</style>
+<style>
+.el-header {
+  height: 60px !important;
+  background: rgba(239, 243, 255, 1);
+  box-shadow: 0px 1px 4px 0px rgba(210, 213, 219, 1);
+  z-index: 99;
+}
+.el-aside {
+  width: 180px !important;
+  height: 100%;
+  background-color: #1e2637 !important;
+}
+.el-aside .layui-nav {
+  background-color: #00152a;
+}
+.el-aside .layui-nav-tree {
+  width: 100%;
+}
+.el-aside .layui-nav-itemed > .layui-nav-child {
+  background-color: #242f45 !important;
+}
+.el-aside .layui-nav-tree .layui-nav-item a {
+  font-size: 16px;
+}
+.el-aside .layui-nav .layui-nav-item a {
+  padding: 0 0 0 16px;
+  font-weight: 100;
+  color: #fff;
+  height: 60px;
+  line-height: 60px;
+}
+/* 去掉下拉三角形*/
+.el-aside .layui-nav .layui-nav-more {
+  border-width: 0 !important;
+}
+.el-container {
+  height: 100%;
+}
+.el-main,
+.el-aside,
+.el-header,
+.el-footer {
+  background-color: initial;
+  color: initial;
+  text-align: initial;
+  line-height: initial;
+  padding: initial;
+}
+
+body > .el-container {
+  margin-bottom: 40px;
+}
+.layui-nav-tree .layui-nav-child dd.layui-this {
+  background-color: initial;
+}
+.layui-nav-tree .layui-nav-bar {
+  background-color: #4580ff !important;
+  width: 5px;
+}
+.layui-nav-tree .layui-nav-child dd.layui-this a,
+.layui-nav-tree .layui-this > a {
+  background-color: initial;
+  color: #4580ff;
+}
+.el-container:nth-child(5) .el-aside,
+.el-container:nth-child(6) .el-aside {
+  line-height: 260px;
+}
+
+.el-container:nth-child(7) .el-aside {
+  line-height: 320px;
+}
+.container-navigator-bar .layui-nav-tree {
+  height: 100%;
+}
+.container-navigator-bar .layui-nav {
+  border-radius: initial;
+}
+.el-aside::-webkit-scrollbar {
+  display: none;
+}
+</style>

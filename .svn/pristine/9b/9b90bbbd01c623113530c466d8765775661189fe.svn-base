@@ -1,0 +1,50 @@
+// 颜色定义规范
+$color-default-background = white // APP默认浅色背景
+$color-tab = #F0F2F5 //标题栏 淡灰
+$aside-color = #1E2637 //右侧导航底色
+
+//专业色
+$color-stand-line-y = #FFB901 //黄色竖线  暖通
+$color-stand-line-b = #2F78FF // 蓝色竖线  给排水
+$color-stand-line-x = #C588F7 //          消防
+$color-stand-line-y = #FD4C6A //          强电
+$color-stand-line-z = #65D4A2 //          弱电
+
+// 按钮色
+$color-background-bt-b = #2F78FF // 按钮蓝色背景
+$color-background-bt-r = #E44949 // 按钮红色背景
+
+//字体定义规范
+$font-size-10 = 10px
+$font-size-12 = 12px
+$font-size-14 = 14px
+$font-size-16 = 16px
+$font-size-18 = 18px
+$font-size-20 = 20px
+$font-size-22 = 22px
+$font-size-24 = 24px
+$font-size-26 = 26px
+$font-size-28 = 28px
+$font-size-30 = 30px
+$font-size-32 = 32px
+$font-size-34 = 34px
+$font-size-36 = 36px
+$font-size-38 = 38px
+$font-size-40 = 40px
+$font-size-42 = 42px
+$font-size-44 = 44px
+$font-size-46 = 46px
+
+//字体颜色
+$font-color-01 = #262626  //深黑 （常用）
+$font-color-02 = #B2B2B2  // 浅灰
+$font-color-03 = #ffffff  //纯白
+$font-color-04 = #999999  
+$font-color-05 = #FD4C6A
+$font-color-06 = #A3C3FF
+$font-color-07 = #2F78FF
+$font-color-08 = #FFBA00
+$font-color-09 = #666666//深灰
+$font-color-10 = #333333
+$font-color-11 = #435089
+$font-color-12 = #BECEDE

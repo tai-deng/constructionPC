@@ -1,0 +1,658 @@
+<!-- 清单调优qingDrab -->
+<template>
+    <div class="container-qing-drab">
+        <div class="wrapper">
+            <div class="right-form">
+                <el-form :inline="true" :model="formInline" class="demo-form-inline">
+                    <!--整体模型-->
+                    <el-form-item prop="model">
+                        <el-select v-model="formInline.wholeModel" placeholder="整体模型">
+                            <el-option
+                                    v-for="item in  wholeList"
+                                    :key="item.id"
+                                    :label="item.label"
+                                    :value="item.id"
+                                    @click.native="fn(item.label)"
+                            ></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <!--专业-->
+                    <el-form-item prop="region">
+                        <el-select v-model="formInline.region" placeholder="专业">
+                            <el-option
+                                    v-for="item in  majorList"
+                                    :key="item.id"
+                                    :label="item.label"
+                                    :value="item.id"
+                                    @click.native="fn(item.label)"
+                            ></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <!--楼层-->
+                    <el-form-item prop="floor">
+                        <el-select v-model="formInline.floor" placeholder="楼层">
+                            <el-option
+                                    v-for="item in  floorList"
+                                    :key="item.id"
+                                    :label="item.label"
+                                    :value="item.id"
+                                    @click.native="fn(item.label)"
+                            ></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <!--资源类别-->
+                    <el-form-item prop="resources">
+                        <el-select v-model="formInline.resources" placeholder="资源类别">
+                            <el-option
+                                    v-for="item in  resourcesList"
+                                    :key="item.id"
+                                    :label="item.label"
+                                    :value="item.id"
+                                    @click.native="fn(item.label)"
+                            ></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <!--搜索-->
+                    <el-form-item>
+                        <div class="search">
+                            <span class="el-icon-search"></span><input type="text" placeholder="楼栋、专业、楼层、资源">
+                        </div>
+                    </el-form-item>
+                    <el-form-item>
+                        <input type="text" class="percent-inp" placeholder="20%">
+                    </el-form-item>
+                    <button class="correct-btn">一键修正</button>
+                </el-form>
+            </div>
+
+                <div class="left-contain">
+                    logo
+                </div>
+            <div class="right-contain">
+                <div class="data-table">
+                    <el-table
+                            :data="tableData.slice((currentPage-1)*pagesize,currentPage*pagesize)"
+                            style="width:100%">
+
+                        <!--序号-->
+                   <el-table-column
+                                prop="date"
+                                label="序号"
+                        ></el-table-column>
+                        <!--资源名称-->
+                        <el-table-column
+                                prop="name"
+                                label="资源名称"
+                        ></el-table-column>
+                        <!--楼栋-->
+                        <el-table-column
+                                prop="address"
+                                label="楼栋"
+                        ></el-table-column>
+                        <!--施工图预算量-->
+                        <el-table-column
+                                prop="planBudget"
+                                label="施工图预算量"
+                                width="94px"
+                        ></el-table-column>
+                        <!--系数-->
+                        <el-table-column
+                                prop="coefficient"
+                                label="系数"
+                        ><input type="text" class="inp" placeholder="1.00">
+                        </el-table-column>
+                        <!--施工预算量-->
+                        <el-table-column
+                                prop="constructionBudget"
+                                label="施工预算量"
+                        ></el-table-column>
+                        <!--差额-->
+                        <el-table-column
+                                prop="difference"
+                                label="差额"
+                        ></el-table-column>
+                    </el-table>
+                </div>
+                <p class="careful-txt">*注：施工图工程量以“step7清单导入”最终拆分量之和为准 </p>
+                <!--分页-->
+                <div class="block">
+                    <el-pagination
+                            background
+                            layout="prev, pager, next"
+                            :total="total"
+                            @current-change="current_change"
+                    ></el-pagination>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</template>
+<!--textecmascript-6-->
+<script>
+export default {
+   data() {
+      return {
+          input: '',
+          total:50, //默认数据总数
+          pagesize:9,//每页的数据条数
+          currentPage:1,//默认开始页面
+          show: true,
+          formInline: {
+          user: '',
+          region: ''
+        },
+
+        wholeList: [    //整体模型数组
+          {
+            id: "0",
+            label: "整体模型"
+          },
+          {
+            id: "1",
+            label: "A1"
+          }
+
+        ],
+
+
+        majorList: [    //专业数组
+          {
+            id: "0",
+            label: "专业"
+          },
+          {
+            id: "1",
+            label: "全部"
+          },
+          {
+            id: "2",
+            label: "建筑专业"
+          },
+          {
+            id: "3",
+            label: "结构专业"
+          },
+          {
+            id: "4",
+            label: "暖通系统"
+          },
+          {
+            id: "5",
+            label: "通风系统"
+          },
+          {
+            id: "6",
+            label: "弱电系统"
+          },
+          {
+            id: "7",
+            label: "强电系统"
+          },
+          {
+            id: "8",
+            label: "建筑专业"
+          },
+        ],
+
+        floorList: [    //楼层数组
+          {
+            id: "0",
+            label: "楼层"
+          },
+          {
+            id: "1",
+            label: "全部"
+          },
+          {
+            id: "2",
+            label: "1F"
+          },
+          {
+            id: "3",
+            label: "2F"
+          },
+          {
+            id: "4",
+            label: "3F"
+          },
+          {
+            id: "5",
+            label: "4F"
+          },
+          {
+            id: "6",
+            label: "5F"
+          },
+          {
+            id: "7",
+            label: "6F"
+          },
+          {
+            id: "8",
+            label: "7F"
+          },
+        ],
+
+        resourcesList: [    //资源数组
+          {
+            id: "0",
+            label: "资源类别"
+          },
+          {
+            id: "1",
+            label: "全部"
+          },
+          {
+            id: "2",
+            label: "C20混凝土"
+          },
+          {
+            id: "3",
+            label: "C30混凝土"
+          },
+          {
+            id: "4",
+            label: "M0821"
+          },
+          {
+            id: "5",
+            label: "4F"
+          },
+          {
+            id: "6",
+            label: "C0915"
+          }
+        ],
+        // 表格数据
+        tableData: [{
+          date: '1',
+          name: 'C20混凝土',
+          address: 'A1',
+          planBudget: '100.00m³',
+          constructionBudget: '100.00m³',
+          difference: '0'
+
+        }, {
+          date: '2',
+          name: 'C20混凝土',
+          address: 'A2',
+          planBudget: '100.00m³',
+          constructionBudget: '100.00m³',
+          difference: '0'
+        }, {
+          date: '3',
+          name: 'C20混凝土',
+          address: 'A3',
+          planBudget: '100.00m³',
+          constructionBudget: '100.00m³',
+          difference: '0'
+        }, {
+          date: '4',
+          name: 'C30混凝土',
+          address: 'A1',
+          planBudget: '100.00m³',
+          constructionBudget: '100.00m³',
+          difference: '0'
+        },
+        {
+          date: '5',
+          name: 'C30混凝土',
+          address: 'A1',
+          planBudget: '10扇',
+          constructionBudget: '10扇',
+          difference: '0'
+        },
+        {
+          date: '6',
+          name: 'M0821',
+          address: 'A1',
+          planBudget: '10扇',
+          constructionBudget: '10扇',
+          difference: '0'
+        },
+        {
+          date: '7',
+          name: 'M0821',
+          address: 'A2',
+          planBudget: '10扇',
+          constructionBudget: '10扇',
+          difference: '0'
+        },
+
+        {
+          date: '8',
+          name: 'M0821',
+          address: 'A3',
+          planBudget: '100.00m³',
+          constructionBudget: '100.00m³',
+          difference: '0'
+        },
+        {
+          date: '9',
+          name: 'C0905',
+          address: 'A1',
+          planBudget: '10扇',
+          constructionBudget: '10扇',
+          difference: '0'
+        },
+            {
+                date: '10',
+                name: 'C0905',
+                address: 'A1',
+                planBudget: '100.00m³',
+                constructionBudget: '10扇',
+                difference: '0'
+
+            }, {
+                date: '11',
+                name: 'M0821',
+                address: 'A2',
+                planBudget: '100.00m³',
+                constructionBudget: '10扇',
+                difference: '0'
+            }, {
+                date: '12',
+                name: 'M0821',
+                address: 'A3',
+                planBudget: '100.00m³',
+                constructionBudget: '100.00m³',
+                difference: '0'
+            }, {
+                date: '13',
+                name: 'C30混凝土',
+                address: 'A1',
+                planBudget: '100.00m³',
+                constructionBudget: '100.00m³',
+                difference: '0'
+            },
+            {
+                date: '14',
+                name: 'C30混凝土',
+                address: 'A4',
+                planBudget: '10扇',
+                constructionBudget: '10扇',
+                difference: '0'
+            },
+            {
+                date: '15',
+                name: 'M0821',
+                address: 'A1',
+                planBudget: '10扇',
+                constructionBudget: '10扇',
+                difference: '0'
+            },
+            {
+                date: '16',
+                name: 'M0821',
+                address: 'A2',
+                planBudget: '10扇',
+                constructionBudget: '10扇',
+                difference: '0'
+            },
+
+            {
+                date: '17',
+                name: 'M0821',
+                address: 'A3',
+                planBudget: '100.00m³',
+                constructionBudget: '100.00m³',
+                difference: '0'
+            },
+            {
+                date: '18',
+                name: 'C0905',
+                address: 'A1',
+                planBudget: '10扇',
+                constructionBudget: '10扇',
+                difference: '0'
+            },
+            {
+                date: '19',
+                name: 'C0905',
+                address: 'A1',
+                planBudget: '100.00m³',
+                constructionBudget: '10扇',
+                difference: '0'
+
+            }, {
+                date: '20',
+                name: 'M0821',
+                address: 'A2',
+                planBudget: '100.00m³',
+                constructionBudget: '10扇',
+                difference: '0'
+            }, {
+                date: '21',
+                name: 'M0821',
+                address: 'A3',
+                planBudget: '100.00m³',
+                constructionBudget: '100.00m³',
+                difference: '0'
+            }, {
+                date: '22',
+                name: 'C30混凝土',
+                address: 'A1',
+                planBudget: '100.00m³',
+                constructionBudget: '100.00m³',
+                difference: '0'
+            },
+            {
+                date: '23',
+                name: 'C30混凝土',
+                address: 'A4',
+                planBudget: '10扇',
+                constructionBudget: '10扇',
+                difference: '0'
+            },
+            {
+                date: '24',
+                name: 'M0821',
+                address: 'A1',
+                planBudget: '10扇',
+                constructionBudget: '10扇',
+                difference: '0'
+            },
+            {
+                date: '25',
+                name: 'M0821',
+                address: 'A2',
+                planBudget: '10扇',
+                constructionBudget: '10扇',
+                difference: '0'
+            },
+
+            {
+                date: '26',
+                name: 'M0821',
+                address: 'A3',
+                planBudget: '100.00m³',
+                constructionBudget: '100.00m³',
+                difference: '0'
+            },
+            {
+                date: '27',
+                name: 'C0905',
+                address: 'A1',
+                planBudget: '10扇',
+                constructionBudget: '10扇',
+                difference: '0'
+            }
+        ],
+        formData: {
+          //表单提交对象
+            model: "", //整体模型
+          region:'',//专业
+          floor:'',//楼层
+          resources:''//资源类别
+        },
+
+      }
+ },
+   mounted(){
+     this.total=this.tableData.length
+   },
+   methods: {
+   fn(data){
+       //data=='整体模型'?this.show=true:this.show=false
+       alert(data)
+
+      },
+      current_change(currentPage){
+        this.currentPage=currentPage
+      },
+    }
+}
+
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+    @import '../../../assets/stylus/variable.styl'
+    .container-qing-drab
+        position relative
+        width 100%
+        height 100%
+        background-color rgba(240,240,240,1)
+
+    .wrapper
+        display flex
+        height 100%
+    .left-contain
+        position absolute
+        left 0
+        background rgba(240,240,240,1)
+
+    .right-contain
+        position absolute
+        right 13px
+        width  824px
+        margin-top 73px
+        background #fff
+        overflow hidden
+    .careful-txt
+        margin 25px 0 18px 50px
+        font-size 16px
+   .right-form
+    position absolute
+    right 0
+    padding-top 19px
+
+    .el-form-item__content .search
+        display flex
+        align-items center
+        width 282px
+        height 38px
+        border-radius 30px
+        border 1px solid rgba(255, 255, 255, 0)
+        background #fff
+    .el-form-item__content .search input
+        width 200px
+        height 24px
+        outline none
+        border none
+    .el-form-item__content .search span
+        display flex
+        align-items center
+        justify-content center
+        width 24px
+        height 24px
+        text-align center
+        margin-left 12px
+        margin-right 20px
+        font-size 18px
+    .el-form-item__content .percent-inp
+        width 100px
+        height 40px
+        padding 0
+        text-indent 12px
+        border 1px solid rgba(187,187,187,1)
+        color rgba(136,136,136,1)
+        font-family Roboto
+     .correct-btn
+        width 100px
+        height 40px
+        border none
+        margin-right 13px
+        line-height 23px
+        border-radius 5px 5px 5px 5px
+        background-color rgba(170, 170, 170, 1)
+        color rgba(255, 255, 255, 1)
+        font-size 16px
+        text-align center
+        font-family Roboto
+        border 1px solid rgba(5, 5, 5, 0.08)
+</style>
+<style>
+    .el-table .cell {
+        text-align: center;
+    }
+
+    .dataTable .el-table__body tbody {
+        padding: 0 10px;
+    }
+
+    .container-qing-drab .el-select {
+        width: 170px;
+        flex: 1;
+        height: 40px;
+        background: rgba(255, 255, 255, 1);
+        box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+        border-radius: 4px;
+    }
+    .container-qing-drab .el-input--suffix .el-input__inner {
+        border: none;
+    }
+
+    .container-qing-drab .el-input__suffix {
+        background: rgba(67, 80, 137, 1);
+        border-radius: 0px 4px 4px 0px;
+        right: 0;
+        width: 40px;
+    }
+
+    .container-qing-drab .el-icon-arrow-up:before {
+        content: "\e60c";
+        color: rgba(255, 255, 255, 1);
+    }
+
+    .container-qing-drab .has-gutter th {
+        background-color: #DDD;
+        font-size: 18px;
+        height: 50px;
+
+    }
+
+    .container-qing-drab .el-table__row .inp {
+        width: 80px;
+        height: 35px;
+        text-align: center;
+        border: 1px solid rgba(187, 187, 187, 1);
+    }
+
+    /*分页*/
+    .el-pagination.is-background .el-pager li:not(.disabled).active {
+        background-color: rgba(153, 153, 153, 1);
+    }
+
+    .container-qing-drab .el-pagination.is-background li {
+        color: rgba(0, 0, 0, 0.65);
+        background: #fff;
+        font-size: 14px;
+    }
+
+    .container-qing-drab .el-pagination .btn-prev,
+    .container-qing-drab .el-pagination .btn-next {
+        background: none;
+    }
+
+    .el-pagination {
+        text-align: center;
+       padding-bottom: 10px;
+    }
+
+    .data-table .el-table__body tbody {
+        font-size: 18px;
+    }
+
+
+</style>

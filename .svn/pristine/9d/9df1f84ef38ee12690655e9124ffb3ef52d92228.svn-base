@@ -1,0 +1,85 @@
+.container-scope(class="container-box-list")
+    .house-model(:span="12") 房子模型区域
+    .filter-wrapper
+        .button-wrapper
+            el-button-group
+                el-button(:type="activeTab ? 'primary' : ''" @click="onPurchaseBtn" :autofocus="activeTab") 采购列表
+                el-button(:type="!activeTab ? 'primary' : ''" @click="onChangeBtn" :autofocus="!activeTab") 变更列表
+
+            el-button(type="warning" @click="startChange") {{ activeTab ? '发起采购' : '发起变更' }}
+        br
+        //- 变更列表
+        template(v-if="!activeTab")
+            ScopeChangeList(@showChangeDetail="showChangeDetail")
+        template(v-else)        
+            .filter
+                el-form(
+                ref="filterFormRef"
+                    :model="filterForm"
+                        :rules="filterRules"
+                        :inline="true"
+                        :validate-on-rule-change="false"
+                )
+                    el-form-item
+                        el-select(v-model="filterForm.house1" placeholder="楼栋")
+                            el-option(
+                            v-for="item in house1Options"
+                                :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"
+                            )
+                    el-form-item
+                        el-select(v-model="filterForm.house2" placeholder="楼栋")
+                            el-option(
+                            v-for="item in house2Options"
+                                :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"
+                            )
+                    el-form-item
+                        el-select(v-model="filterForm.house3" placeholder="楼栋")
+                            el-option(
+                            v-for="item in house3Options"
+                                :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"
+                            )
+                    el-form-item
+                        el-input(v-model="filterForm.custom" placeholder="楼栋、专业、楼层、资源")
+                            i(slot="prefix" class="el-input__icon el-icon-search")
+
+            el-card(class="box-card new-box-card")
+                div( slot="header" class="clearfix border-bottom")
+                    span 采购批次:202020
+                    el-button(style="float: right" type="primary" round @click="toPurchaseDetail(1)") 采购详情
+                    div(class="text item new-list-item")
+                        el-row
+                            el-col( :span="8")
+                                div(class="grid-content bg-purple") 申请人:王xx
+                            el-col( :span="8")
+                                div(class="grid-content bg-purple-light text-center") 发请日期:222
+                            el-col( :span="8")
+                                div(class="grid-content bg-purple text-right") 需用日期:333
+                div( slot="header" class="clearfix border-bottom")
+                    span 采购批次:202020
+                    el-button(style="float: right" type="primary" round @click="toPurchaseDetail(2)") 采购详情
+                    div(class="text item new-list-item")
+                        el-row
+                            el-col( :span="8")
+                                div(class="grid-content bg-purple") 申请人:王xx
+                            el-col( :span="8")
+                                div(class="grid-content bg-purple-light text-center") 发请日期:222
+                            el-col( :span="8")
+                                div(class="grid-content bg-purple text-right") 需用日期:333
+
+
+            el-pagination(:total="1000" background layout="prev, pager, next" class="text-center")
+    CommonDialog(ref="dialogRef" :title="dialogTitle" width="50%" @ok="dialogOk" @close="dialogClose")
+        //- 采购详情
+        template(v-if="dialogType === dialogTypeOptions.purchaseDetail")
+            ScopeDetail
+        //- 变更详情 
+        template(v-else-if="dialogType === dialogTypeOptions.changeDetail")
+            ScopeChangeDetail
+
+            

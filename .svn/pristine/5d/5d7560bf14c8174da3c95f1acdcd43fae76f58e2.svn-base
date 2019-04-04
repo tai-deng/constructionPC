@@ -1,0 +1,257 @@
+<!-- 风险管理 -->
+<template lang="pug" src="./index.pug"></template>
+<style lang="stylus" src="./index.styl" scoped></style>
+
+<script type='textecmascript-6'>
+import { GetThisMonthCount, GetRiskList } from "@/api/api.js";
+import { mapMutations } from "vuex";
+export default {
+  components: {},
+  created() {
+    this.initModel();  //加载模型
+    this.getRiskIng();  //待接收
+    this.getRiskHandle();  //整改中
+    this.getRiskOver();  //已整改
+    this.getMonthProblem();  //获取本月新增问题数
+  },
+  mounted() {},
+  data() {
+    return {
+      ingLoading: false,
+      handleLoading: false,
+      overLoading: false,
+      pageSize: 5,
+      ingCurrentPage: 1,
+      ingPageTotal: 0,  //待接收数
+      handleCurrentPage: 1,
+      handlePageTotal: 0,  //整改中数
+      overCurrentPage: 1,
+      overPageTotal: 0,  //已整改数
+      /**[当前折叠面板] */
+      nowCollapse: ["1", "2", "3"],
+      /**[待接收] */
+      dataIng: [],
+      /**[整改中] */
+      dataHandle: [],
+      /**[待接收] */
+      dataOver: [],
+      thisMonthCount: 0  //本月新增问题数
+    };
+  },
+  computed: {
+    
+  },
+  methods: {
+    /**
+     * 加载模型
+     */
+    initModel(){
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          console.log(res)
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    /**[发起问题] */
+    onStartQuestion() {
+      this.$router.push({
+        path: "newQuestion",
+        query:{
+          thisMonthCount: this.thisMonthCount,
+          ingPageTotal: this.ingPageTotal,
+          handlePageTotal: this.handlePageTotal,
+          overPageTotal: this.overPageTotal
+        }
+      });
+    },
+    /**[表格处理]
+     *  @row  当前行的数据
+     */
+    onHandle(row) {
+      this.$router.push({
+        path: "questionDetail",
+        query: {riskID: row.sort}
+      });
+    },
+    /**
+     * 根据项目ID和状态获取风险管理问题列表
+     * 待接收
+     */
+    getRiskIng(){
+      this.ingLoading = true;
+      let params = {
+        ProjectID: localStorage.getItem('projectid'),  //项目ID
+        status: 0,  //状态 0：未整改 1：整改中 2：已整改
+        pageIndex: this.ingCurrentPage,  //页码
+        pageSize: this.pageSize  //页大小
+      }
+      this.Request(
+        GetRiskList(params),
+      ).then(data => {
+        if (data.StatusCode === 200) {
+          if(data.Detiel.lenght != 0){
+            this.ingPageTotal = parseInt(data.Count);
+            this.dataIng = [];
+            data.Detiel.forEach(element => {
+              this.dataIng.push({
+                sort: element.ID,
+                title: element.Subject,
+                question_type: element.ProblemType,
+                state: element.Status + "/3"
+              })
+            });
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+        this.ingLoading = false;
+      });
+    },
+    /**
+     * 根据项目ID和状态获取风险管理问题列表
+     * 整改中
+     */
+    getRiskHandle(){
+      this.handleLoading = true;
+      let params = {
+        ProjectID: localStorage.getItem('projectid'),  //项目ID
+        status: 1,  //状态 0：未整改 1：整改中 2：已整改
+        pageIndex: this.handleCurrentPage,  //页码
+        pageSize: this.pageSize  //页大小
+      }
+      this.Request(
+        GetRiskList(params),
+      ).then(data => {
+        if (data.StatusCode === 200) {
+          if(data.Detiel.lenght != 0){
+            this.handlePageTotal = parseInt(data.Count);
+            this.dataHandle = [];
+            data.Detiel.forEach(element => {
+              this.dataHandle.push({
+                sort: element.ID,
+                title: element.Subject,
+                question_type: element.ProblemType,
+                state: element.Status + "/3"
+              })
+            });
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+        this.handleLoading = false;
+      });
+    },
+    /**
+     * 根据项目ID和状态获取风险管理问题列表
+     * 已整改
+     */
+    getRiskOver(){
+      this.overLoading = true;
+      let params = {
+        ProjectID: localStorage.getItem('projectid'),  //项目ID
+        status: 2,  //状态 0：未整改 1：整改中 2：已整改
+        pageIndex: this.overCurrentPage,  //页码
+        pageSize: this.pageSize  //页大小
+      }
+      this.Request(
+        GetRiskList(params),
+      ).then(data => {
+        if (data.StatusCode === 200) {
+          if(data.Detiel.lenght != 0){
+            this.overPageTotal = parseInt(data.Count);
+            this.dataOver = [];
+            data.Detiel.forEach(element => {
+              this.dataOver.push({
+                sort: element.ID,
+                title: element.Subject,
+                question_type: element.ProblemType,
+                state: element.Status + "/3"
+              })
+            });
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+        this.overLoading = false;
+      });
+    },
+    /**
+     * 翻页
+     */
+    ingCurrentChange: function(val) {
+      this.ingCurrentPage = val;
+      this.getRiskIng();
+    },
+    handleCurrentChange: function(val){
+      this.handleCurrentPage = val;
+      this.getRiskHandle();
+    },
+    overCurrentChange: function(val){
+      this.overCurrentPage = val;
+      this.getRiskOver();
+    },
+    /**
+     * 根据项目ID获取本月新增问题数
+     */
+    getMonthProblem(){
+      this.Request(
+        GetThisMonthCount({projectid: localStorage.getItem('projectid')}),
+      ).then(data => {
+        if (data.StatusCode === 200) {
+          this.thisMonthCount = data.Result
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+      });
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    }),
+  },
+  watch: {}
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-quality
+  width 100%
+  height 100%
+</style>
+<style scoped>
+.model-container {
+  width: 98%;
+  height: 900px;
+  padding: 0 !important;
+  z-index:90;
+  margin-top: 50px;
+}
+</style>
+

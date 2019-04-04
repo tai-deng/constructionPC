@@ -1,0 +1,25 @@
+<!-- listingImport清单导入 -->
+<template>
+ <div class='container-listing-import'>
+ <div class='wrapper'>
+   {{data}}
+ </div>
+ </div>
+</template>
+
+<script type='textecmascript-6'>
+export default {
+ data() {
+   return {
+    data: 'listingImport清单导入'
+   }
+ },
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-listing-import
+  width 100%
+  height 100%
+</style>

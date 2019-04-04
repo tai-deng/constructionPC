@@ -1,0 +1,25 @@
+<!-- 时间管理time -->
+<template>
+ <div class='container-time'>
+ <div class='wrapper'>
+   {{data}}
+ </div>
+ </div>
+</template>
+
+<script type='textecmascript-6'>
+export default {
+ data() {
+   return {
+ data: '时间管理time'
+   }
+ },
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-time
+  width 100%
+  height 100%
+</style>

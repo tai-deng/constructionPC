@@ -1,0 +1,182 @@
+<!-- 范围管理-采购列表 scope -->
+<template lang="pug" src="./index.pug"></template>
+<style lang="stylus" src="./index.styl" scope></style>
+
+<script type='textecmascript-6'>
+import CommonDialog from "@/common/common-dialog/index";
+import ScopeChangeList from "./components/scope-change-list/index";
+import ScopeChangeDetail from "./components/scope-change-detail/index";
+import ScopeDetail from "./components/scope-detail/index";
+
+export default {
+  components: {
+    ScopeChangeList,
+    ScopeChangeDetail,
+    CommonDialog,
+    ScopeDetail
+  },
+  created() {},
+  mounted() {},
+  data() {
+    return {
+      /**[弹框类型] 可选项
+       *  @change         发起变更
+       *  @purchaseDetail 采购详情
+       */
+      dialogTypeOptions: {
+        changeDetail: "changeDetail",
+        purchaseDetail: "purchaseDetail"
+      },
+      /**[弹框类型] */
+      dialogType: "purchaseDetail",
+      /**[当前选项卡]
+       *  @ture   采购列表
+       *  @false  变更列表
+       */
+      activeTab: true,
+      /**[当前折叠面板] */
+      nowCollapse: ["1", "2", "3"],
+      /**[楼栋1] 可选项 */
+      house1Options: [{ label: "AAA", value: 1 }, { label: "BBB", value: 2 }],
+      /**[楼栋1] 可选项 */
+      house2Options: [{ label: "CCC", value: 3 }, { label: "DDD", value: 4 }],
+      /**[楼栋1] 可选项 */
+      house3Options: [{ label: "EEE", value: 5 }, { label: "FFF", value: 6 }],
+      /**[筛选表单] */
+      filterForm: {},
+      /**[筛选表单规则] */
+      filterRules: {},
+      /**[进行中] */
+      dataIng: [
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        },
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        }
+      ],
+      /**[处理中] */
+      dataHandle: [
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        },
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        }
+      ],
+      /**[已处理] */
+      dataOver: [
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        },
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        }
+      ]
+    };
+  },
+  computed: {
+    /**[弹框标题] */
+    dialogTitle() {
+      let tit = "变更详情";
+
+      if (this.dialogType === this.dialogTypeOptions.purchaseDetail) {
+        tit = "采购详情";
+      }
+
+      return tit;
+    }
+  },
+  methods: {
+    /**[采购详情] */
+    toPurchaseDetail(item) {
+      this.dialogType = this.dialogTypeOptions.purchaseDetail;
+      this.$refs.dialogRef.show();
+    },
+    /**[弹框确定] */
+    dialogOk() {
+      this.$refs.dialogRef.hide();
+    },
+    /**[弹框取消] */
+    dialogClose() {
+      this.$refs.dialogRef.hide();
+    },
+    /**[采购列表按钮] */
+    onPurchaseBtn() {
+      this.activeTab = !this.activeTab;
+    },
+    /**[变更列表按钮] */
+    onChangeBtn() {
+      this.activeTab = !this.activeTab;
+    },
+    /**[发起变更 or 发起采购]
+     *  @true 发起采购
+     *  @false 发起变更
+     */
+    startChange() {
+      if (this.activeTab) {
+        /**[发起采购] */
+        this.$router.push({
+          path: "material-need"
+        });
+      } else {
+        /**[发起变更] */
+        this.$router.push({
+          path: "InitiateChange"
+        });
+      }
+    },
+    /**[表格处理]
+     *  @row  当前行的数据
+     */
+    onHandle(row) {
+      console.log(row);
+    },
+    /**[显示变更详情] */
+    showChangeDetail(row) {
+      this.$router.push({
+        path: "ChangeDetail"
+      });
+      // this.dialogType = this.dialogTypeOptions.changeDetail;
+      // this.$refs.dialogRef.show();
+    }
+  },
+  watch: {}
+};
+</script>

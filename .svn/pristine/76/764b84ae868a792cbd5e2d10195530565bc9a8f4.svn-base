@@ -1,0 +1,25 @@
+<!-- 集成管理integration -->
+<template>
+ <div class='container-integration'>
+ <div class='wrapper'>
+   {{data}}
+ </div>
+ </div>
+</template>
+
+<script type='textecmascript-6'>
+export default {
+ data() {
+   return {
+ data: '集成管理integration'
+   }
+ },
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-integration
+  width 100%
+  height 100%
+</style>

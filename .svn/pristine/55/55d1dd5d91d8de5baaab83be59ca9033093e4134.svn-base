@@ -1,0 +1,25 @@
+const arrayClick = (arr = [], v) => {
+    if (v == '') return arr;
+    let newArr= [],flag= true;
+    if(arr.length==0){
+        newArr.push(v)
+    }else{
+        arr.forEach((item,index)=>{
+            if(item!=v){
+                newArr.push(item)
+            }else{
+                flag= false;
+            }
+        })
+        newArr.forEach(item=>{
+            if(item!=v && newArr.indexOf(v)== -1 && flag){
+                newArr.push(v)
+            }
+        })
+    }
+    return newArr;
+}
+
+export default {
+    arrayClick
+}

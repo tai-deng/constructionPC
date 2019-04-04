@@ -1,0 +1,88 @@
+.container-time
+  position relative
+  padding 18px 0s
+  width 100%
+  height 100%
+  box-sizing border-box
+  background-color rgba(245,246,251,1)
+
+  .progress
+    position absolute
+    bottom 0
+    width 100%
+    height 140px
+
+    .right
+      display flex
+      align-items center
+      >>>
+        .el-timeline-item__wrapper
+          top 10px
+        .el-timeline
+          display flex
+        .el-timeline-item__tail
+          top 4px
+          width 100%
+          height 0
+          border none
+          border-top 1px solid #E4E7ED
+
+    .left
+      width 280px
+      text-align center
+      color #fff
+      background #435089
+
+      p
+        text-align left
+        text-indent 30px
+
+    >>>
+      .el-carousel__item
+        display flex
+      .el-carousel__indicators
+        display none
+      .el-carousel__arrow--left
+        display none
+      .el-carousel__arrow--right
+        right 0
+        height 100%
+        width 40px
+        border-radius inherit
+        background #435088
+        
+  .top
+    position relative
+    width 100%
+    height 75%
+    display flex
+
+    .left, .right
+      width 50%
+      text-align center
+      .model
+        height 80%
+    .left
+      border-right 1px solid #C7C7C7
+
+    .type
+      position absolute
+      left 10px
+
+      >>>
+        .el-select .el-input__inner
+          border 1px solid #ecedf1
+          border-radius 5px
+          overflow hidden
+
+        .el-input__suffix
+          right 0
+          width 50px
+          background #44508a
+          border-radius 0 5px 5px 0
+
+        .el-input--suffix
+          overflow hidden
+
+        .el-select .el-input .el-select__caret
+          color #fff

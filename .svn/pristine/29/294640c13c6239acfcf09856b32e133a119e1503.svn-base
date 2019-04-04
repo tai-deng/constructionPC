@@ -1,0 +1,578 @@
+<template>
+  <div>
+    <div class="gantt-top-panel">
+    </div>
+    <div class="header">
+      <ul class="gantt-controls">
+        <li class="gantt-menu-item">
+          <a data-action="collapseAll">
+            <img src="imgs/ic_collapse_all_24.png">Collapse All
+          </a>
+        </li>
+        <li class="gantt-menu-item gantt-menu-item-last">
+          <a data-action="expandAll">
+            <img src="imgs/ic_expand_all_24.png">Expand All
+          </a>
+        </li>
+        <li class="gantt-menu-item">
+          <a data-action="undo">
+            <img src="imgs/ic_undo_24.png">Undo
+          </a>
+        </li>
+        <li class="gantt-menu-item gantt-menu-item-last">
+          <a data-action="redo">
+            <img src="imgs/ic_redo_24.png">Redo
+          </a>
+        </li>
+        <li class="gantt-menu-item">
+          <a data-action="toggleAutoScheduling">
+            <img src="imgs/ic_auto_scheduling_24.png">Auto Scheduling
+          </a>
+        </li>
+        <li class="gantt-menu-item">
+          <a data-action="toggleCriticalPath">
+            <img src="imgs/ic_critical_path_24.png">Critical Path
+          </a>
+        </li>
+        <li class="gantt-menu-item gantt-menu-item-right">
+          <a data-action="fullscreen">
+            <img src="imgs/ic_fullscreen_24.png">Fullscreen
+          </a>
+        </li>
+        <li class="gantt-menu-item gantt-menu-item-right gantt-menu-item-last">
+          <a data-action="zoomToFit">
+            <img src="imgs/ic_zoom_to_fit_24.png">Zoom to Fit
+          </a>
+        </li>
+        <li class="gantt-menu-item gantt-menu-item-right">
+          <a data-action="zoomOut">
+            <img src="imgs/ic_zoom_out.png">Zoom Out
+          </a>
+        </li>
+        <li class="gantt-menu-item gantt-menu-item-right">
+          <a data-action="zoomIn">
+            <img src="imgs/ic_zoom_in.png">Zoom In
+          </a>
+        </li>
+        <li class="gantt-menu-item gantt-menu-item-right gantt-menu-item-last">
+          <a>
+            <img src="imgs/ic_export_24.png">Export
+          </a>
+          <ul class="gantt-controls">
+            <li class="gantt-menu-item">
+              <a data-action="toPDF">
+                <img src="imgs/ic_file_24.png">PDF
+              </a>
+            </li>
+            <li class="gantt-menu-item">
+              <a data-action="toPNG">
+                <img src="imgs/ic_file_24.png">PNG
+              </a>
+            </li>
+            <li class="gantt-menu-item">
+              <a data-action="toExcel">
+                <img src="imgs/ic_file_24.png">Excel
+              </a>
+            </li>
+            <li class="gantt-menu-item">
+              <a data-action="toMSProject">
+                <img src="imgs/ic_file_24.png">MS Project
+              </a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <div class="main-content">
+      <div ref="gantt_here" style="width:100%; height:100%;"></div>
+    </div>
+  </div>
+</template>
+<script>
+import "dhtmlx-gantt";
+import "dhtmlx-gantt/codebase/locale/locale_cn.js";
+import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_marker.js";
+import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_smart_rendering.js";
+import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_fullscreen.js";
+// import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_critical_path.js";
+// import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_auto_scheduling.js";
+import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_undo.js";
+export default {
+  name: "ganttMode",
+  data() {
+    return {
+      tasks: {
+        data: [
+          {
+            id: 1,
+            text: "Task #1",
+            start_date: "15-04-2017",
+            duration: 3,
+            progress: 0.6
+          },
+          {
+            id: 2,
+            text: "Task #2",
+            start_date: "18-04-2017",
+            duration: 3,
+            progress: 0.4
+          },
+          {
+            id: 3,
+            text: "Task #3",
+            start_date: "18-04-2017",
+            duration: 3,
+            progress: 0.4
+          },
+          {
+            id: 4,
+            text: "Task #4",
+            start_date: "18-04-2017",
+            duration: 3,
+            progress: 0.4
+          }
+        ],
+        links: [{ id: 1, source: 1, target: 2, type: "0" }]}
+    };
+  },
+  mounted() {
+    this.$_initGanttEvents();
+    let date_to_str = gantt.date.date_to_str(gantt.config.task_date);
+    let today = new Date(2016, 9, 5);
+    gantt.addMarker({
+        start_date: today,
+        css: "today",
+        text: "Today",
+        title:"Today: "+ date_to_str(today)
+    });
+
+    var start = new Date(2016, 9, 28);
+    gantt.addMarker({
+        start_date: start,
+        css: "status_line",
+        text: "Start project",
+        title:"Start project: "+ date_to_str(start)
+    });
+    gantt.config.lightbox.sections = [
+        {name: "description", height: 70, map_to: "text", type: "textarea", focus: true},
+        {name: "type", type: "typeselect", map_to: "type", filter: function(name, value){
+            return !!(value != gantt.config.types.project);
+        }},
+        {name: "time", type: "duration", map_to: "auto"}
+    ];
+    gantt.config.lightbox.project_sections = [
+        {name: "description", height: 70, map_to: "text", type: "textarea", focus: true},
+
+        {name: "time", type: "duration", readonly:true, map_to: "auto"}
+    ];
+    gantt.config.lightbox.milestone_sections = [
+        {name: "description", height: 70, map_to: "text", type: "textarea", focus: true},
+        {name: "type", type: "typeselect", map_to: "type", filter: function(name, value){
+            return !!(value != gantt.config.types.project);
+        }},
+        {name: "time", type: "duration", map_to: "auto"}
+    ];
+// ganttModules.wbs.getTaskPath(task.id)
+    gantt.config.columns = [
+        {"name":"","width":15,"resize":false, template: function(task){return "<span class='gantt_grid_wbs'>" + "" + "</span>"}},
+        {"name":"text","tree":true,"width":156,"resize":true},
+        {"name":"start_date","align":"center","resize":true,"width":90},
+        {"name":"duration","align":"center","width":70},
+        {"name":"add","width":44}
+    ];
+    gantt.config.xml_date = "%Y-%m-%d %H:%i:%s";
+    gantt.config.duration_unit = "hour";
+
+    gantt.config.row_height = 23;
+    gantt.config.order_branch = true;
+    gantt.config.order_branch_free = true;
+    gantt.config.grid_resize = true;
+    gantt.config.static_background = true;
+    gantt.config.auto_scheduling_strict = true;
+
+    // ganttModules.zoom.setZoom(4);
+    // ganttModules.menu.setup();
+
+    gantt.init(this.$refs.gantt_here)
+    gantt.parse(this.tasks)
+    gantt.refreshData = function() {
+        if (this.verticalDND && !this.allowNextRender) {
+            gantt._sync_order();
+            gantt._get_tasks_data();
+
+            if (!taskid || !gantt.isTaskExists(taskid)) return;
+            if (this.el && this.el.parentNode) {
+                this.el.parentNode.removeChild(this.el);
+                this.el = null;
+            }
+
+            var task = gantt.getTask(taskid);
+            var index = gantt.getGlobalTaskIndex(task.id);
+            if(index > start_index) index++;
+            var top = ((index * gantt.config.row_height ) - gantt.getScrollState().y)+ gantt.config.scale_height ;
+
+            this.el = document.createElement("DIV");
+            this.el.className = "dnd_highlighter";
+            this.el.style.top = top + "px";
+            var offset = (gantt.calculateTaskLevel(task) + 1) * 22 + gantt.calculateTaskLevel(task);
+            this.el.style.left = offset + "px";
+            this.el.style.width  = gantt.config.grid_width - offset + "px";
+            gantt.$grid_data.appendChild(this.el);
+
+            return;
+        }
+        this.allowNextRender = false;
+
+        // return this.refresh.apply(this, arguments);
+    };
+
+    gantt.config.font_width_ratio = 7;
+    gantt.templates.leftside_text = function leftSideTextTemplate(start, end, task) {
+        if (this.getTaskFitValue(task) === "left") {
+            return task.text;
+        }
+        return "";
+    }.bind(this);
+    gantt.templates.rightside_text = function rightSideTextTemplate(start, end, task) {
+        if (this.getTaskFitValue(task) === "right") {
+            return task.text;
+        }
+        return "";
+    }.bind(this);
+    gantt.templates.task_text = function taskTextTemplate(start, end, task){
+        if (this.getTaskFitValue(task) === "center") {
+            return task.text;
+        }
+        return "";
+    };
+    
+    gantt.templates.grid_row_class = function(start, end, task){
+        return gantt.hasChild(task.id) ? "gantt_parent_row": "";
+    };
+  },
+  computed:{
+    refresh:function(){
+      return gantt.refreshData;
+    }
+  },
+  methods: {
+    $_initGanttEvents() {
+      gantt.attachEvent("onColumnResizeStart", function(ind, column) {
+          if(!column.tree || ind == 0) return;
+
+          setTimeout(function() {
+              var marker = document.querySelector(".gantt_grid_resize_area");
+              if(!marker) return;
+              var cols = gantt.getGridColumns();
+              var delta = cols[ind - 1].width || 0;
+              if(!delta) return;
+
+              marker.style.boxSizing = "content-box";
+              marker.style.marginLeft = -delta + "px";
+              marker.style.paddingRight = delta + "px";
+          },1);
+      });
+
+      // gantt.attachEvent("onParse", function() {
+      //   gantt.eachTask(function(task) {
+      //     this.setTaskType(task);
+      //   });
+      // });
+
+      // gantt.attachEvent("onAfterTaskAdd", function onAfterTaskAdd(id) {
+      //   gantt.batchUpdate(function() {
+      //     this.checkParents(id);
+      //   });
+      // });
+
+      // gantt.attachEvent("onBeforeTaskDelete", function onBeforeTaskDelete(id,task) {
+      //   this.delTaskParent = gantt.getParent(id);
+      //   return true;
+      // });
+
+      // gantt.attachEvent("onAfterTaskDelete", function onAfterTaskDelete(
+      //   id,
+      //   task
+      // ) {
+      //   if (delTaskParent != gantt.config.root_id) {
+      //     gantt.batchUpdate(function() {
+      //       this.checkParents(delTaskParent);
+      //     });
+      //   }
+      // });
+
+      // gantt.attachEvent("onTaskCreated", function(item) {
+      //   if (item.duration == 1) {
+      //     item.duration = 72;
+      //   }
+      //   return true;
+      // });
+      // gantt.attachEvent("onRowDragStart", function(id, target, e) {
+      //   this.verticalDND = true;
+      //   this.allowNextRender = true;
+      //   this.taskid = id;
+      //   this.start_index = gantt.getGlobalTaskIndex(id);
+      //   return true;
+      // });
+
+      // gantt.attachEvent("onAfterTaskMove", function(id, parent, tindex) {
+      //   if (gantt.isTaskExists(parent)) {
+      //     gantt.getTask(parent).$open = true;
+      //   }
+      //   return true;
+      // });
+
+      // gantt.attachEvent("onBeforeRowDragEnd", function(id, parent, tindex) {
+      //   this.verticalDND = false;
+      //   this.taskid = null;
+      //   this.start_index = null;
+      //   return true;
+      // });
+
+    },
+    checkParents(id) {
+      this.setTaskType(id);
+      let parent = gantt.getParent(id);
+      if (parent != gantt.config.root_id) {
+        checkParents(parent);
+      }
+    },
+
+    setTaskType(id) {
+      id = id.id ? id.id : id;
+      let task = gantt.getTask(id);
+      let type = null;
+      if (gantt.hasChild(task.id)) {
+        type = gantt.config.types.project;
+      } else {
+        type =
+          task.type == gantt.config.types.milestone
+            ? gantt.config.types.milestone
+            : gantt.config.types.task;
+      }
+
+      if (type != task.type) {
+        task.type = type;
+        gantt.updateTask(id);
+      }
+    },
+
+    getTaskFitValue(task){
+      let taskStartPos = gantt.posFromDate(task.start_date);
+      let taskEndPos = gantt.posFromDate(task.end_date);
+
+      let width = taskEndPos - taskStartPos;
+      let textWidth = (task.text || "").length * gantt.config.font_width_ratio;
+
+      if(width < textWidth){
+          let ganttLastDate = gantt.getState().max_date;
+          let ganttEndPos = gantt.posFromDate(ganttLastDate);
+          if(ganttEndPos - taskEndPos < textWidth){
+              return "left"
+          }
+          else {
+              return "right"
+          }
+      }
+      else {
+          return "center";
+      }
+    },
+  }
+};
+</script>
+    <style>
+@import "~dhtmlx-gantt/codebase/dhtmlxgantt.css";
+html,
+body {
+  font-family: arial, serif;
+  height: 100%;
+  padding: 0px;
+  margin: 0px;
+  overflow: hidden;
+}
+.header {
+  height: 40px;
+}
+.main-content {
+  height: 600px;
+  height: calc(100vh - 80px);
+}
+
+.gantt-controls {
+  background-color: #f5f5f5;
+  font-size: 14px;
+  list-style-type: none;
+  margin: 0;
+  overflow: visible;
+  padding: 0;
+  text-align: left;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.gantt-menu-item {
+  display: inline-block;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+
+  position: relative;
+  overflow: visible;
+  /*padding:0 10px;*/
+}
+
+.gantt-menu-item-right {
+  float: right;
+}
+
+.gantt-menu-item img {
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.gantt-menu-item a {
+  display: block;
+  cursor: pointer;
+  color: #3d3d3d;
+  text-align: center;
+  line-height: 40px;
+  padding: 0 10px;
+  text-decoration: none;
+}
+
+.gantt-menu-item a:hover {
+  background-color: #e2e2e2;
+}
+
+.gantt-controls .gantt-controls {
+  display: none;
+}
+.gantt-menu-item:hover .gantt-controls {
+  display: block;
+  left: 0;
+  padding: 5px 0;
+  position: absolute;
+  top: 41px;
+  z-index: 1;
+}
+
+.gantt-menu-item .menu-item-active {
+  background-color: #dadada !important;
+}
+
+.gantt-menu-item .menu-item-disabled {
+  color: #818181 !important;
+  pointer-events: none;
+}
+
+.gantt-menu-item:hover .gantt-controls li {
+  width: 100%;
+}
+.gantt-menu-item:hover .gantt-controls a {
+  white-space: nowrap;
+  text-align: left;
+}
+
+.gantt-menu-item:hover .gantt-controls::before {
+  position: absolute;
+  top: -7px;
+  width: 100%;
+  content: " ";
+  height: 10px;
+  background: transparent;
+  left: 0;
+  z-index: 1;
+}
+
+.gantt-menu-item-last {
+  border-right: 1px solid #cecece;
+}
+
+.status_line {
+  background-color: #0ca30a;
+}
+
+.gantt_grid_wbs {
+  position: absolute;
+}
+
+.gantt_grid_scale {
+  position: relative;
+  z-index: 1;
+}
+
+.dnd_highlighter {
+  position: absolute;
+  height: 4px;
+  width: 500px;
+  background-color: #3498db;
+}
+.dnd_highlighter::before {
+  background: transparent;
+  width: 12px;
+  height: 12px;
+  box-sizing: border-box;
+  border: 3px solid #3498db;
+  border-radius: 6px;
+  content: "";
+  line-height: 1px;
+  display: block;
+  position: absolute;
+  margin-left: -11px;
+  margin-top: -4px;
+}
+
+.gantt_drag_marker {
+  opacity: 0.6;
+}
+
+.gantt_drag_marker.gantt_grid_resize_area {
+  z-index: 1;
+}
+
+.gantt_parent_row {
+  font-weight: bold;
+}
+
+.gantt_task_line div.gantt_side_content {
+  bottom: 0;
+}
+
+.gantt-top-panel {
+  position: relative;
+  color: #fff;
+  padding: 11px 16px;
+  background: #3d3d3d;
+}
+
+.gantt-top-panel__btn {
+  display: inline-block;
+  color: #fff;
+  padding: 7px 24px;
+  text-decoration: none;
+  border-radius: 20px;
+  background: #2095f3;
+
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  margin-top: -16px;
+}
+
+.gantt-top-panel__btn:hover {
+  background: #03a9f4;
+}
+
+.gantt-top-panel__btn:focus {
+  outline: none;
+}
+
+.gantt-top-panel__btn:active {
+  transform: translateY(1px);
+  -webkit-transform: translateY(1px);
+}
+</style>
+    

@@ -1,0 +1,186 @@
+<template>
+  <div class="plan-container">
+    <div class="plan-left">
+      <div class="add-plan flex-center top-add" :class="{'play-opt':point==1}" @click="addPlan(1)">
+        <img class="add-plan-icon flex-center" src="../../../../assets/imgs/gantt-add-a.png">
+        新增计划方案
+      </div>
+      <Label for="load_csv">
+        <div class="lead-in flex-center top-add">project导入</div>
+      </Label>
+      <input
+        type="file"
+        id="load_csv"
+        name="file"
+        style="display:none"
+        @change="inputCSV"
+        ref="upfile"
+      >
+
+      <div
+        class="del-sec flex-center top-add"
+        :class="{'del-sec_opt':isDelBtn}"
+        @click="delSec(3)"
+      >删除选定</div>
+      <!-- <div class="tip">*注：您可以通过该平台自行生成进度方案，也可以通过导入project文件进行生成</div> -->
+    </div>
+    <div class="plan-right">
+      <div class="play-day flex-center" :class="{'day-opt':dayP==1}" @click="date(1)">日</div>
+      <div class="play-week flex-center" :class="{'day-opt':dayP==2}" @click="date(2)">周</div>
+      <div class="play-month flex-center" :class="{'day-opt':dayP==3}" @click="date(3)">月</div>
+    </div>
+  </div>
+</template>
+<script>
+// vuex
+import { mapMutations } from "vuex";
+import { project_JDGH_push } from "../../../../api/api.js";
+
+export default {
+  name: "plan",
+  data() {
+    return {
+      point: 0, // 左侧选中CS效果
+      dayP: 2 // 日周月选中cs效果
+    };
+  },
+  props: ["isDelBtn"],
+  computed: {},
+  methods: {
+    // 新增方案
+    addPlan() {
+      this.$emit("addJd");
+    },
+
+    // 导入
+    inputCSV(event) {
+      let File = event.target.files;
+      if (
+        File[0].name.indexOf("MPP") >= 0 ||
+        File[0].name.indexOf("mpp") >= 0
+      ) {
+        let prams = [
+          { key: "files", value: File[0] },
+          { key: "projectid", value: localStorage.getItem("projectid") }
+        ];
+        //loading
+        let loading = this.$loading({
+          lock: true,
+          text: "Loading",
+          spinner: "el-icon-loading",
+          background: "rgba(0, 0, 0, 0.5)"
+        });
+        this.Request(
+          project_JDGH_push(prams).then(res => {
+            if (res.StatusCode == 200) {
+              console.log(res);
+            } else {
+              this.$message.error(res.Message);
+            }
+            loading.close();
+          })
+        );
+      }
+    },
+
+    // 删除
+    delSec() {
+      this.$emit("taskDelete", true);
+      this.gantState({ deleteTaskItem: true });
+    },
+
+    // 日期显示形式
+    date(p) {
+      this.dayP = p;
+      this.$emit("changeUpdate", p);
+      this.gantState({ dateShape: p });
+    },
+
+    ...mapMutations({
+      gantState: "GET_GANTT_STATE"
+    })
+  }
+};
+</script>
+<style>
+.plan-container {
+  height: 100px;
+  font-size: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  /* padding: 0 40px; */
+  background-color: #f0f2f5;
+}
+.plan-left,
+.plan-right {
+  display: flex;
+}
+.tip {
+  font-size: 12px;
+  color: #b2b2b2;
+  width: 400px;
+  height: 40px;
+  word-wrap: break-word;
+}
+.add-plan {
+  width: 184px;
+  height: 40px;
+  background: rgba(71, 117, 202, 1);
+  box-shadow: 0px 2px 4px 0px rgba(161, 192, 250, 1);
+}
+.add-plan-icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+  margin-right: 10px;
+}
+.lead-in {
+  width: 120px;
+  height: 40px;
+  background: rgba(69, 128, 255, 1);
+}
+.del-sec {
+  width: 120px;
+  height: 40px;
+  background: rgba(221, 221, 221, 1);
+}
+.del-sec_opt {
+  background: rgba(253, 161, 67, 1);
+  box-shadow: 0px 2px 4px 0px rgba(176, 148, 119, 0.5);
+}
+.top-add {
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+  padding: 0 10px;
+  margin-right: 20px;
+}
+.plan-left .play-opt {
+  color: #333333;
+  background-color: #f1f1f1;
+}
+.play-day,
+.play-week,
+.play-month {
+  width: 68px;
+  height: 40px;
+  background: rgba(229, 229, 229, 1);
+  font-size: 16px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(102, 102, 102, 1);
+}
+.plan-right .day-opt {
+  color: white;
+  background: rgba(71, 117, 202, 1);
+}
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>
+

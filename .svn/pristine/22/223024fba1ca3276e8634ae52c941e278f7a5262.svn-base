@@ -1,0 +1,165 @@
+<!-- 时间管理times -->
+<template lang="pug" src="./index.pug"></template>
+<style lang="stylus" src="./index.styl" scoped></style>
+
+<script type="textecmascript-6">
+import CommonDialog from "@/common/common-dialog/index";
+
+export default {
+  components: {
+    CommonDialog
+  },
+  created() {},
+  mounted() {},
+  data() {
+    return {
+      /**[当前选中按钮] */
+      activeBtn: true,
+      filterForm: {
+        search: ""
+      },
+      /**[班组划分] */
+      menuList: [
+        {
+          name: "木工班组",
+          number: 12
+        },
+        {
+          name: "水电班组",
+          number: 12
+        },
+        {
+          name: "机械班组",
+          number: 12
+        },
+        {
+          name: "钢筋班组",
+          number: 12
+        }
+      ],
+      /**[表格数据] */
+      tableData: [
+        {
+          sort: "序号",
+          company: "所属公司",
+          name: "姓名",
+          grade: "班组",
+          card: "实名卡号",
+          tell: "手机号",
+          money: "工资发放状态",
+          zhengchang: "正常",
+          chidao: "迟到",
+          zaotui: "早退",
+          qingjia: "请假",
+          /**[是黑名单 ？true : false] */
+          isBlacklist: false
+        }
+      ],
+      /**[分页数据] */
+      page: 1,
+      total: 0,
+      page_size: 20,
+      page_sizes: [10, 20, 40, 60],
+      /**[弹框类型] */
+      dialogType: "blacklist",
+      /**[弹框类型] 可选项
+       *  @blacklist  黑名单
+       *  @info       人员详情
+       */
+      dialogTypeOptions: {
+        blacklist: "blacklist",
+        info: "info"
+      },
+      /**[弹框表单] */
+      dialogForm: {},
+      dialogRules: {
+        reason: [{ required: true, message: "请选择拉黑理由" }]
+      },
+      /**[拉黑理由] */
+      reasonOptions: [
+        { label: "AAA", value: 1 },
+        { label: "bbb", value: 2 },
+        { label: "ccc", value: 3 }
+      ]
+    };
+  },
+  computed: {
+    dialogTitle: function() {
+      let tit = "加入黑名单";
+
+      if (this.dialogType === this.dialogTypeOptions.info) {
+        tit = "人员详情";
+      }
+
+      return tit;
+    },
+    okText: function() {
+      let tit = "确定";
+
+      if (this.dialogType === this.dialogTypeOptions.info) {
+        tit = "";
+      }
+
+      return tit;
+    },
+    closeText: function() {
+      let tit = "取消";
+
+      if (this.dialogType === this.dialogTypeOptions.info) {
+        tit = "";
+      }
+
+      return tit;
+    }
+  },
+  methods: {
+    dialogOk() {
+      this.$refs.dialogFormRef.validate(valid => {
+        if (valid) {
+          console.log(valid);
+        }
+      });
+    },
+    dialogClose() {
+      this.$refs.dialogRef.hide();
+    },
+    handleSizeChange(page_size) {
+      this.page_size = page_size;
+    },
+    handleCurrentChange(page) {
+      this.page = page;
+    },
+    /**[编辑] */
+    onEdit() {},
+    /**[查看考勤详情] */
+    onLooKattendance() {},
+    /**[移除黑名单] */
+    onOutBlacklist(row) {},
+    /**[查看详情] */
+    onLook(row) {
+      this.dialogType = this.dialogTypeOptions.info;
+      this.$refs.dialogRef.show();
+    },
+    /**[加入黑名单] */
+    onToBlacklist(row) {
+      this.dialogType = this.dialogTypeOptions.blacklist;
+      this.$refs.dialogRef.show();
+    },
+    /**[数据导入] */
+    dataImport() {},
+    /**[模板下载] */
+    downloadModel() {},
+    /**[生成二维码] */
+    createQRcode() {},
+    /**[实名制信息] */
+    onCertification() {
+      this.activeBtn = !this.activeBtn;
+    },
+    /**[黑名单] */
+    onBlacklist() {
+      this.activeBtn = !this.activeBtn;
+    }
+  },
+  watch: {}
+};
+</script>

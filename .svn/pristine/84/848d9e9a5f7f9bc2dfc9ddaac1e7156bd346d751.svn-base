@@ -1,0 +1,189 @@
+<!-- 导入成功页面 -->
+<template>
+  <div class="container-success">
+    <div class="wrapper">
+      <div class="top">
+        <div class="left">
+          <button class="but1">替换当前表单</button>
+          <button class="but2">新增表单</button>
+        </div>
+        <div class="right">
+          <div class="menu-1">
+            <menu-el-select :list="TableNamelist" @selected="select"></menu-el-select>
+          </div>
+          <div>
+            <menu-el-select :list="TableNamelist" @selected="select"></menu-el-select>
+          </div>
+          <div>
+            <menu-el-select :list="TableNamelist" @selected="select"></menu-el-select>
+          </div>
+          <div class="but-3">
+            <button>清空表单</button>
+          </div>
+        </div>
+      </div>
+      <div class="center">
+        <el-table
+          max-height="800"
+          stripe
+          fit
+          highlight-current-row
+          :header-cell-style="{background:'#435089',color:'#FFFFFF'}"
+          :data="tableData"
+          style="width: 100%"
+        >
+          <el-table-column prop="date" label="日期" width="180"></el-table-column>
+          <el-table-column prop="name" label="姓名" width="180"></el-table-column>
+          <el-table-column prop="address" label="地址"></el-table-column>
+        </el-table>
+      </div>
+      <div class="bottom">
+        <el-pagination
+          background
+          layout="prev, pager, next"
+          :total="1000">
+        </el-pagination>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+// 组件
+import menuElSelect from "@/common/Selects/elSelect.vue";
+export default {
+  data() {
+    return {
+      tableData: [
+        {
+          date: "2016-05-02",
+          name: "王小虎",
+          address: "上海市普陀区金沙江路 1518 弄"
+        },
+        {
+          date: "2016-05-04",
+          name: "王小虎",
+          address: "上海市普陀区金沙江路 1517 弄"
+        },
+        {
+          date: "2016-05-01",
+          name: "王小虎",
+          address: "上海市普陀区金沙江路 1519 弄"
+        },
+        {
+          date: "2016-05-03",
+          name: "王小虎",
+          address: "上海市普陀区金沙江路 1516 弄"
+        }
+      ],
+      TableNamelist: []
+    };
+  },
+  components: {
+    menuElSelect
+  },
+  methods: {
+    select() {}
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+@import '../../../../assets/stylus/variable.styl'
+
+.container-success
+  width 100%
+  height 100%
+  .wrapper
+    width 100%
+    height 100%
+    box-sizing border-box
+    padding 0 20px
+    .top
+      width 100%
+      height 80px
+      box-sizing border-box
+      padding-top 15px
+      display flex
+      justify-content space-between
+      .left
+        .but1
+          height 40px
+          background $font-color-13
+          box-shadow 0px 2px 4px 0px rgba(161, 192, 250, 1)
+          border-radius 4px
+          font-size $font-size-16
+          font-family SourceHanSansCN-Medium
+          font-weight 500
+          color $font-color-03
+          line-height 24px
+          padding 0 30px
+        .but2
+          height 40px
+          background $font-color-14
+          border-radius 4px
+          font-size $font-size-16
+          font-family SourceHanSansCN-Medium
+          font-weight 500
+          color $font-color-03
+          line-height 24px
+          padding 0 30px
+          margin-left 20px
+      .right
+        display flex
+        >div
+          margin-left 20px
+          margin-top 6px
+        .menu-1
+          width 343px
+          height 40px
+          background $font-color-03
+          box-shadow 0px 3px 7px 0px rgba(229, 229, 229, 1)
+          border-radius 4px
+        .but-3
+          margin-top 0
+          button
+            height:40px
+            background $color-but-bg-01
+            box-shadow:0px 2px 4px 0px rgba(176,148,119,0.5)
+            border-radius:4px;
+            font-size $font-size-16
+            font-family:SourceHanSansCN-Medium
+            font-weight:500
+            color $font-color-03
+            // line-height:24px;
+            padding 0 30px
+            
+    .center
+      width 100%
+      height 800px
+    .bottom
+      width 100%
+      height 100px
+</style>
+<style>
+.center .el-table th > .cell {
+  white-space: nowrap;
+}
+.center .el-table .cell,
+.el-table th div {
+  overflow: initial;
+  text-overflow: initial;
+}
+.center .el-table td {
+  border-bottom: initial;
+}
+.center .el-table .cell,
+.el-table th div {
+  white-space: nowrap;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  width: 180px;
+  text-align: center;
+}
+/* .container-import-construction .el-checkbox__label{
+  color: white
+} */
+.bottom .el-pagination{
+  text-align: center
+}
+</style>

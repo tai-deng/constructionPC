@@ -1,0 +1,106 @@
+.container-risk
+  padding 18px
+  width 100%
+  height 100%
+  box-sizing border-box
+  background-color rgba(245, 246, 251, 1)
+  display flex
+  justify-content space-between
+
+  .house-model
+    position relative
+    margin-right 20px
+    width 49.5%
+    height 100%
+    background-color #fff
+
+    .infomations
+      position absolute
+      right 8px
+      bottom 8px
+
+      p
+        vertical-align top
+        line-height 38px
+        height 38px
+        font-size 16px
+        vertical-align top
+
+      img
+        margin-right 8px
+        height 24px
+        vertical-align middle
+
+  .el-icon-location
+    color #435089
+
+  .start-question
+    position absolute
+    right 10px
+    top 10px
+
+  .button-wrapper
+    display flex
+    justify-content space-between
+
+  .filter-wrapper
+    width 49.5%
+
+  >>>
+    .el-tabs__header
+      border-bottom none
+
+  .filter
+    margin-top 18px
+
+    >>>
+      .el-select .el-input__inner
+        border 1px solid #ecedf1
+        border-radius 5px
+        overflow hidden
+
+      .el-input__suffix
+        width 50px
+        background #44508a
+        border-radius 0 5px 5px 0
+
+      .el-input--suffix
+        overflow hidden
+
+      .el-select .el-input .el-select__caret
+        color #fff
+
+  .table
+    .title
+      >>>
+        th
+          background #44508a
+
+        th .cell
+          color #fff
+
+        .el-table__body-wrapper
+          display none
+
+    .content
+      >>>
+        .el-collapse-item__arrow::before
+          content "\e600"
+        .el-collapse-item__content
+          padding-bottom 0
+
+        .el-table td
+          border-style dashed
+
+        .el-table tr:last-child td
+          border none
+
+        .el-table::before
+          display none
+
+        .el-collapse-item, .el-collapse-item .el-collapse-item__header
+          text-indent 18px
+          background #F5F6FB
+
+      tbody tr:last-child td
+        border-bottom none

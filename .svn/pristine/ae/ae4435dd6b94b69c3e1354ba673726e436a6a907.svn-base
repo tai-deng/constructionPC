@@ -1,0 +1,431 @@
+<!-- 清单调优qingDrab -->
+<template>
+    <div class="container-qing-drab">
+        <div class="container_head">
+            <div class="right-form">
+                <el-form :inline="true" :model="formInline" class="demo-form-inline">
+                    <!--整体模型-->
+                    <el-form-item prop="model">
+                        <el-select v-model="formInline.wholeModel" placeholder="整体模型">
+                            <el-option v-for="item in  wholeList"
+                                    :key="item.value" :label="item.label" :value="item.value"
+                                   ></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <!--专业-->
+                    <el-form-item prop="region">
+                        <el-select v-model="formInline.region" placeholder="专业">
+                            <el-option v-for="item in  majorList"
+                                    :key="item.value"    :label="item.label"     :value="item.value"
+                                      ></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <!--楼层-->
+                    <el-form-item prop="floor">
+                        <el-select v-model="formInline.floor" placeholder="楼层">
+                            <el-option v-for="item in  floorList"
+                                  :key="item.value"  :label="item.label"  :value="item.value"
+                                   ></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <!--资源类别-->
+                    <el-form-item prop="resources">
+                        <el-select v-model="formInline.resources" placeholder="资源类别">
+                            <el-option v-for="item in  resourcesList"
+                                    :key="item.value" :label="item.label"  :value="item.value"
+                                  ></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <!--搜索-->
+                    <el-form-item>
+                        <el-input placeholder="请输入内容"   v-model="input21">
+                          <el-button slot="append" icon="el-icon-search" style="border-radius:0px 4px 4px 0px;position:relative;top:1px;" @click="searchBtn"></el-button>
+                        </el-input>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-input type="text" class="percent-inp" placeholder="请输入修正值"/>
+                    </el-form-item>
+                    <el-button class="correct-btn">一键修正</el-button>
+                </el-form>
+            </div>
+            <div class="left-contain">
+                <img src="../../../assets/imgs/order_tree.png" alt="">
+            </div>
+        </div>
+        <div class="left_contain">
+            <p>模型显示区域</p>
+        </div>
+        <div class="right-contain">
+                <div class="data-table">
+                    <el-table
+                            :data="tableData"
+                            style="width:100%"
+                            :row-class-name="tableRowClassName"
+                            :header-cell-style="{'background-color':'#435089','color':'#ffffff'}">
+
+                        <!--序号-->
+                        <el-table-column
+                                prop="date"
+                                label="序号"
+                        ></el-table-column>
+                        <!--资源名称-->
+                        <el-table-column
+                                prop="name"
+                                label="资源名称"
+                        ></el-table-column>
+                        <!--楼栋-->
+                        <el-table-column
+                                prop="address"
+                                label="楼栋"
+                        ></el-table-column>
+                        <!--施工图预算量-->
+                        <el-table-column
+                                prop="planBudget"
+                                label="施工图预算量"
+                                width="94px"
+                        ></el-table-column>
+                        <!--系数-->
+                        <el-table-column label="系数">
+                          
+                          <template slot-scope="scope">
+                            <input type="text" v-model="scope.row.number" class="table_input" placeholder="系数">
+                          </template>
+
+                        </el-table-column>
+                        <!--施工预算量-->
+                        <el-table-column
+                                prop="constructionBudget"
+                                label="施工预算量"
+                        ></el-table-column>
+                        <!--差额-->
+                        <el-table-column
+                                prop="difference"
+                                label="差额"
+                        ></el-table-column>
+                    </el-table>
+                </div>
+                <p class="careful-txt">*注：施工图工程量以“step7清单导入”最终拆分量之和为准 </p>
+                <!--分页-->
+                <div class="page_padding">
+                    <el-pagination
+                      background 
+                      layout="prev, pager, next"
+                      :prev-text="first" :next-text="last" :total="alltotal" @current-change='changPage'>
+                    </el-pagination>
+                </div>
+            </div>
+
+        
+    </div>
+</template>
+<!--textecmascript-6-->
+<script>
+export default {
+   data() {
+      return {
+        formInline: {
+          user: '',
+          region: ''},
+        //整体模型数组
+        wholeList: [{value: "1",label: "A1"},{value: "2",label: "A2"}],
+        //专业数组
+        majorList: [{value: "1",label: "全部"}, {value: "2",label: "建筑专业"},
+          {value: "3",label: "结构专业"},{value: "4",label: "暖通系统"},{value: "5",label: "通风系统"},
+          {value: "6",label: "弱电系统"}, {value: "7",label: "强电系统"}],
+        //楼层数组
+        floorList: [{value: "1", label: "全部"},{value: "2", label: "1F"},
+          { value: "3",label: "2F" }, { value: "4",label: "3F"}],
+        //资源数组
+        resourcesList: [ { value: "1",label: "全部" }, { value: "2", label: "C20混凝土"}, { value: "3", label: "C30混凝土"},
+          { value: "4",  label: "M0821" },{ value: "5",  label: "4F"}, { value: "6",  label: "C0915" }],
+        // 表格数据
+        tableData: [{
+          date: '1',
+          name: 'C20混凝土',
+          address: 'A1',
+          planBudget: '100.00m³',
+          constructionBudget: '100.00m³',
+          difference: '0'}, {
+          date: '2',
+          name: 'C20混凝土',
+          address: 'A2',
+          planBudget: '100.00m³',
+          constructionBudget: '100.00m³',
+          difference: '0'}, {
+          date: '3',
+          name: 'C20混凝土',
+          address: 'A3',
+          planBudget: '100.00m³',
+          constructionBudget: '100.00m³',
+          difference: '0'}, {
+          date: '4',
+          name: 'C30混凝土',
+          address: 'A1',
+          planBudget: '100.00m³',
+          constructionBudget: '100.00m³',
+          difference: '0'},{
+          date: '5',
+          name: 'C30混凝土',
+          address: 'A1',
+          planBudget: '10扇',
+          constructionBudget: '10扇',
+          difference: '0'},{
+          date: '6',
+          name: 'M0821',
+          address: 'A1',
+          planBudget: '10扇',
+          constructionBudget: '10扇',
+          difference: '0'}, {
+          date: '7',
+          name: 'M0821',
+          address: 'A2',
+          planBudget: '10扇',
+          constructionBudget: '10扇',
+          difference: '0'},{
+          date: '8',
+          name: 'M0821',
+          address: 'A3',
+          planBudget: '100.00m³',
+          constructionBudget: '100.00m³',
+          difference: '0'},{
+          date: '9',
+          name: 'C0905',
+          address: 'A1',
+          planBudget: '10扇',
+          constructionBudget: '10扇',
+          difference: '0'},{
+          date: '10',
+          name: 'C0905',
+          address: 'A1',
+          planBudget: '100.00m³',
+          constructionBudget: '10扇',
+          difference: '0'}],
+        formData: {
+          //表单提交对象
+            model: "", //整体模型
+          region:'',//专业
+          floor:'',//楼层
+          resources:''//资源类别
+        },
+        input21:'',
+
+        //分页相关的事件
+        first:'上一页',
+        last:'下一页',
+        alltotal:30,//数据总条数
+        currentPage:1,//当前页码
+
+      }
+ },
+   mounted(){
+     this.total=this.tableData.length
+   },
+   methods: {
+    //表格单双隔层的颜色变化
+    tableRowClassName({row, rowIndex}) {
+        if (rowIndex%2 === 1) {
+          return 'warning-row';
+        } else{
+          return false;
+        }
+    },
+    //分页中改变当前页的时候，触发事件
+    changPage(page){
+      this.currentPage=page;
+    },
+    //点击搜索输入框旁边的搜索图标
+    searchBtn:function(){
+      console.log('10');
+    },
+
+
+
+
+
+      
+
+
+
+    }
+}
+
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+    @import '../../../assets/stylus/variable.styl'
+    .container-qing-drab
+        position relative
+        width 100%
+        height 100%
+        padding 5px 30px
+        box-sizing border-box
+        background-color rgba(240,240,240,1)
+
+    .container_head
+        width 100%
+        height 60px
+    .left-contain
+        float left
+        padding-top 19px
+       
+    .right-contain
+        float right
+        width  900px
+        height 920px
+        margin-top 30px
+        background #fff
+        overflow hidden
+    .left_contain
+        float left
+        width 800px
+        height 870px
+        margin-top 30px
+    .careful-txt
+        margin 25px 0 18px 50px
+        font-size 16px
+        color #A6A6A6
+    .page_padding
+      padding-top 50px
+   .right-form
+    float right
+    padding-top 19px
+
+    .el-form-item__content .search
+        display flex
+        align-items center
+        width 282px
+        height 38px
+        border-radius 30px
+        border 1px solid rgba(255, 255, 255, 0)
+        background #fff
+    .el-form-item__content .search input
+        width 200px
+        height 24px
+        outline none
+        border none
+    .el-form-item__content .search span
+        display flex
+        align-items center
+        justify-content center
+        width 24px
+        height 24px
+        text-align center
+        margin-left 12px
+        margin-right 20px
+        font-size 18px
+    .el-form-item__content .percent-inp
+        width 150px
+        height 40px
+        border-radius 5px
+        color rgba(136,136,136,1)
+        font-family Roboto
+      .correct-btn
+        color #ffffff
+        background-color #FDA143
+        border-radius  5px
+        height 42px
+        vertical-align middle
+        font-size 20px
+        padding 0px 28px
+        float right
+      .correct-btn:hover,.correct-btn:focus
+        border:1px solid #FDA143
+      .correct-btn[disabled]
+        background-color #DDDDDD
+</style>
+<style>
+    .el-table .cell {
+        text-align: center;
+    }
+
+    .dataTable .el-table__body tbody {
+        padding: 0 10px;
+    }
+
+    .container-qing-drab .el-select {
+        width: 200px;
+        flex: 1;
+        height: 40px;
+        background: rgba(255, 255, 255, 1);
+        box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+        border-radius: 4px;
+    }
+    .container-qing-drab .el-input--suffix .el-input__inner {
+        border: none;
+    }
+
+    .container-qing-drab .el-input__suffix {
+        background: rgba(67, 80, 137, 1);
+        border-radius: 0px 4px 4px 0px;
+        right: 0;
+        width: 40px;
+    }
+
+    .container-qing-drab .el-icon-arrow-up:before {
+        content: "\e60c";
+        color: rgba(255, 255, 255, 1);
+    }
+
+    .container-qing-drab .has-gutter th {
+        background-color: #DDD;
+        font-size: 18px;
+        height: 50px;
+
+    }
+
+    .container-qing-drab .el-table__row .table_input {
+        width: 80px;
+        height: 35px;
+        text-align: center;
+        border: 1px solid rgba(187, 187, 187, 1);
+    }
+    .data-table {
+      font-size: 18px
+    }
+
+    /*分页*/
+    .el-pagination .is-background .el-pager li:not(.disabled) .active {
+        background-color: #ffffff;
+    }
+
+    .container-qing-drab .el-pagination .is-background  li {
+        color: #333333;
+        background-color: #ffffff;
+        font-size: 18px;
+        border:1px solid #EAEAEA;
+        border-radius: 5px;
+        display: inline-block;
+        padding : 15px 17px;
+    }
+
+    .btn-prev,.btn-next,.number {
+        background-color: #ffffff;
+        border: 1px solid #EAEAEA;
+        display: inline-block;
+        padding : 15px 17px;
+        font-size: 18px;
+    }
+
+    .el-pagination {
+       text-align: center;
+       padding-bottom: 10px;
+    }
+
+    
+
+    
+
+    /* 表格单双颜色变化 */
+    .el-table .warning-row {
+      background-color: #F4F6FF;
+    }
+    /* 搜索输入框 */
+    .el-input-group__append button.el-button{
+      background-color: #435089;
+      height: 39px;
+    }
+
+    
+
+
+</style>

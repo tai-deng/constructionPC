@@ -1,0 +1,90 @@
+.container-time(@click="listenWrapper")
+  .top
+    .type
+      el-select(v-model="type")
+        el-option(
+          v-for="item in typeOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        )
+    .left
+      div.model
+      span.title 实际进度
+    .right
+      div.model
+      span.title 计划进度
+  .progress
+    .left
+      p 整体进度：70%
+      p 滞后8天
+      el-button 查看详情
+    .right-wrapper
+      el-carousel(arrow="always" :autoplay="false" height="180px" @change="onCarouselChange")
+        el-carousel-item(:index="0")
+          .right
+            .after-title
+              p 计划进度
+              .line
+              p 实际进度
+            el-timeline(:reverse="true")
+              div(class="timeline")
+                ul
+                  li(v-for="(item,index) in porgressOptions" :key="index" style="width: 340px" :class="item.message && item.message")
+                    div(v-if="item.top && item.top.length" class="timeline-top")
+                      p(v-for="(t,i) in item.top" :class="t.class && t.class" :key="i") {{ t.text }}
+                    div(class="ico-wrapper")
+                      span(@click.stop="(ev) => {onEditProgress(ev, item, index)}" class="ico" :class="item.icoClassName || 'el-icon-circle-plus'")
+                      span(v-if="index < porgressOptions.length - 1 || (index === (porgressOptions.length - 1))" class="line" style="width: 340px")
+                    div(v-if="item.bottom && item.bottom.length" class="timeline-content")
+                      p(v-for="(t,i) in item.bottom" :class="t.class && t.class" :key="i") {{ t.text }}
+        el-carousel-item(:index="1")
+          .right
+            .after-title
+              p 计划进度
+              .line
+              p 实际进度
+            el-timeline(:reverse="true")
+              div(class="timeline")
+                ul
+                  li(v-for="(item,index) in porgressOptions" :key="index" style="width: 340px" :class="item.message && item.message")
+                    div(v-if="item.top && item.top.length" class="timeline-top")
+                      p(v-for="(t,i) in item.top" :class="t.class && t.class" :key="i") {{ t.text }}
+                    div(class="ico-wrapper")
+                      span(@click.stop="onEditProgress" class="ico" :class="item.icoClassName || 'el-icon-circle-plus'")
+                      span(v-if="index < porgressOptions.length - 1 || (index === (porgressOptions.length - 1))" class="line" style="width: 340px")
+                    div(v-if="item.bottom && item.bottom.length" class="timeline-content")
+                      p(v-for="(t,i) in item.bottom" :class="t.class && t.class" :key="i") {{ t.text }}
+
+  .progress-detail(v-show="isProgressDetail" :style="progressDetailStyle" @click.stop)
+    .tit
+      span.el-icon-close(@click="toggleDetail()")
+    el-form(:data="dialogForm" label-width="110px" :disabled="dialogType === 'look'")
+      el-form-item(label="认证时间")
+        el-date-picker(
+          v-model="dialogForm.time"
+          type="date"
+          placeholder="选择日期"
+        )
+      el-form-item(label="完成百分比")
+        el-input(v-model="dialogForm.progress")
+      el-form-item.flex(label="认证凭证")
+        el-upload(
+          action="https://jsonplaceholder.typicode.com/posts/"
+          list-type="picture-card"
+          :on-preview="handlePictureCardPreview"
+          :on-remove="handleRemove"
+        )
+          i(class="el-icon-plus")
+        el-upload(
+          action="https://jsonplaceholder.typicode.com/posts/"
+          list-type="picture-card"
+          :on-preview="handlePictureCardPreview"
+          :on-remove="handleRemove"
+        )
+          i(class="el-icon-plus")
+      el-form-item
+        el-button(type="primary") 确认
+        el-button(@click="toggleDetail()") 取消
+
+

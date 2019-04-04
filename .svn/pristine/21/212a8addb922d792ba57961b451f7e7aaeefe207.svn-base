@@ -1,0 +1,28 @@
+<!-- 物资管理 -->
+<template lang="html" src="./index.html"></template>
+<style lang="stylus" src="./index.styl" scoped></style>
+
+<script type='textecmascript-6'>
+export default {
+  data() {
+    return {
+      form: {
+        name: "王xx",
+        time: "2019.03.04",
+        need_time: "2019.03.04"
+      },
+      tableData: [
+        {
+          loudong: "楼栋",
+          code: "项目编码",
+          name: "项目名称",
+          yusuan: "预算量",
+          yicaigou: "已采购",
+          bencicaigou: "本次采购"
+        }
+      ]
+    };
+  },
+  methods: {}
+};
+</script>

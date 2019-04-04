@@ -1,0 +1,147 @@
+<template>
+  <div class="plan-container">
+      <el-form :model="modeValue" ref="formData">
+        <div class="plan-left">
+          <div class="mode-type">
+            <el-select v-model="mode" placeholder="请选择模型">
+              <el-option
+                v-for="item in modeList"
+                :key="item.id"
+                :label="item.label"
+                :value="item.id"
+              ></el-option>
+            </el-select>
+          </div>
+
+          <div class="date">
+            <el-date-picker
+              v-model="shop"
+              value-format="yyyy-MM-dd"
+              format="yyyy-MM-dd"
+              type="daterange"
+              @change="chooseTimeRange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期">
+            </el-date-picker>
+          </div>
+
+          <div class="plan-play">
+              <i class="el-icon-error pause" @click='pause'></i>
+              <i class="el-icon-success play" @click='play'></i>
+          </div>
+        </div>
+      </el-form>
+    <div class="plan-right">
+      <div class="road-week" :class="{'day-opt':dayP==1}" @click="roadWeek(1)">
+        <i class="el-icon-upload2"></i>
+        施工组织计划导出
+      </div>
+      <div class="road-week" :class="{'day-opt':dayP==1}" @click="showMode(2)">
+        显示模型
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+export default {
+    name:'plan',
+    data(){
+        return{
+            point:0,
+            dayP:3,
+            shop: null, // 时间选择
+            mode:null,  // 模型选择
+            modeValue:null,
+            modeList: [
+              {
+                id: "0",
+                label: "模型0"
+              },
+              {
+                id: "1",
+                label: "模型1"
+              }
+            ],
+            rules: {
+              mode: [
+                { required: true, message: "请选择模型", trigger: "change" }
+              ],
+            },
+        }
+    },
+    props:{
+
+    },
+    computed:{
+
+    },
+    methods:{
+        pause(){
+            console.log('暂停')
+        },
+        play(){
+            console.log('播放')
+        },
+        roadWeek(){
+          console.log('施工计划导出')
+        },
+        showMode(){
+          console.log('显示模型')
+        },
+        chooseTimeRange(p){
+          console.log('选择时间',p)
+        },
+    }
+}
+</script>
+<style>
+    .plan-container{
+        background-color: #F0F2F5;
+        padding: 0 40px;
+        height:100px;
+        font-size: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .plan-left,
+    .plan-right{
+        display: flex;
+    }
+    .mode-type,
+    .date{
+        width: 160px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        color: white;
+        margin-right: 20px;
+    }
+    .date {
+      width: 400px;
+    }
+    .plan-play{
+      width: 100px;
+      height: 40px;
+      color: #000000;
+      font-size: 20px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+    .road-week {
+      color: white;
+      background-color: #B2B2B2;
+      margin-left: 20px;
+      height: 40px;
+      border-radius: 6px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+
+    }
+</style>
+

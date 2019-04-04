@@ -1,0 +1,326 @@
+<template>
+    <div class='model_main_all'>
+       <div class="model_btn_head">
+           <el-button class='add_btn_head'> 
+               <i class='icon_add'>
+                   <img src="../../../assets/imgs/add_model.png" alt="">
+               </i>
+               新增建筑单体
+           </el-button>
+           <el-button class="upload_btn_head">上传模型</el-button>
+           <el-button class="redel_btn_head" :disabled="isTimeTogether">合并模型</el-button>
+           <el-button class="redel_btn_head" @click="openModel()">分享模型(模态框)</el-button>
+       </div>
+       <div class="model_main_body">
+           
+
+            <div class="model_body_panel">
+               <div class="model_body_panel_title">
+                    整合模型
+               </div>
+               <div class="model_body_panel_body">
+
+               </div>
+            </div>
+
+            <div class="model_body_panel">
+               <div class="model_body_panel_title">
+                    场地模型
+               </div>
+               <div class="model_body_panel_body">
+                   <div class="model_panel_list">
+                       <div class="model_panel_list_title">
+                           <span>场地模型</span>
+                           <i class="model_panel_list_img"><img src="../../../assets/imgs/upload_model.png" alt=""></i>
+                       </div>
+                   </div>
+               </div>
+            </div>
+
+            <div class="model_body_panel">
+               <div class="model_body_panel_title">
+                    建筑单体
+                    <i> <img class="model_body_panel_title_img" src="../../../assets/imgs/return_model.png" alt=""> </i>
+               </div>
+               <div class="model_body_panel_body">
+                   <div class="model_panel_list">
+                       <div class="model_panel_list_title">
+                           <span>建筑模型</span>
+                           <i class="model_panel_list_img"> <img src="../../../assets/imgs/upload_model.png" alt=""> </i>
+                       </div>
+                       <div class="model_panel_list_body">
+                           <div>显示模型的区域</div>
+                       </div>
+                   </div>
+
+                    <div class="model_panel_list">
+                       <div class="model_panel_list_title">
+                           <span>结构模型</span>
+                           <i class="model_panel_list_img"> <img src="../../../assets/imgs/upload_model.png" alt=""> </i>
+                       </div>
+                       
+                    </div>
+                    <div class="model_panel_list">
+                       <div class="model_panel_list_title">
+                           <span>机电模型</span>
+                           <i class="model_panel_list_img"> <img src="../../../assets/imgs/upload_model.png" alt=""> </i>
+                       </div>
+                       
+                    </div>
+
+               </div>
+            </div>
+       </div>  
+
+
+       <!-- 分享模态框 -->
+        <div id="model_show_time" class='model_display_none'>
+            <div class="model_show_time_div">
+                <div class="model_title">
+                    分享链接
+                    <i> <img  class="model_show_time_img" src="../../../assets/imgs/close_model.png" alt="关闭模态框" @click="closeModel()"> </i>
+                </div>
+                <div class="model_body">
+                    <el-input class="model_body_input" v-model="showModelInput" placeholder="请输入内容"></el-input>
+                    <el-button class="model_body_repeat_btn">复制链接</el-button>
+                    <div class="model_body_text">
+                        <p>*温馨提示：复制链接分享打开即可查看模型</p>
+                    </div>
+                </div> 
+            </div>
+        </div>   
+         <!-- 合并模态框 -->
+        <!-- <div id="model_toget_all" class='model_display_show'>
+            <div class="model_toget_all_div">
+                <div class="model_title">
+                    合并模型
+                    <i> <img  class="model_show_time_img" src="../../../assets/imgs/close_model.png" alt="关闭模态框" @click="closeModel()"> </i>
+                </div>
+                <div class="model_body">
+                    <div class="model_body_select">
+                        <el-select v-model="selectOption" placeholder="选择建筑单体">
+                            <el-option   v-for="item in selectoptions"   :key="item.value"
+                              :label="item.label"   :value="item.value">
+                            </el-option>
+                        </el-select>
+                        <el-select v-model="selectMedel" placeholder="建筑模型">
+                            <el-option   v-for="item in model"   :key="item.value"
+                              :label="item.label"   :value="item.value">
+                            </el-option>
+                        </el-select>
+                    </div>
+                    
+                </div> 
+            </div>
+        </div> -->
+            
+    
+
+    </div>
+</template>
+<script>
+export default {
+    data(){
+        return{
+            isTimeTogether:true,    //合并按钮是否禁用，上传模型以后，可以点击
+            showModelInput:'',      //分享模态框中的输入框
+            selectOption:'',        //合并模态框上的下拉--选择建筑单体
+            selectoptions:[{value: '0',label: '选择建筑单体'},{value: '1',label: '建筑1'}],
+            selectMedel:'',         //合并模态框上的下拉--选择建筑模型
+            model:[{value: '0',label: '选择建筑模型'},{value: '1',label: '结构模型'},{value: '2',label: '机电模型'}],
+        }
+    },
+    methods:{
+        //关闭分享模态框
+        closeModel:function(){
+            document.querySelector('#model_show_time').className = "model_display_none";
+        },
+        //打开分享模态框
+        openModel:function(){
+            document.querySelector('#model_show_time').className = "model_display_show";
+        },
+    }
+}
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.model_main_all
+    padding 10px 20px
+    background-color #F5F6FA
+    .model_btn_head
+        padding-top 20px
+        .add_btn_head
+            color #ffffff
+            background-color #4775CA
+            border-radius  5px
+            height 48px
+            vertical-align middle
+            font-size 20px
+            padding 0px 28px
+            .icon_add
+                margin-right 10px
+                display inline-block
+                width 25px 
+                height 25px
+        .upload_btn_head
+            color #ffffff
+            background-color #4580FF
+            border-radius  5px
+            height 48px
+            vertical-align middle
+            font-size 20px
+            margin-left 30px
+            padding 0px 28px
+        .redel_btn_head
+            color #ffffff
+            background-color #FDA143
+            border-radius  5px
+            height 48px
+            vertical-align middle
+            font-size 20px
+            margin-left 30px
+            padding 0px 28px
+        .redel_btn_head:disabled
+            background-color #DDDDDD
+    .model_main_body
+        height 990px
+        .model_body_panel
+            width 400px
+            height 932px
+            background-color #ffffff
+            border 1px solid #EAEDF6
+            display inline-block
+            box-sizing border-box
+            margin-right 20px
+            margin-top 20px
+            float left
+            .model_body_panel_title
+                padding 10px 0px
+                text-align center
+                color #ffffff
+                background-color #435089
+                font-size 18px
+                .model_body_panel_title_img
+                    display inline-block
+                    width 15px
+                    height 15px
+                        
+            .model_body_panel_body
+                width 100%
+                height 100%
+                padding 0px 20px
+                box-sizing border-box
+                .model_panel_list_title
+                    font-size 18px
+                    padding 10px 
+                    border-bottom 1px solid #F0F0F0
+                    .model_panel_list_img
+                        display inline-block
+                        width 20px
+                        height 20px
+                        float right 
+                .model_panel_list_body
+                    height 220px 
+                    width 100%
+    // 模态框
+    .model_display_none
+        display none
+    .model_display_show
+        display block
+    #model_show_time
+        position fixed
+        top 0
+        left 0
+        width 100%
+        height 100%
+        z-index 20
+        background rgba(121,121,121,0.4)
+        .model_show_time_div
+            background-color #fff
+            width 1000px
+            height 600px
+            margin-left 30%
+            margin-top 10%
+            border-radius 6px
+            .model_title
+                background-color #6460FF
+                text-align center
+                color #fff
+                height 40px
+                font-size 18px
+                padding-top 10px
+                .model_show_time_img
+                    float right
+                    display inline-block
+                    width 18px
+                    height 18px
+                    margin-right 25px
+                    margin-top 5px
+                    cursor pointer
+            .model_body
+                padding 80px
+                .model_body_input 
+                    width 640px
+                    background-color #F0F0F0
+                    margin-right 30px
+                .model_body_repeat_btn
+                    color #ffffff
+                    background-color #4580FF
+                    border-radius  5px
+                    height 48px
+                    vertical-align middle
+                    font-size 20px
+                    padding 0px 28px
+                .model_body_text
+                    text-align left 
+                    font-size 20px
+                    padding-top 25px
+                    color #ACACAC
+    #model_toget_all
+        position fixed 
+        top 0
+        left 0
+        width 100%
+        height 100%
+        z-index 20
+        background rgba(121,121,121,0.4)
+        .model_toget_all_div
+            background-color #fff
+            width 1000px
+            height 600px
+            margin-left 30%
+            margin-top 10%
+            border-radius 6px
+            .model_title
+                background-color #6460FF
+                text-align center
+                color #fff
+                height 40px
+                font-size 18px
+                padding-top 10px
+                .model_show_time_img
+                    float right
+                    display inline-block
+                    width 18px
+                    height 18px
+                    margin-right 25px
+                    margin-top 5px
+                    cursor pointer
+            .model_body
+                padding 44px 117px
+                .model_body_select
+                    padding-bottom 20px
+                    border-bottom 1px solid #F0F0F0
+
+
+
+
+                
+                    
+
+    
+
+
+</style>
+
+
+   

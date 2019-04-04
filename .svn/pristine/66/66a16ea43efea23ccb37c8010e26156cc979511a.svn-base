@@ -1,0 +1,463 @@
+<!-- 智能报表-资料员intelligenceReports -->
+<template>
+ <div class='container-intelligence-reports'>
+
+    <div class='intelligenec_left'>
+      <div class='intelligenec_left_head'>
+        <img class="intelligenec_left_head_img" src="../../assets/imgs/AI_img.png" alt="">AI报表
+      </div>
+      <div class="intelligenec_left_body">
+        <ul  class="intelligenec_jump">
+          <li @click="showFrom(1)" :class="fromCurrent==1?'active':''">施工日志</li>
+          <li @click="showFrom(2)" :class="fromCurrent==2?'active':''">施工方案</li>
+          <li @click="showFrom(3)" :class="fromCurrent==3?'active':''">技术交底</li>
+          <li @click="showFrom(4)" :class="fromCurrent==4?'active':''">节点对比</li>
+          <li @click="showFrom(5)" :class="fromCurrent==5?'intelligenec_left_border active':'intelligenec_left_border'">自定义表格</li>
+        </ul>
+
+        <div v-if="fromCurrent==1" class="intelligenec_left_div">
+          <!-- 施工日志 -->
+          <ul class='intelligenec_building'>
+            <li style="width:65px"><el-checkbox v-model="buildChecked" @change="allBuildingChange()"></el-checkbox> </li>
+            <li style="width:55px">序号</li>
+            <!-- 332px -->
+            <li style="width:315px">资料名称</li>  
+            <li style="width:85px">预览</li>
+            <li style="width:85px">下载</li>
+          </ul>
+          <div class='intelligenec_expand' @click="showBuildingClick()" >  
+              <!-- 点击时候，（已生成表格）显示与不显示的小图标  alredyBuilding1已生成的总数-->
+              <i v-if='showbuilding1' class="el-icon-caret-bottom"></i><i v-if='!showbuilding1' class="el-icon-caret-right"></i>  
+              已生成（{{alredyBuilding1}}）
+          </div>
+                <!-- 已生成表格（不显示表头） -->
+                <el-table     v-if='showbuilding1'      style="width:100%;"   ref="multipleTable"
+                    :show-header="false" :data="buildingDay">
+                    <el-table-column type="selection" width="65" align="center"> </el-table-column>
+                    <el-table-column type="index" label="序号" width="55" align="center" :index="indexMethod" ></el-table-column>
+                    <el-table-column  prop="name"  label="资料名称"   width="315" align="center"></el-table-column>
+                    <el-table-column  label="预览"  width="85" align="center">
+                        <template slot-scope="scope">
+                            <img src="../../assets/imgs/blue_eye.png" @click="buildingClick(scope.$index, scope.row)" alt="">
+                        </template>  
+                    </el-table-column>
+                    <el-table-column  label="下载" width="85" align="center">
+                        <template slot-scope="scope">
+                            <img src="../../assets/imgs/down_blue.png" @click="buildingDown(scope.$index, scope.row)" alt="">
+                        </template>
+                    </el-table-column>
+                    <p slot="append" style="text-align:center; line-height:30px;border-bottom:1px solid #EBEEF5;" v-loading="loading">
+                      <a href="javascript:;"  @click="getMData()" class="blue01">查看更多</a>
+                    </p>
+                </el-table>
+            <div class='intelligenec_expand' @click="shownoBuildingClick()" >  
+              <!-- 点击时候，（未生成表格）显示与不显示的小图标  alredyBuilding1已生成的总数-->
+              <i v-if='shownobuilding1' class="el-icon-caret-bottom"></i><i v-if='!shownobuilding1' class="el-icon-caret-right"></i>  
+              已生成（{{noBuilding1}}）
+            </div>
+                <el-table     v-if='shownobuilding1'      style="width:100%;"   ref="nomultipleTable"
+                    :show-header="false" :data="nobuildingDay">
+                    <el-table-column type="selection" width="65" align="center"> </el-table-column>
+                    <el-table-column type="index" label="序号" width="55" align="center" :index="indexMethod" ></el-table-column>
+                    <el-table-column  prop="name"  label="资料名称"   width="315" align="center"></el-table-column>
+                    <el-table-column  label="预览"  width="85" align="center">
+                        <template slot-scope="scope">
+                            <img src="../../assets/imgs/blue_eye.png" @click="nobuildingClick(scope.$index, scope.row)" alt="">
+                        </template>  
+                    </el-table-column>
+                    <el-table-column  label="下载" width="85" align="center">
+                        <template slot-scope="scope">
+                            <img src="../../assets/imgs/down_grey.png" @click="nobuildingDown(scope.$index, scope.row)" alt="">
+                        </template>
+                    </el-table-column>
+                    <p slot="append" style="text-align:center; line-height:30px;border-bottom:1px solid #EBEEF5;" v-loading="noloading">
+                      <a href="javascript:;"  @click="getNoData()" class="blue01">查看更多</a>
+                    </p>
+                </el-table>
+
+        </div>
+        <div v-if="fromCurrent==2" class="intelligenec_left_div">
+          <!-- 施工方案 -->
+          
+
+
+        </div>
+
+
+
+
+
+        <div v-if="fromCurrent==3" class="intelligenec_left_div">
+          技术交底
+        </div>
+        <div v-if="fromCurrent==4" class="intelligenec_left_div">
+          <!-- 节点对比 -->
+
+
+          <ul class='intelligenec_building'>
+            <li style="width:65px"><el-checkbox v-model="buildChecked3" @change="allBuildingChange3()"></el-checkbox> </li>
+            <li style="width:55px">序号</li>
+            <!-- 332px -->
+            <li style="width:315px">资料名称</li>  
+            <li style="width:85px">预览</li>
+            <li style="width:85px">下载</li>
+          </ul>
+          <div class='intelligenec_expand' @click="showBuildingClick3()" >  
+              <!-- 点击时候，（已生成表格）显示与不显示的小图标  alredyBuilding1已生成的总数-->
+              <i v-if='showbuilding3' class="el-icon-caret-bottom"></i><i v-if='!showbuilding3' class="el-icon-caret-right"></i>  
+              已生成（{{alredyBuilding3}}）
+          </div>
+                <!-- 已生成表格（不显示表头） -->
+                <el-table     v-if='showbuilding3'      style="width:100%;"   ref="multipleTable3"
+                    :show-header="false" :data="buildingDay3">
+                    <el-table-column type="selection" width="65" align="center"> </el-table-column>
+                    <el-table-column type="index" label="序号" width="55" align="center" :index="indexMethod" ></el-table-column>
+                    <el-table-column  prop="name"  label="资料名称"   width="315" align="center"></el-table-column>
+                    <el-table-column  label="预览"  width="85" align="center">
+                        <template slot-scope="scope">
+                            <img src="../../assets/imgs/blue_eye.png" @click="buildingClick3(scope.$index, scope.row)" alt="">
+                        </template>  
+                    </el-table-column>
+                    <el-table-column  label="下载" width="85" align="center">
+                        <template slot-scope="scope">
+                            <img src="../../assets/imgs/down_blue.png" @click="buildingDown3(scope.$index, scope.row)" alt="">
+                        </template>
+                    </el-table-column>
+                    <p slot="append" style="text-align:center; line-height:30px;border-bottom:1px solid #EBEEF5;" v-loading="loading3">
+                      <a href="javascript:;"  @click="getMData3()" class="blue01">查看更多</a>
+                    </p>
+                </el-table>
+            <div class='intelligenec_expand' @click="shownoBuildingClick3()" >  
+              <!-- 点击时候，（未生成表格）显示与不显示的小图标  alredyBuilding1已生成的总数-->
+              <i v-if='shownobuilding3' class="el-icon-caret-bottom"></i><i v-if='!shownobuilding3' class="el-icon-caret-right"></i>  
+              已生成（{{noBuilding3}}）
+            </div>
+                <el-table     v-if='shownobuilding3'      style="width:100%;"   ref="nomultipleTable3"
+                    :show-header="false" :data="nobuildingDay3">
+                    <el-table-column type="selection" width="65" align="center"> </el-table-column>
+                    <el-table-column type="index" label="序号" width="55" align="center" :index="indexMethod" ></el-table-column>
+                    <el-table-column  prop="name"  label="资料名称"   width="315" align="center"></el-table-column>
+                    <el-table-column  label="预览"  width="85" align="center">
+                        <template slot-scope="scope">
+                            <img src="../../assets/imgs/blue_eye.png" @click="nobuildingClick3(scope.$index, scope.row)" alt="">
+                        </template>  
+                    </el-table-column>
+                    <el-table-column  label="下载" width="85" align="center">
+                        <template slot-scope="scope">
+                            <img src="../../assets/imgs/down_grey.png" @click="nobuildingDown3(scope.$index, scope.row)" alt="">
+                        </template>
+                    </el-table-column>
+                    <p slot="append" style="text-align:center; line-height:30px;border-bottom:1px solid #EBEEF5;" v-loading="noloading3">
+                      <a href="javascript:;"  @click="getNoData3()" class="blue01">查看更多</a>
+                    </p>
+                </el-table>
+
+          
+
+
+
+
+        </div>
+        <div v-if="fromCurrent==5" class="intelligenec_left_div">
+          自定义表格
+        </div>
+
+        <div class="intelligenec_left_foot">
+          <el-button class='intelligenec_down_btn'>批量下载</el-button>
+        </div>
+        
+
+
+
+
+
+      </div>
+
+      
+    </div>
+
+
+    <div class='intelligenec_right'>
+      <div class='intelligenec_left_head'>
+        <img class="intelligenec_left_head_img " src="../../assets/imgs/number_looking.png" alt="">数据预览
+      </div>
+    </div>
+
+ </div>
+</template>
+
+<script type='textecmascript-6'>
+export default {
+ data() {
+   return {
+    //  跳转显示
+    fromCurrent:1,
+
+    //施工日志-已生成
+    buildingDay:[{id:1,name:'施工日志2019/01/01'},{id:1,name:'施工日志2019/01/01'},{id:1,name:'施工日志2019/01/01'},
+        {id:1,name:'施工日志2019/01/01'},{id:2,name:'施工日志2019/01/01'},{id:1,name:'施工日志2019/01/01'},{id:2,name:'施工日志2019/01/01'}],
+    nobuildingDay:[{id:1,name:'施工日志2019/01/01'},{id:2,name:'施工日志2019/01/01'},{id:1,name:'施工日志2019/01/01'}],
+    buildChecked:false, //施工日志的全选
+    loading: false,//点击查看更多的--已生成--加载中
+    noloading:false,//点击查看更多的--未生成--加载中
+    alredyBuilding1:'12',//施工日志中-已生成--数据总数
+    showbuilding1:true,//施工日志中-已生成--是否显示
+    shownobuilding1:true,//施工日志中-未生成--是否显示
+    noBuilding1:'3',//施工日志中-未生成--数据总数
+
+    //节点对比-已生成
+    buildingDay3:[{id:1,name:'节点对比2019/01/01'},{id:1,name:'节点对比2019/01/01'},{id:1,name:'节点对比2019/01/01'},
+        {id:1,name:'节点对比2019/01/01'},{id:2,name:'节点对比2019/01/01'},{id:1,name:'节点对比2019/01/01'},{id:2,name:'节点对比2019/01/01'}],
+    nobuildingDay3:[{id:1,name:'节点对比2019/01/01'},{id:2,name:'节点对比2019/01/01'},{id:1,name:'节点对比2019/01/01'}],
+    buildChecked3:false, //节点对比的全选
+    loading3: false,//点击查看更多的--已生成--加载中
+    noloading3:false,//点击查看更多的--未生成--加载中
+    alredyBuilding3:'12',//节点对比中-已生成--数据总数
+    showbuilding3:true,//节点对比中-已生成--是否显示
+    shownobuilding3:true,//节点对比中-未生成--是否显示
+    noBuilding3:'3',//节点对比中-未生成--数据总数
+
+   }
+ },
+ methods:{
+    //点击左边的菜单--切换
+    showFrom(a){
+      this.fromCurrent=a;
+      console.log(this.fromCurrent);
+    },
+    //表格序号
+    indexMethod(index){
+      return index+1;
+    },
+
+
+    //施工日志--已生成-查看
+    buildingClick(index,row){
+      console.log(index);
+      console.log(row);
+    },
+    //施工日志--已生成-下载
+    buildingDown(index,row){
+      console.log(index);
+      console.log(row);
+    },
+    //施工日志-未生成--查看
+    nobuildingClick(index,row){
+      console.log(index);
+      console.log(row);
+    },
+    //施工日志-未生成--下载
+    nobuildingDown(index,row){
+      console.log(index);
+      console.log(row);
+    },
+    //点击加载更多----已生成
+    getMData(){
+      let that = this;
+      that.loading = true;
+      //然后再掉查询接口
+    },
+    //点击加载更多----未生成
+    getNoData(){
+      let that = this;
+      that.noloading = true;
+      //然后再掉查询接口
+    },
+    //点击-已生成-表格上门的--收缩栏
+    showBuildingClick:function(){
+      console.log('点击了-已生成上的div');
+        this.showbuilding1=!this.showbuilding1;
+    },
+    //点击-未生成-表格上门的--收缩栏
+    shownoBuildingClick:function(){
+      console.log('点击了-未生成上的div');
+      this.shownobuilding1=!this.shownobuilding1;
+    },
+    //点击施工日志的全选
+    allBuildingChange(){
+      if(this.buildChecked=='true'){
+          console.log('110');
+          this.$refs.multipleTable.clearSelection();//取消-已生成表格的全选  
+          this.$refs.nomultipleTable.clearSelection();
+      }else{
+          console.log('120');
+          this.$refs.multipleTable.toggleAllSelection();//取消-已生成表格的全选 
+          this.$refs.nomultipleTable.toggleAllSelection();
+      }
+    },
+
+
+    //节点对比--已生成-查看
+    buildingClick3(index,row){
+      console.log(index);
+      console.log(row);
+    },
+    //节点对比--已生成-下载
+    buildingDown3(index,row){
+      console.log(index);
+      console.log(row);
+    },
+    //节点对比-未生成--查看
+    nobuildingClick3(index,row){
+      console.log(index);
+      console.log(row);
+    },
+    //节点对比-未生成--下载
+    nobuildingDown3(index,row){
+      console.log(index);
+      console.log(row);
+    },
+    //点击加载更多----已生成
+    getMData3(){
+      let that = this;
+      that.loading3 = true;
+      //然后再掉查询接口
+    },
+    //点击加载更多----未生成
+    getNoData3(){
+      let that = this;
+      that.noloading3 = true;
+      //然后再掉查询接口
+    },
+    //点击-已生成-表格上门的--收缩栏
+    showBuildingClick3:function(){
+      console.log('点击了-已生成上的div');
+        this.showbuilding3=!this.showbuilding3;
+    },
+    //点击-未生成-表格上门的--收缩栏
+    shownoBuildingClick3:function(){
+      console.log('点击了-未生成上的div');
+      this.shownobuilding3=!this.shownobuilding3;
+    },
+    //点击节点对比的全选
+    allBuildingChange3(){
+      if(this.buildChecked=='true'){
+          console.log('110');
+          this.$refs.multipleTable3.clearSelection();//取消-已生成表格的全选  
+          this.$refs.nomultipleTable3.clearSelection();
+      }else{
+          console.log('120');
+          this.$refs.multipleTable3.toggleAllSelection();//取消-已生成表格的全选 
+          this.$refs.nomultipleTable3.toggleAllSelection();
+      }
+    },
+
+
+
+
+
+
+    },
+ 
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-intelligence-reports
+  width 100%
+  height 100%
+  font-size 18px
+  padding 20px
+  box-sizing border-box
+  background-color #F5F6FA
+  .intelligenec_left
+    width 886px
+    box-sizing border-box
+    height 968px
+    // boeder-right 1px solid #CDCDCE
+    boeder 1px solid #CDCDCE
+    float left
+    padding-top 12px
+    padding-right 20px
+
+  .intelligenec_left_head
+    font-weight  bold
+  .intelligenec_left_head_img
+    display inline-block
+    width 23px
+    height 23px
+    margin-right 16px
+  .intelligenec_left_body
+    height 680px
+    
+    padding-top 20px
+  .intelligenec_jump li
+    display inline-block
+    width 20%
+    height 40px
+    box-sizing border-box
+    border 1px solid #4775CA
+    border-right 0
+    color #4775CA
+    font-weight bold
+    font-size 18px
+    line-height 40px
+    text-align center
+    cursor pointer
+
+  // 表格最上面的样式
+  .intelligenec_left_div .intelligenec_building li
+    display inline-block
+    background-color  #435089
+    color #ffffff
+    height 40px
+    line-height 40px
+    text-align center
+  .intelligenec_expand
+    width 100%
+    height 40px
+    line-height 40px
+    background-color #ffffff
+    border 1px solid #EEEFF1
+    box-sizing border-box
+    padding-left 30px
+  .intelligenec_expand i 
+    margin-right 40px
+  .el-table .success-row 
+    background: #F4F6FF;
+  
+  .intelligenec_down_btn
+    margin-top 30px
+    color #ffffff
+    background rgba(71,117,202,1)
+    box-shadow 0px 3px 7px 0px rgba(161,192,250,1)
+    border-radius 4px
+    line-height 40px
+    font-size 18px
+    padding 11px 24px
+
+  .intelligenec_left_div .el-table td,.intelligenec_left_div .el-table th 
+    padding  5px 0 
+
+
+  .intelligenec_left_body li.active 
+    color #ffffff
+    background-color #4775CA
+
+  .intelligenec_left_body .intelligenec_left_border
+    border-right 1px solid #4775CA
+  .intelligenec_left_div
+    overflow-x hidden
+    overflow-y scroll
+    margin-top 30px
+    width 100%
+    height 730px
+
+    box-sizing border-box
+  .el-table .cell  
+    text-align center
+
+
+
+  .intelligenec_right
+    width 869px
+    box-sizing border-box
+    height 968px
+    border 1px solid #333
+    float left
+    padding-top 12px
+    padding-left 20px
+
+
+</style>

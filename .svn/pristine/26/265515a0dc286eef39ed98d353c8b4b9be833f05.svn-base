@@ -1,0 +1,193 @@
+// 接口
+import http from './request.js'
+/**
+ * 公共接口
+ */
+// 获取BIMFace的AccessToken接口
+export const GetAccessToken = params => {
+  return http.fetchGet('Home/GetAccessToken', params)
+}
+//登录接口
+export const Login = params => {
+  return http.fetchPost('Home/Login', params)
+}
+
+/**
+ * 模型相关
+ */
+//获取用户默认模型ID
+export const GetDefaultModelId = params => {
+  return http.fetchGet('Project/GetDefaultModelId', params)
+}
+// 获取ViewToken
+export const GetViewToken = params => {
+  return http.fetchGet('Model/GetViewToken', params)
+}
+
+/**
+ * 清单导入
+ */
+//施工图工程量清单导入
+export const BOQImport = params => {
+  return http.formDataUpLoad('ListImport/BOQImport', params)
+}
+//获取楼栋列表
+export const GetBuilding = params => {
+  return http.fetchGet('Element/GetBuilding', params)
+}
+//获取缓存中表数据
+export const GetBOQTempTable = params => {
+  return http.fetchGet('ListImport/GetBOQTempTable', params)
+}
+//确定导入 替换当前表单，新增表单
+export const SaveImport = (getParams, postParams) => {
+  return http.fetchPostAndGet('ListImport/SaveImport', getParams, postParams)
+}
+//获取所有的施工图工程量清单类型
+export const GetAllBOQType = params => {
+  return http.fetchGet('ListImport/GetAllBOQType', params)
+}
+//获取所有的施工图工程量清单楼层
+export const GetAllBOQFloor = params => {
+  return http.fetchGet('ListImport/GetAllBOQFloor', params)
+}
+//获取所有的施工图工程量清单构件
+export const GetAllBOQElement = params => {
+  return http.fetchGet('ListImport/GetAllBOQElement', params)
+}
+//根据楼栋获取施工图的楼层列表
+export const GetContructFloorbyBuilding = params => {
+  return http.fetchGet('Element/GetContructFloorbyBuilding', params)
+}
+//根据楼栋，类型 获取施工图的构件名称列表
+export const GetConstructElementNamebyBuilding = params => {
+  return http.fetchGet('Element/GetConstructElementNamebyBuilding', params)
+}
+//根据楼栋获取施工图的类型列表
+export const GetContructTypebyBuilding = params => {
+  return http.fetchGet('Element/GetContructTypebyBuilding', params)
+}
+//根据类型 楼层 构件名称 查询实施工图表数据列表
+export const GetBOQList = params => {
+  return http.fetchGet('ListImport/GetBOQList', params)
+}
+
+// 上传模型
+//添加建筑单体--更改建筑单体的时候发起请求
+export const AddSingBuilding = params => {
+  return http.fetchPostGet('Model/AddSingBuilding', params)
+}
+//获取建筑单体列表
+export const GetSingBuildingList = params => {
+  return http.fetchGet('Model/GetSingBuildingList', params)
+}
+//修改建筑单体
+export const UpdateSingBuilding = params => {
+  return http.fetchPostGet('Model/UpdateSingBuilding', params)
+}
+//删除建筑单体
+export const DeleteSingBuilding = params => {
+  return http.fetchPostGet('Model/DeleteSingBuilding', params)
+}
+//上传模型
+export const UploadBIMFaceAddModelFile = params => {
+  return http.fetchPost('Model/UploadBIMFaceAddModelFile', params)
+}
+
+/**
+ * 沟通管理
+ */
+// 保存沟通管理数据
+export const SaveCommunicate = params => {
+  return http.fetchPost('Communicate/SaveCommunicate', params)
+}
+
+
+
+/**
+ * 文件上传
+ */
+//上传Base64String 图片
+export const UploadBase64Img = params => {
+  return http.fetchPost('File/UploadBase64Img', params)
+}
+//图片上传
+export const UploadImages = params => {
+  return http.formDataUpLoad('File/UploadImages', params)
+}
+
+
+
+
+
+//认证设定
+//获取---方案类型列表
+export const SchemeTypeList = params => {
+  return http.fetchGet('AuthenticationSetting/SchemeTypeList', params)
+}
+//获取节点接口
+export const ToSetNodeList = params => {
+  return http.fetchGet('AuthenticationSetting/ToSetNodeList', params)
+}
+//获取  楼栋接口 
+export const SetGetBuilding = params => {
+  return http.fetchGet('Element/GetBuilding', params)
+}
+//获取认证设定任务列表
+export const GetAuthenSetTaskList = params => {
+  return http.fetchGet('AuthenticationSetting/GetAuthenSetTaskList', params)
+}
+
+
+
+
+
+
+// 案例
+//获取用户最近完成(月)接口
+// export const GetMonthRecentCompleted = params => {
+//   return http.fetchGet('Mobile/GetMonthRecentCompleted', params)
+// }
+//登录接口
+// export const Login = params => {
+//   return http.fetchPost('Home/Login', params)
+// }
+// // 根据（质量，安全，进度）动态ID删除动态表及动态照片表记录 ids
+// export const DeleteById = params => {
+//   return http.fetchPostGet('Dynamic/DeleteById', params)
+// }
+// //文件上传
+// export const UploadFiles = params => {
+//   return http.formDataUpLoad('File/UploadAndSaveMyFile', params)
+// }
+
+
+/**
+ * 进度规划
+ */
+// 获取列表
+export const Get_JDGH_List = params => {
+  return http.fetchGet('SchedulePlan/GetSchedule_PlanList', params)
+}
+// project 导入
+export const project_JDGH_push = (postParams) => {
+  return http.formDataUpLoad('SchedulePlan/SchedulePlanUpload', postParams)
+}
+// 删除选定
+export const delete_JDGH_push=(postParams)=>{
+  return http.fetchPostGet('SchedulePlan/DeleteByIds',postParams)
+}
+/** 构件相关api */
+// 获取构件清单数据
+export const GetAllElementList = params => {
+  return http.fetchGet('Element/GetAllElementList', params)
+}
+// 获取清单类型 0为未导入 1为施工图清单 2.全费用清单 3.构件生成清单
+export const GetCurrentListType = params => {
+  return http.fetchGet('ListImport/GetCurrentListType', params)
+}
+// 获取施工图清单导入中楼栋和导入类型（施工图下拉列表）
+export const GetBuildImportType = params => {
+  return http.fetchGet('ListImport/GetBuildImportType', params)
+}
+//

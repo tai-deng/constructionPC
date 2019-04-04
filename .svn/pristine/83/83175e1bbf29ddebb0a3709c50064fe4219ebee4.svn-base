@@ -1,0 +1,227 @@
+<template>
+  <div ref="gantt"></div>
+</template>
+
+<script>
+import "dhtmlx-gantt";
+import "dhtmlx-gantt/codebase/locale/locale_cn.js";
+import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_marker.js";
+
+export default {
+  name: "gantt",
+  props: {
+    tasks: {
+      type: Object,
+      default() {
+        return { data: [], links: [] };
+      }
+    }
+  },
+
+  methods: {
+    $_initGanttEvents: function() {
+      if (gantt.$_eventsInitialized) return;
+      gantt.attachEvent("onTaskSelected", id => {
+        let task = gantt.getTask(id);
+        this.$emit("task-selected", task);
+      });
+
+      gantt.attachEvent("onAfterTaskAdd", (id, task) => {
+        this.$emit("task-updated", id, "inserted", task);
+        task.progress = task.progress || 0;
+        if (gantt.getSelectedId() == id) {
+          this.$emit("task-selected", task);
+        }
+      });
+
+      gantt.attachEvent("onAfterTaskUpdate", (id, task) => {
+        this.$emit("task-updated", id, "updated", task);
+      });
+
+      gantt.attachEvent("onAfterTaskDelete", id => {
+        this.$emit("task-updated", id, "deleted");
+        if (!gantt.getSelectedId()) {
+          this.$emit("task-selected", null);
+        }
+      });
+
+      gantt.attachEvent("onAfterLinkAdd", (id, link) => {
+        this.$emit("link-updated", id, "inserted", link);
+      });
+
+      gantt.attachEvent("onAfterLinkUpdate", (id, link) => {
+        this.$emit("link-updated", id, "updated", link);
+      });
+
+      gantt.attachEvent("onAfterLinkDelete", (id, link) => {
+        this.$emit("link-updated", id, "deleted");
+      });
+      gantt.$_eventsInitialized = true;
+    },
+    addTask(task) {
+      // 添加一项新任务
+      gantt.addTask(task);
+    },
+
+    closeTask(id) {
+      // 关闭一个任务
+      gantt.close(id);
+    },
+    userLabelById(id){
+		for(var i = 0; i < this.tasks.length; i++){
+			if(this.tasks[i].data.id == id){
+				return this.tasks[i].data.text;
+			}
+		}
+		return "";
+	}
+
+  },
+  /**
+   * %D %d %Y %F %j %M
+   */
+  mounted() {
+    this.$_initGanttEvents(); // 分发所有事件
+    let _this= this;
+    let flag = 4;
+    if (flag == 1) {
+      gantt.config.scale_unit = "year"; //按年显示
+      gantt.config.step = 1; //设置时间刻度的步长(X轴)
+      gantt.config.date_scale = "%Y"; //日期尺度按年
+    } else if (flag == 2) {
+      gantt.config.scale_unit = "month"; //按月显示
+      gantt.config.date_scale = "%F, %Y"; //设置时间刻度的格式(X轴) 多个尺度
+      gantt.config.scale_height = 50; //设置时间刻度的高度和网格的标题
+      gantt.config.subscales = [
+        //指定第二个时间刻度
+        { unit: "day", step: 1, date: "%j, %D" }
+      ];
+    } else if (flag == 3) {
+      gantt.config.scale_unit = "day";
+      gantt.config.date_scale = "%d";  // 最后一项的格式
+      gantt.config.min_column_width = 40; // 最小宽度
+      gantt.config.duration_unit = "month";
+      gantt.config.scale_height = 70;
+      gantt.config.row_height = 28;       // 設置任務条行高
+      let weekScaleTemplate = (date)=> {
+        let dateToStr = gantt.date.date_to_str("%M%d");
+        let weekNum = gantt.date.date_to_str("(周%W)");
+        let endDate = gantt.date.add(
+          gantt.date.add(date, 1, "week"),
+          -1,
+          "day"
+        );
+        return (
+          dateToStr(date) + " - " + dateToStr(endDate)+ "" + weekNum(date)
+        );
+      };
+      gantt.config.subscales = [
+        {
+          unit: "month",
+          step: 1,
+          date: "%Y-%F"
+        },
+        {
+          unit: "week",
+          step: 1,
+          template: weekScaleTemplate
+        }
+      ];
+    }else if(flag== 4){
+      gantt.config.scale_unit = "month";
+      gantt.config.date_scale = "%Y, %F";
+      gantt.config.scale_height = 50;
+      gantt.config.min_column_width = 30; // 最小宽度
+      gantt.config.subscales = [
+        {unit: "day", step: 1, date: "%j"}
+      ];
+    }
+    gantt.templates.task_text = function(start, end, task) {// 模板可用于更改日期和标签的显示
+      return "<b>Text:</b> " + task.text + ",<b> Holders:</b> " + task.users;
+    };
+    gantt.config.order_branch = true; //实现拖插
+    gantt.config.order_branch_free = true;
+    gantt.config.order_branch = "marker";
+    gantt.config.smart_rendering = true;
+    gantt.templates.scale_row_class = function(scale) { return "day_scale"};
+    // 页面布局设置
+    gantt.config.layout = {
+      css: "gantt_container",
+      cols: [
+        {
+          width:500,
+          min_width: 400,
+          rows:[
+            {view: "grid", scrollX: "gridScroll", scrollable: true, scrollY: "scrollVer"},
+            {view: "scrollbar", id: "gridScroll", group:"horizontal"}
+            ]
+        },
+        {resizer: true, width: 1},
+        {
+          rows:[
+            {view: "timeline", scrollX: "scrollHor", scrollY: "scrollVer"},
+            {view: "scrollbar", id: "scrollHor", group:"horizontal"},
+          ]
+        },
+        {view: "scrollbar", id: "scrollVer"}
+      ],
+    };
+    // 左边标题设置
+    gantt.config.columns = [
+      {name: "wbs", align:'center',label: "序号", min_width: 40, width: 40, template: gantt.getWBSCode, resize:true},
+      {name: "text", align:'center', label: "任务列表", tree: true, min_width: 120, width: 180, resize:true},
+      {name: "start_date", label:"计划开始时间", align: "center", width: 100, resize:true},
+      {name: "end_date", label:"计划结束时间", align: "center", width: 100, template: function(task){
+          return gantt.templates.date_grid(task.end_date, task);
+        }, resize:true},
+      {name: "duration", align: "center",label:'工期', width: 80, resize:true},
+      {name: "type", label:"状态", align: "center", width: 80, template: function(task){return task.type || gantt.config.types.task}, resize:true},
+      {name: "add", label:'操作',width: 40}
+    ];
+    // 灯箱时间处理
+    gantt.templates.lightbox_header = function(start_date,end_date,task){
+        return gantt.templates.task_time(task.start_date, task.end_date, task)  +  "&nbsp;" +
+        (gantt.templates.task_text(task.start_date, task.end_date, task) || "").substr(0, 70);
+    };
+
+    gantt.init(this.$refs.gantt); // 初始化gantt 节点
+    gantt.parse(this.$props.tasks); // 解析任务数据
+
+    let a = gantt.calculateDuration({
+      // 项目持续时间
+      start_date: new Date("2013/02/15"),
+      end_date: new Date("2018/02/25")
+    });
+    console.log(a);
+  }
+};
+</script>
+
+<style>
+/* 加载gantt 样式 */
+@import "~dhtmlx-gantt/codebase/dhtmlxgantt.css";
+/* 右边标题背景/颜色 */
+.day_scale {
+  background-color: #b2b2b2;
+}
+.week_scale {
+  background-color: #666666;
+}
+.month_scale {
+  background-color: #333333;
+}
+.grid_header_class{
+  color: red;
+  background-color: #f1f1f1;
+}
+.gantt_task .gantt_task_scale .gantt_scale_cell {
+  color: #000000;
+}
+/* 左边标题背景/颜色 */
+.gantt_grid_scale{
+  background-color: #f1f1f1;
+}
+.gantt_grid_scale .gantt_grid_head_cell {
+  color: #000000;
+}
+</style>

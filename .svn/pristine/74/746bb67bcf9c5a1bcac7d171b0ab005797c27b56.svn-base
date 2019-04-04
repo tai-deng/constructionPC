@@ -1,0 +1,20 @@
+<!-- organization -->
+<template>
+ <div class='container-organization'>
+   <organization></organization>
+ </div>
+</template>
+
+<script type='textecmascript-6'>
+import organization from './module/interaction'
+export default {
+  name:'organizations',
+  components:{organization},
+}
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-organization
+  width 100%
+  height 100%
+  background-color rgba(245, 246, 250, 1)
+</style>

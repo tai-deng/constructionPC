@@ -1,0 +1,6 @@
+/**
+ * mutation.js 常量集
+ */
+export default{
+    GET_MODEL_BOX:'GET_MODEL_BOX',////模型状态
+}

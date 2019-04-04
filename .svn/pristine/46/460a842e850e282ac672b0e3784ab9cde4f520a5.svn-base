@@ -1,0 +1,219 @@
+<!-- 组织单位 -->
+<template>
+  <div class='container-organizational-unit'>
+    <div class='container-organizational_wrapper'>
+      <div class="collabora_title">Step3.1 组织单位</div>
+      <div class="company_div">
+        <div class="company_box">
+          <div class="company_item" v-for="item in companies" :key="item.index">
+            <p>{{item.title}}</p>
+            <!-- <p>{{item}}</p> -->
+            <el-form :model="item.dynamicValidateForm" ref="dynamicValidateForm" label-width="100px" class="demo-dynamic">
+              <el-form-item
+                :rules="{
+                  required: true, message: '单位名称不能为空', trigger: 'blur'
+                }"
+              >
+                <el-input v-model="item.dynamicValidateForm.companyInput" placeholder="请输入单位名称"></el-input><span @click="addDomain(item)" class="add_btn"></span>
+              </el-form-item>
+              <el-form-item
+                v-show="item.isNewadd==true?true:false"
+                v-for="(domain, index) in item.dynamicValidateForm.domains"
+                :key="domain.key"
+                :prop="'domains.' + index + '.value'"
+                :rules="{
+                  required: true, message: '单位名称不能为空', trigger: 'blur'
+                }"
+              >
+                <el-input v-model="domain.value" placeholder="请输入单位名称"></el-input><span @click.prevent="removeDomain(item,domain)" class="reduce_btn"></span>
+              </el-form-item>
+            </el-form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+export default {
+  data() {
+    return {
+      companies:[
+        {
+          title:'建设单位',
+          dynamicValidateForm: {
+            companyInput:'',
+            domains: [{
+              value: ''
+            }],
+          },
+          isNewadd:false,
+          time:0
+        },{
+          title:'勘察单位',
+          dynamicValidateForm: {
+            companyInput:'',
+            domains: [{
+              value: ''
+            }],
+          },
+          isNewadd:false,
+          time:0
+        },
+        {
+          title:'设计单位',
+          dynamicValidateForm: {
+            companyInput:'',
+            domains: [{
+              value: ''
+            }],
+          },
+          isNewadd:false,
+          time:0
+        },{
+          title:'监理单位',
+          dynamicValidateForm: {
+            companyInput:'',
+            domains: [{
+              value: ''
+            }],
+          },
+          isNewadd:false,
+          time:0
+        },
+        {
+          title:'施工单位',
+          dynamicValidateForm: {
+            companyInput:'',
+            domains: [{
+              value: ''
+            }],
+          },
+          isNewadd:false,
+          time:0
+        },{
+          title:'其他单位',
+          dynamicValidateForm: {
+            companyInput:'',
+            domains: [{
+              value: ''
+            }],
+          },
+          isNewadd:false,
+          time:0
+        }
+      ], 
+    }
+  },
+  methods: {
+    submitForm(formName) {
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          alert('submit!');
+        } else {
+          console.log('error submit!!');
+          return false;
+        }
+      });
+    },
+    // resetForm(formName) {
+    //   this.$refs[formName].resetFields();
+    // },
+    // 删除新增的input框
+    removeDomain(item,dom) {
+      var index = item.dynamicValidateForm.domains.indexOf(dom)
+      if (index !== -1) {
+        item.dynamicValidateForm.domains.splice(index, 1)
+      }
+      item.time--
+      console.log("删除次数",item.time)
+    },
+    // 新增input框
+    addDomain(obj) {
+      console.log(obj)
+      obj.time++
+      if(obj.time>1){
+        obj.dynamicValidateForm.domains.push({
+          value: '',
+          key: Date.now()
+        });
+      }
+      obj.isNewadd = true
+      console.log("增加次数",obj.time)
+    }
+  }
+}
+
+</script>
+<style lang='stylus' scoped  rel='stylesheet/stylus'>
+.container-organizational-unit
+  width 25%
+  height  100%
+  display inline-block
+  background-color #ffffff
+  float left
+  box-sizing border-box
+  .container-organizational_wrapper
+    height 100%
+    .collabora_title
+      background #435089
+      height 40px
+      line-height 40px
+      padding 0 20px
+      font-size 18px
+      color #fff
+      font-weight 400
+    .company_div
+      overflow hidden
+      width 100%
+      height 90%
+      .company_box
+        display box 
+        box-sizing border-box
+        padding 13px 20px 0
+        height 100%
+        overflow auto
+        width 100%
+        .company_item
+          margin-bottom 17px
+          p
+            font-size 18px
+            color #333333
+            margin-bottom 18px
+          .el-form-item__content
+            span 
+              display inline-block
+              vertical-align top
+              float right
+              width 40px
+              height 40px
+            span.reduce_btn
+              background url('../../../../assets/icons/reduce.png') center center no-repeat
+            span.add_btn 
+              background url('../../../../assets/icons/add.png') center center no-repeat
+</style>
+<style>
+.container-organizational-unit .el-form-item__content{margin-left: 0!important;}
+.container-organizational-unit .el-input{width: 88%}
+.container-organizational-unit .el-input__inner{height:40px;background:#F8F8F8;border:1px solid #E5E5E5;border-radius:4px;font-size:18px;padding:0 20px}
+
+.company_box::-webkit-scrollbar{
+  /*滚动条整体样式*/
+  width: 6px; /*高宽分别对应横竖滚动条的尺寸*/
+  height: 1px;
+}
+.company_box::-webkit-scrollbar-thumb{
+  /*滚动条里面小方块*/
+  border-radius: 10px;
+  width: 5px;
+  -webkit-box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.1);
+  background: #ccc;
+}
+.company_box::-webkit-scrollbar-track{
+  /*滚动条里面轨道*/
+  -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background: #ededed;
+}
+</style>

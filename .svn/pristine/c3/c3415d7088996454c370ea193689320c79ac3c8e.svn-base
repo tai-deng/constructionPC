@@ -1,0 +1,914 @@
+<!-- 认证设定SetAuthentication -->
+<template>
+  <div class="container_set_authentication">
+    <!-- 左边 -->
+    <div class="authent_left">
+      <div class="authent_left_head">
+        <el-select class="authent_left_head_select" @change='changeBuilding' v-model="allSelect" placeholder="选择建筑单体">
+          <el-option
+            v-for="item in authentSelect"
+            :key="item.id"
+            :label="item.text"
+            :value="item.id"
+          ></el-option>
+        </el-select>
+        <el-button class="authent_left_head_btn" :disabled="disShow" @click="timeToShow()">认证设定</el-button>
+      </div>
+      <div class="authent_left_body">
+
+        <el-table
+          ref="multipleTable"
+          :data="tableData3"
+          tooltip-effect="dark"
+          style="width: 100%;"
+          id="my_table_set"
+          @selection-change="handleSelectionChange"
+          :row-class-name="tableRowClassName"
+          :header-cell-style="{'background-color':'#435089','color':'#ffffff'}">
+          <el-table-column type="expand" accordion>
+
+            <template slot-scope="scope">
+              <el-table
+                :data="scope.row.children"
+                style="width:100%;margin-left:5%"
+                :show-header="false"
+                @row-click="rowClick">
+                <el-table-column type="selection"></el-table-column>
+                <el-table-column type="index" :index="indexChildMethod">
+                </el-table-column>
+                <el-table-column prop="name"></el-table-column>
+                <el-table-column prop="date"></el-table-column>
+                <el-table-column prop="days"></el-table-column>
+              </el-table>
+            </template>
+
+          </el-table-column>
+          <el-table-column type="selection" ></el-table-column>
+          <el-table-column label="序号" type="index" :index="indexMethod"></el-table-column>
+          <el-table-column prop="name" label="任务名称" sortable></el-table-column>
+          <el-table-column prop="date" label="计划结束时间"></el-table-column>
+          <el-table-column prop="days" label="工期"></el-table-column>
+        </el-table>
+
+
+
+
+      </div>
+    </div>
+
+    <!-- 中间----模型 -->
+    <div class="authent_middle"></div>
+
+    <!-- 右边--弹出框 -->
+    <div class="authent_right" id="authent_right1">
+      <div class="authent_right_title">
+        认证设定
+        <span class="authent_right_span" @click="timeToClose()">取消</span>
+        <span class="authent_right_span" v-if="showTitle">编辑</span>
+      </div>
+      <div class="authent_right_body">
+
+
+        <!-- 施工方案（可以增减的部分）-->
+        <div class="authent_right_div" v-for="(list,index) in addbuildType" v-bind:key="list.index">
+          <div class="authent_right_div_title">
+            施工方案
+              <i v-show="index==0?true:false" class="authent_right_div_img"  @click="addBuild()">
+                <img src="../../../assets/imgs/model_add.svg" alt=''>
+              </i>
+              <i  v-show="index==0?false:true " class='draw_image'  v-on:click='addbuildType.splice(index, 1)'>
+                   -
+              </i>
+          </div>
+          <div class="authent_right_div_box">
+            <div class="list_div">
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">方案名称:</span>
+                </el-col>
+                <el-col :span="18">
+                  <el-input v-model="list.buildName"></el-input>
+                </el-col>
+              </el-row>
+
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">方案类型:</span>
+                </el-col>
+                <el-col :span="18">
+                  <el-select class="box_select" v-model="list.buildFileType" placeholder="上传的文件类型">
+                    <el-option
+                      v-for="item in fileType"
+                       :key="item.id"
+                      :label="item.text"
+                      :value="item.id"
+                    ></el-option>
+                  </el-select>
+                </el-col>
+              </el-row>
+
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">认证时间:</span>
+                </el-col>
+                <el-col :span="8">
+                  <el-date-picker
+                    class="box_select_day"
+                    v-model="list.buildTime"
+                    type="date"
+                    placeholder="选择日期"
+                  ></el-date-picker>
+                </el-col>
+                <el-col :span="5" class="box_right">
+                  <span class="box_span">逾期提醒:</span>
+                </el-col>
+                <el-col :span="5">
+                  <el-input v-model="list.buildDay" type="number" min="0">
+                    <i slot="suffix" class="box_input_day">天</i>
+                  </el-input>
+                </el-col>
+              </el-row>
+
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">模型关联:</span>
+                </el-col>
+                <el-col :span="18">
+                  <i class="box_relative_img" v-if="list.isRelation">
+                    <img src="../../../assets/imgs/unRelation.png" alt>
+                  </i>
+                  <i class="box_relative_img" v-if="!list.isRelation">
+                    <img src="../../../assets/imgs/allRelation.png" alt>
+                  </i>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </div>
+
+       
+        <!-- 技术交底（可以增减的部分） -->
+        <div class="authent_right_div" v-for="(list,index) in addtechnology" v-bind:key="list.index">
+          <div class="authent_right_div_title">
+            技术交底
+            <i v-show="index==0?true:false" class="authent_right_div_img" @click="addTech()">
+              <img src="../../../assets/imgs/model_add.svg" alt>
+            </i>
+            <i v-show="index==0?false:true" class='draw_image'  v-on:click='addtechnology.splice(index, 1)'>
+                   -
+            </i>
+          </div>
+          <div class="authent_right_div_box">
+            <div class="list_div">
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">方案名称:</span>
+                </el-col>
+                <el-col :span="18">
+                  <el-input v-model="list.buildName"></el-input>
+                </el-col>
+              </el-row>
+
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">方案类型:</span>
+                </el-col>
+                <el-col :span="18">
+                  <el-select class="box_select" v-model="list.buildFileType" placeholder="上传的文件类型">
+                    <el-option
+                      v-for="item in fileType"
+                      :key="item.id"
+                      :label="item.text"
+                      :value="item.id"
+                    ></el-option>
+                  </el-select>
+                </el-col>
+              </el-row>
+
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">认证时间:</span>
+                </el-col>
+                <el-col :span="8">
+                  <el-date-picker
+                    class="box_select_day"
+                    v-model="list.buildTime"
+                    type="date"
+                    placeholder="选择日期"
+                  ></el-date-picker>
+                </el-col>
+                <el-col :span="5" class="box_right">
+                  <span class="box_span">逾期提醒:</span>
+                </el-col>
+                <el-col :span="5">
+                  <el-input v-model="list.buildDay" type="number" min="0">
+                    <i slot="suffix" class="box_input_day">天</i>
+                  </el-input>
+                </el-col>
+              </el-row>
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">模型关联:</span>
+                </el-col>
+                <el-col :span="18">
+                  <i class="box_relative_img" v-if="list.isRelation">
+                    <img src="../../../assets/imgs/unRelation.png" alt>
+                  </i>
+                  <i class="box_relative_img" v-if="!list.isRelation">
+                    <img src="../../../assets/imgs/allRelation.png" alt>
+                  </i>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </div>
+
+        
+        <!-- 工序验收（可以增减的部分） -->
+        <div class="authent_right_div" v-for="(list,index) in addprocess" v-bind:key="list.index">
+          <div class="authent_right_div_title">
+            工序验收
+            <i v-show="index==0?true:false" class="authent_right_div_img" @click="addpro()">
+              <img src="../../../assets/imgs/model_add.svg" alt>
+            </i>
+            <i v-show="index==0?false:true" class='draw_image'  v-on:click='addprocess.splice(index, 1)'>
+                   -
+            </i>
+          </div>
+          <div class="authent_right_div_box">
+            <div class="list_div">
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">方案名称:</span>
+                </el-col>
+                <el-col :span="18">
+                  <el-input v-model="list.buildName"></el-input>
+                </el-col>
+              </el-row>
+
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">方案类型:</span>
+                </el-col>
+                <el-col :span="18">
+                  <el-select class="box_select" v-model="list.buildFileType" placeholder="上传的文件类型">
+                    <el-option
+                      v-for="item in fileType"
+                      :key="item.id"
+                      :label="item.text"
+                      :value="item.id"
+                    ></el-option>
+                  </el-select>
+                </el-col>
+              </el-row>
+
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">认证时间:</span>
+                </el-col>
+                <el-col :span="8">
+                   <!-- :picker-options="pickerTime" 认证时间-->
+                  <el-date-picker
+                    class="box_select_day"
+                    v-model="list.buildTime"
+                    type="date"
+                    placeholder="选择日期"
+                  ></el-date-picker>
+                </el-col>
+                <el-col :span="5" class="box_right">
+                  <span class="box_span">逾期提醒:</span>
+                </el-col>
+                <el-col :span="5">
+                  <el-input v-model="list.buildDay" type="number" min="0">
+                    <i slot="suffix" class="box_input_day">天</i>
+                  </el-input>
+                </el-col>
+              </el-row>
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">模型关联:</span>
+                </el-col>
+                <el-col :span="18">
+                  <i class="box_relative_img" v-if="list.isRelation">
+                    <img src="../../../assets/imgs/unRelation.png" alt>
+                  </i>
+                  <i class="box_relative_img" v-if="!list.isRelation">
+                    <img src="../../../assets/imgs/allRelation.png" alt>
+                  </i>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </div>
+
+      
+        
+        <!-- 物资采购 （可以增减的部分-->
+        <div class="authent_right_div" v-for="(list,index) in addSupplies" v-bind:key="list.index">
+          <div class="authent_right_div_title">
+            物资采购
+            <i   v-show="index==0?true:false" class="authent_right_div_img" @click="addSup()">
+              <img src="../../../assets/imgs/model_add.svg" alt>
+            </i>
+            <i v-show="index==0?false:true" class='draw_image'  v-on:click='addSupplies.splice(index, 1)'>
+                   -
+            </i>
+          </div>
+          <div class="authent_right_div_box">
+            <div class="list_div">
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">采购时间:</span>
+                </el-col>
+                <el-col :span="18">
+                  <el-date-picker
+                    class="box_select_day"
+                    v-model="list.buildTime"
+                    type="date"
+                    placeholder="选择日期"
+                  ></el-date-picker>
+                </el-col>
+              </el-row>
+
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">模型关联:</span>
+                </el-col>
+                <el-col :span="8">
+                  <i class="box_relative_img" v-if="list.isRelation">
+                    <img src="../../../assets/imgs/unRelation.png" alt>
+                  </i>
+                  <i class="box_relative_img" v-if="!list.isRelation">
+                    <img src="../../../assets/imgs/allRelation.png" alt>
+                  </i>
+                </el-col>
+                <el-col :span="5"  class="box_right">
+                  <span class="box_span">逾期提醒:</span>
+                </el-col>
+                <el-col :span="5">
+                  <el-input v-model="list.buildDay" type="number" min="0">
+                    <i slot="suffix" class="box_input_day">天</i>
+                  </el-input>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </div>
+
+     
+        
+        <!-- 认证对比（可以增减的部分）addLastChange -->
+        <div class="authent_right_div"  v-for="(list,index) in addLastChange" v-bind:key="list.index">
+          <div class="authent_right_div_title">
+            认证对比
+            <i v-show="index==0?true:false" class="authent_right_div_img" @click="addLast()">
+              <img src="../../../assets/imgs/model_add.svg" alt>
+            </i>
+            <i v-show="index==0?false:true" class='draw_image'  v-on:click='addLastChange.splice(index, 1)'>
+                   -
+            </i>
+          </div>
+          <div class="authent_right_div_box">
+            <div class="list_div">
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">对比时间:</span>
+                </el-col>
+                <el-col :span="18">
+                  <el-date-picker
+                    class="box_select_day"
+                    v-model="list.buildTime"
+                    type="date"
+                    placeholder="选择日期"
+                  ></el-date-picker>
+                </el-col>
+              </el-row>
+
+              <el-row>
+                <el-col :span="5" :offset="14" class="box_right">
+                  <span class="box_span">逾期提醒:</span>
+                </el-col>
+                <el-col :span="5">
+                  <el-input v-model="list.buildDay" type="number" min="0">
+                    <i slot="suffix" class="box_input_day">天</i>
+                  </el-input>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </div>
+
+        <div class="authent_right_footer">
+          <el-button class="box_footer_btn_none" @click="timeToClose()">取消</el-button>
+          <el-button class="box_footer_btn">确认</el-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import {SchemeTypeList,ToSetNodeList,SetGetBuilding,GetAuthenSetTaskList} from '@/api/api.js'
+export default {
+  data() {
+    return {
+      authentSelect: [
+        { value: "0", label: "A1栋-计划进度" },
+        { value: "1", label: "A2栋-计划进度" }
+      ],
+      allSelect: "", //选择建筑下拉
+      // 表格数据
+      tableData3: [
+        {
+          date: "2016-05-03",
+          name: "施工组织计划1",
+          days: "32",
+          children: [
+            {
+              date: "2016-05-02",
+              name: "子组织计划1",
+              days: "28"
+            },
+            {
+              date: "2016-05-02",
+              name: "子组织计划1",
+              days: "28"
+            }
+          ]
+        },
+        {
+          date: "2016-05-02",
+          name: "施工组织计划2",
+          days: "28",
+        },
+        {
+          date: "2016-05-04",
+          name: "施工组织计划3",
+          days: "16",
+          children: [
+            {
+              date: "2016-05-02",
+              name: "子组织计划3",
+              days: "28"
+            },
+            {
+              date: "2016-05-02",
+              name: "子组织计划3",
+              days: "28"
+            }
+          ]
+        }
+      ],
+      // selectPeople: [],//存储被选择的任务
+      // isOpenItem: [],//控制没记面板的打开与折叠
+      // isSelectAll: [],//控制每级面板的选中状态
+
+      multipleSelection: [],
+      //右边悬浮窗口头部点击按钮--未设定的时候按钮（编辑）不显示，已经设定了的 按钮（编辑）就显示
+      showTitle: true,
+      //未设定的时候  设定按钮就显示true, 未设定的时候显示false
+      disShow: false,
+
+    
+      //右边悬浮窗口-施工方案（增减部分）
+      addbuildType: [
+        {
+        buildName: "", //方案名称
+        buildFileType: "", //方案类型
+        buildDay: "", //逾期天数
+        buildTime: "", //认证时间
+        isRelation: false //是否关联模型
+      }
+      ],
+
+      
+      //右边悬浮窗口-技术交底（增减部分）
+      addtechnology: [{
+        buildName: "", //方案名称
+        buildFileType: "", //方案类型
+        buildDay: "", //逾期天数
+        buildTime: "", //认证时间
+        isRelation: false //是否关联模型
+      }],
+
+      
+      //右边悬浮窗口-工序验收（增减部分）
+      addprocess: [ {
+        buildName: "", //方案名称
+        buildFileType: "", //方案类型
+        buildDay: "", //逾期天数
+        buildTime: "", //认证时间
+        isRelation: false //是否关联模型
+      }],
+
+      //右边悬浮窗口-物资采购（增减部分）
+      addSupplies: [ {
+        buildTime: "", //方案类型
+        buildDay: "", //逾期天数
+        isRelation: false //是否关联模型
+      }],
+
+      
+      //右边悬浮窗口-认证对比（增减部分）
+      addLastChange:[{
+        buildTime:'',//对比时间
+         buildDay: "", //逾期天数
+      }],
+
+      // pickerTime: {
+      //   //所有的认证时间不能大于今天
+      //   disabledDate(time) {
+      //     return time.getTime() > Date.now();
+      //   }
+      // },
+      //右边悬浮窗口-上传的方案类型
+      fileType: [ ]
+    };
+  },
+  //加载列表数据的时候把children中的数据保存到tableData中，并在折叠的时候分别显示
+  created(){
+      //获取方案类型的列表
+      this.Request(SchemeTypeList()).then(res=>{
+        if(res.StatusCode===200){
+          this.fileType=res.Detiel
+        }else{
+          this.$message({type:'error',message:res.Message,center:'true'})
+        }
+      })
+      //获取节点接口 ToSetNodeList
+      this.Request(ToSetNodeList()).then(res=>{
+        console.log(res);
+        // 0: {Value: 0, Text: "施工方案"}
+        // 1: {Value: 1, Text: "技术交底"}
+        // 2: {Value: 2, Text: "工序验收"}
+        // 3: {Value: 3, Text: "物资采购"}
+        // 4: {Value: 4, Text: "认证比对"}
+        
+      
+      })
+      //获取-建筑单体-列表 SetGetBuilding
+      this.Request(SetGetBuilding({projectid:localStorage.getItem('projectid')})).then(res=>{
+        console.log(res);
+        if(res.StatusCode===200){
+          this.authentSelect=res.Detiel
+        }else{
+          this.$message({type:'error',message:res.Message,center:'true'})
+        }
+      })
+
+
+
+  },
+  methods: {
+    //表格
+    toggleSelection(rows) {
+      if (rows) {
+        rows.forEach(row => {
+          this.$refs.multipleTable.toggleRowSelection(row);
+        });
+      } else {
+        this.$refs.multipleTable.clearSelection();
+      }
+    },
+    //点击外面的表格获取这一行及前面的数据
+    handleSelectionChange(val) {
+      this.multipleSelection = val;
+    },
+    //表格序号
+    indexMethod(index) {
+      return index + 1;
+    },
+    //折叠中表格的序号---无法获取最外曾表格的序号
+    indexChildMethod(index) {
+      return index * 0.1 + 0.1;
+    },
+    tableRowClassName({ row, rowIndex }) {
+      row.index = rowIndex;
+    },
+
+    // singleClick(row){
+    //   // console.log(selection);
+    //   console.log(row);
+    // },
+    // checkboxclick(e){//获取的是小表格中已经选中的数据[{},{}]
+    //   console.log(e);
+    // },
+
+    changecheckBox(){
+        console.log('110');
+    },
+
+    //获取方案
+
+
+
+
+
+
+
+
+    //点击表格中折叠的小表格中的一行时候---打开右悬浮列表（没有传值和改变值）
+    rowClick(row, event, column) {
+      console.log(row); //获取这一行的数据（day,time,name）
+      document.querySelector("#authent_right1").className =
+        "authent_right authent_right_width";
+    },
+    
+    //点击认证设定按钮---右侧悬浮的框加width
+    timeToShow: function() {
+      document.querySelector("#authent_right1").className =
+        "authent_right authent_right_width";
+    },
+    timeToClose: function() {
+      document.querySelector("#authent_right1").className = "authent_right";
+    },
+
+    //添加新的施工方案
+    addBuild: function() {
+      var arr = {
+        buildName: "", //方案名称
+        buildFileType: "", //方案类型
+        buildDay: "", //逾期天数
+        buildTime: "",
+        isRelation: false
+      };
+      this.addbuildType.push(arr);
+    },
+    //添加新的技术交底
+    addTech: function() {
+      var arr = {
+        buildName: "", //方案名称
+        buildFileType: "", //方案类型
+        buildDay: "", //逾期天数
+        buildTime: "",
+        isRelation: false
+      };
+      this.addtechnology.push(arr);
+    },
+    //添加新的工序验收
+    addpro: function() {
+      var arr = {
+        buildName: "", //方案名称
+        buildFileType: "", //方案类型
+        buildDay: "", //逾期天数
+        buildTime: "",
+        isRelation: false
+      };
+      this.addprocess.push(arr);
+    },
+    //添加新的物资采购
+    addSup: function() {
+      var arr = {
+        buildFileType: "", //方案类型
+        buildDay: "" //逾期天数
+      };
+      this.addSupplies.push(arr);
+    },
+    //添加新的认证对比
+    addLast:function(){
+      var arr = {
+         buildTime:'',//对比时间
+         buildDay: "", //逾期天数
+      };
+      this.addLastChange.push(arr);
+    },
+    //切换建筑单体的时候--更换列表-----未对接完--后台传的是名字并非id
+    changeBuilding(){
+      console.log(this.allSelect);
+      this.Request(GetAuthenSetTaskList({BuildingID:this.allSelect})).then(res=>{
+        console.log(res);
+        // if(res.StatusCode===200){
+        //   this.tableData3=res.Detiel
+        // }else{
+        //   this.$message({type:'error',message:res.Message,center:'true'})
+        // }
+      })
+    },
+
+
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container_set_authentication
+  width 100%
+  height 100%
+  background-color #F5F6FA
+  padding 10px 20px
+  box-sizing border-box
+  float left
+  .select_data_img_i
+    background-img url(../../../assets/imgs/data_time.png) no-repeat
+    background-color #435089
+
+  .authent_left
+    width 600px
+    height 872px
+    box-sizing border-box
+    display inline-block
+
+    .authent_left_head
+      .authent_left_head_select
+        margin-right 30px
+        width 320px
+
+      .authent_left_head_btn
+        color #ffffff
+        background-color #FDA143
+        border-radius 5px
+        height 48px
+        width 120px
+        vertical-align middle
+        font-size 20px
+        float right
+
+      .authent_left_head_btn:hover, .authent_left_head_btn:focus
+        border 1px solid #FDA143
+
+      .authent_left_head_btn[disabled]
+        background-color #DDDDDD
+
+    .authent_left_body
+      margin-top 20px
+      background-color #ffffff
+      height 950px
+      box-sizing border-box
+      border 1px solid #EEEEF1
+
+      #my_table_set .el-table th
+        background-color #435089 !important
+        font-size 18px
+        color #ffffff
+
+  // 中间的模型位置
+  .authent_middle
+    width 69%
+    height 100%
+    box-sizing border-box
+    display inline-block
+    float right
+
+  .authent_right
+    width 0
+    height 1200px
+    overflow-y scroll
+    overflow-x hidden
+    border 1px solid #EEEEF1
+    position fixed
+    right 0
+    top 90px
+    box-sizing border-box
+    background-color #ffffff
+    font-size 18px
+
+    .authent_right_title
+      background-color #435089
+      color #ffffff
+      padding-left 20px
+      width 100%
+      height 50px
+      line-height 50px
+
+      .authent_right_span
+        color #F59D45
+        cursor pointer
+        display inline-block
+        width 50px
+        height 50px
+        margin-right 20px
+        float right
+        text-align center
+
+    .authent_right_body
+      width 100%
+      height 100%
+      box-sizing border-box
+      padding-left 8px
+      padding-right 8px
+      padding-bottom 8px
+
+      .authent_right_div
+        border-bottom 2px solid #F4F4F4
+        padding-top 20px
+
+        .authent_right_div_title
+          font-weight bolder
+          font-size  20px
+          height 50px
+          line-height 50px
+          padding-left 10px
+          box-sizing border-box
+          .authent_right_div_img
+            display inline-block
+            width 40px
+            height 40px
+            margin-left 30px
+            cursor pointer
+            float right
+            margin-right 60%
+          .draw_image 
+            display inline-block
+            width 40px
+            height 40px
+            margin-left 30px
+            cursor pointer
+            float right
+            margin-right 58%
+            border 3px solid #435089
+            line-height 35px
+            margin-top 5px
+            text-align center
+            border-radius 8px
+            box-sizing border-box
+            font-size 25px
+
+        .authent_right_div_box
+          padding-bottom 20px
+          height 100%
+
+          .list_div>div
+            padding-top 10px
+
+            .box_right
+              text-align right
+
+            .box_span
+              position relative
+              top 8px
+
+            .box_select
+              width 100%
+
+            .box_select_day
+              width 100%
+
+            .box_relative_img
+              border 1px solid #E6E6E6
+              display inline-block
+              width 40px
+              height 40px
+              padding 9px
+              box-sizing border-box
+              background-color #F8F8F8
+              cursor pointer
+
+            .box_input_day
+              background-color #435089
+              color #ffffff
+              font-style normal
+              line-height 40px
+              border-radius 0px 4px 4px 0px
+              padding 10px
+              position relative
+              left 5px
+
+      .authent_right_footer
+        width 100%
+        height 80px
+        padding 20px
+        text-align center
+
+        .box_footer_btn
+          color #ffffff
+          background-color #4775CA
+          border-radius 5px
+          font-size 18px
+          padding 10px 20px
+
+        .box_footer_btn_none
+          color #ffffff
+          background-color #999999
+          border-radius 5px
+          font-size 18px
+          padding 10px 20px
+
+  .authent_right_width
+    width 525px
+</style>
+<style>
+    .box_select .el-input__suffix ,.authent_left_head .el-input__suffix{
+        background: rgba(67, 80, 137, 1);
+        border-radius: 0px 4px 4px 0px;
+        right: 0;
+        width: 40px;
+    }
+
+    .box_select .el-icon-arrow-up:before ,.authent_left_head .el-icon-arrow-up:before {
+        content: "\e60c";
+        color: rgba(255, 255, 255, 1);
+    }
+    /* .box_select_day  e921 事件选择器的样式*/ 
+    /* .box_select_day .el-icon-arrow-up:before {
+      content: "\e921";
+      color: rgba(255, 255, 255, 1);
+    }
+    .box_select_day .el-input__suffix {
+      background: rgba(67, 80, 137, 1);
+      border-radius: 0px 4px 4px 0px;
+      right: 0;
+      width: 40px;
+    } */
+    .box_select {
+        vertical-align: text-top;
+    }
+</style>

@@ -1,0 +1,7 @@
+/**
+ * 获取状态
+ */
+export default{
+    getModelBox: state => state.modelBox,//模型状态
+    getIsViewAdded: state => state.isViewAdded,//模型是否加载完成
+}

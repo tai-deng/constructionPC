@@ -1,0 +1,25 @@
+<!-- 成本管理cost -->
+<template>
+ <div class='container-cost'>
+ <div class='wrapper'>
+   {{data}}
+ </div>
+ </div>
+</template>
+
+<script type='textecmascript-6'>
+export default {
+ data() {
+   return {
+ data: '成本管理cost'
+   }
+ },
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-cost
+  width 100%
+  height 100%
+</style>

@@ -1,0 +1,50 @@
+
+<template>
+  <div class="container-schedule-planning">
+    <div class="wrapper">
+      <five
+      @sel-model='selModel'></five>
+    </div>
+    <fiveModul :selModel='selModelValue'></fiveModul>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import five from "./fiveDsimulation_components/fiveHead";
+import fiveModul from "./fiveDsimulation_modules/fiveD_modules";
+
+export default {
+  name: "schedulePlanning",
+  components: {
+    five,
+    fiveModul
+  },
+  props: {
+    selectSchedule: {
+      type: Object,
+      default() {
+        return {};
+      }
+    },
+    ganttOrChartsData: Array
+  },
+  methods:{
+    selModel(v){
+      this.selModelValue= v;
+    }
+  },
+  data() {
+    return {
+      data: "5d",
+      selModelValue:null,
+    };
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+
+.container-schedule-planning {
+  width: 100%;
+  height: 100%;
+}
+</style>

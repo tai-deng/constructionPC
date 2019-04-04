@@ -1,0 +1,75 @@
+/**
+ * 全费用清单导入
+ */
+import { GetCostTempData, GetAllFeeListFloor } from "@/api/api.js";
+export default {
+	methods: {
+		/**
+		 * 获取全费用表数据
+		 * @param {*} pageSize 
+		 * @param {*} pageIndex 
+		 * @param {*} projectid 
+		 * @param {*} userid 
+		 * @param {*} buildname 
+		 */
+		CostTempData(pageSize, pageIndex, projectid, userid, buildname) {
+			this.load()
+			return new Promise(resolve => {
+				this.Request(GetCostTempData({ pageSize, pageIndex, projectid, userid, buildname })).then(res => {
+					console.log(res)
+					if (res.StatusCode === 200) {
+						this.$toast.clear()
+						resolve(res)
+					} else {
+						this.$toast.clear()
+						reject(new Error(res.Message))
+					}
+				})
+			})
+		},
+		/**
+		 * 全费用清单导入
+		 */
+		costData() {
+			let userid = Number(localStorage.getItem("userId"));
+			let buildname = localStorage.getItem("Building");
+			this.CostTempData(
+				this.pageSize,
+				this.pageIndex,
+				this.projectid,
+				userid,
+				buildname
+			).then(res => {
+				this.tableData1 = res.Detiel;
+				this.Count = res.Count
+			});
+		},
+		/**
+		 * 选择了哪个费用清单选项
+		 */
+		onCostImport(index, checked, text) {
+			console.log(index, checked, text);
+			if (checked) {
+				this.costImportList[index - 1] = text;
+			} else {
+				this.costImportList[index - 1] = null;
+			}
+			console.log(this.costImportList);
+		},
+
+		/**
+		 * 获取全费用清单楼层
+		 * @param {*} projectid 
+		 */
+		getCostFloors(projectid) {
+			return new Promise(resolve => {
+				this.Request(GetAllFeeListFloor({ projectid })).then(res => {
+					console.log(res)
+					if (res.StatusCode == 200) {
+						resolve(res)
+					}
+				})
+			})
+		}
+	}
+}

@@ -1,0 +1,93 @@
+.flex-between
+  display flex
+  justify-content space-between
+
+.flex
+  display flex
+
+.material-need-container
+  padding 18px
+  width 100%
+  height 100%
+  box-sizing border-box
+  background-color rgba(245, 246, 251, 1)
+
+  .model-wrapper, .form-wrapper
+    width 50%
+
+  .form-wrapper
+    background #fff
+
+    .title
+      position relative
+      background #435089
+      text-align center
+      color #fff
+      font-size 20px
+      line-height 40px
+      height 40px
+
+      .hiden-material
+        position absolute
+        right 10px
+        top 50%
+        transform translateY(-50%)
+
+    .content
+      padding 20px
+
+      .teble-wrapper
+
+        tr th
+          background #435089
+
+          .cell
+            color #fff
+
+.material-structure .timeline .ico-wrapper .line
+  height: 1px
+.material-structure .el-button--success
+  background: #4775CA !important
+.material-structure .el-button
+  padding: 10px 30px
+
+.material-structure .el-button--text
+  padding 0
+  color #333333
+  font-size 18px
+
+.material-structure .el-icon-refresh
+  color #435089
+
+.material-speed .el-select .el-input--suffix input
+    background: #fff
+
+.material-speed .el-select .el-input--suffix .el-input__suffix
+  right 0
+  width 50px
+  background: #44508a;
+  border-radius: 0 0.066667rem 0.066667rem 0;
+  
+.material-speed .el-select .el-input--suffix .el-input__suffix .el-select__caret
+  color: #fff
+
+ .material-speed .el-select .el-input__suffix 
+    right: 0;
+    background: #44508a;
+    border-radius: 0 0.066667rem 0.066667rem 0;
+
+ .material-speed .el-select .el-input__suffix-inner .el-select__caret::before
+    content: "\E60C";
+    font-size: 0.32rem;
+ .material-speed .table-input .el-input__inner, .table-input .el-checkbox__inner 
+    background: #f0f0f0;
+    text-align: center;
+ .material-speed .el-input--prefix .el-input__inner
+  background: #f0f0f0;
+.material-need-container .form-wrapper .content .teble-wrapper tr th 
+    text-align: center;
+.material-need-container .form-wrapper .content .teble-wrapper tr td
+  text-align: center;
+ .material-need-container .el-table--border td,.material-need-container .el-table--border th,.material-need-container .el-table__body-wrapper .el-table--border.is-scrolling-left~.el-table__fixed {
+   border-right: 0
+}

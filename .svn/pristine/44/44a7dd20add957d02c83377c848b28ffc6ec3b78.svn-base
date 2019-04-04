@@ -1,0 +1,27 @@
+/**
+ * 同步
+ */
+import types from './mutation-types.js'
+console.log(types.GET_MODEL_BOX)
+export default{
+    /**
+     * 模型状态
+     * @param {*} state 
+     * @param {*} model 模型对象
+     */
+    [types.GET_MODEL_BOX](state,model){
+       state.modelBox = model
+    },
+    // gantt 状态
+    [types.GET_GANTT_STATE](state,model){
+        state.ganttState = model
+    },
+    /**
+     * 模型是否加载完成
+     * @param {*} state 
+     * @param {true：加载完成} isViewAdded 
+     */
+    [types.IS_VIEW_ADDED](state,isViewAdded){
+       state.isViewAdded = isViewAdded
+    }
+}

@@ -1,0 +1,112 @@
+<!-- 风险管理 -->
+<template lang="pug" src="./index.pug"></template>
+<style lang="stylus" src="./index.styl" scoped></style>
+
+<script type='textecmascript-6'>
+export default {
+  components: {},
+  created() {},
+  mounted() {},
+  data() {
+    return {
+      /**[当前折叠面板] */
+      nowCollapse: ["1", "2", "3"],
+      /**[待接收] */
+      dataIng: [
+        {
+          sort: "编码",
+          title: "楼栋",
+          question_type: "专业",
+          state: "楼层"
+        },
+        {
+          sort: "编码",
+          title: "楼栋",
+          question_type: "专业",
+          state: "楼层"
+        }
+      ],
+      /**[整改中] */
+      dataHandle: [
+        {
+          sort: "编码",
+          title: "楼栋",
+          question_type: "专业",
+          state: "楼层"
+        },
+        {
+          sort: "编码",
+          title: "楼栋",
+          question_type: "专业",
+          state: "楼层"
+        }
+      ],
+      /**[待接收] */
+      dataOver: [
+        {
+          sort: "编码",
+          title: "楼栋",
+          question_type: "专业",
+          state: "楼层"
+        },
+        {
+          sort: "编码",
+          title: "楼栋",
+          question_type: "专业",
+          state: "楼层"
+        }
+      ]
+    };
+  },
+  computed: {},
+  methods: {
+    /**[发起问题] */
+    onStartQuestion() {},
+    /**[采购列表按钮] */
+    onPurchaseBtn() {
+      this.activeTab = !this.activeTab;
+    },
+    /**[变更列表按钮] */
+    onChangeBtn() {
+      this.activeTab = !this.activeTab;
+    },
+    /**[发起变更] */
+    startChange() {},
+    /**[表格处理]
+     *  @row  当前行的数据
+     */
+    onHandle(row) {
+      console.log(row);
+    }
+  },
+  watch: {}
+};
+</script>||||||| .r395
+ data() {
+   return {
+ data: 'quality质量管理'
+   }
+ },
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-quality
+  width 100%
+  height 100%
+</style>=======
+ data() {
+   return {
+      data: 'quality质量管理'
+   }
+ },
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-quality
+  width 100%
+  height 100%
+</style>>>>>>>> .r396

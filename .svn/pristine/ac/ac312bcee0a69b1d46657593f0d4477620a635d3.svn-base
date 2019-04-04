@@ -1,0 +1,89 @@
+<template>
+  <div id="app">
+    <router-view/>
+    <!-- 模型盒 -->
+    <div class="model-box" v-show="modelBox.isShowModel"
+      :style="{
+        'position':'fixed',
+        'top':`${modelBox.top}px`,
+        'left':`${modelBox.left}px`,
+        'width':`${modelBox.width}px`,
+        'height':`${modelBox.height}px`,
+        'z-index':modelBox.zIndex,
+        'background-color':modelBox.background
+        }"
+    >
+        <!-- 模型 -->
+        <model
+          v-if="modelBox.isLoadModel" 
+          :ElementIDs='modelBox.ElementIDs' 
+          :highLightElementIDs='modelBox.highLightElementIDs'
+          :widthAndHeight='{width:modelBox.width,height:modelBox.height}' 
+          :functionNumber="modelBox.functionNumber"
+      ></model>
+    </div>
+  </div>
+</template>
+<script>
+import model from "@/components/model/model"
+export default {
+  created(){
+    let dpr = document.body.offsetWidth / 1920
+    console.log('%c 屏幕宽高：','color:SlateBlue',document.body.offsetWidth,document.body.offsetHeight,dpr)
+    localStorage.setItem('dpr',dpr)//像素比
+    localStorage.setItem('offsetWidth',document.body.offsetWidth)
+    localStorage.setItem('offsetHeight',document.body.offsetHeight)
+  },
+  components:{
+    model
+  },
+  computed:{
+    modelBox(){
+      console.log(this.$store.getters.getModelBox)
+      return this.$store.getters.getModelBox
+    }
+  }
+}
+
+</script>
+<style scoped lang="stylus" rel="stylesheet/stylus">
+@import "/assets/stylus/variable"
+  #app
+    background: $color-default-background
+    font-size $font-size-30
+    width 100%
+    height 100%
+    .model-box
+      width 100%
+      height 100%
+      border 1px solid red
+</style>
+
+<style>
+html,body,#app,#app>div,.is-vertical{
+  height: 100%;
+}
+.van-nav-bar__text{
+  font-size: 36px
+}
+.van-nav-bar .van-nav-bar__title{
+  font-size: 36px;
+  font-weight:400;
+  color:rgba(3,3,3,1);
+}
+.van-pull-refresh__track{
+  height: 100%;
+}
+.van-nav-bar{
+  height: 88px;
+  line-height:88px;
+  /* background-color: initial; */
+  background:rgba(255,255,255,0.13);
+  /* filter:blur(12px); */
+}
+/* .van-pull-refresh__head{
+  height: 88px; */
+  /* top: 0; */
+/* } */
+
+</style>

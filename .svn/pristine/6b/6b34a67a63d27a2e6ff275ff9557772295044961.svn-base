@@ -1,0 +1,54 @@
+<template>
+  <div id="app">
+    <router-view/>
+  </div>
+</template>
+<script>
+export default {
+  created(){
+    let dpr = document.body.offsetWidth / 750
+    console.log('%c 屏幕宽高：','color:SlateBlue',document.body.offsetWidth,document.body.offsetHeight,dpr)
+    localStorage.setItem('dpr',dpr)//像素比
+    localStorage.setItem('offsetWidth',document.body.offsetWidth)
+    localStorage.setItem('offsetHeight',document.body.offsetHeight)
+  }
+}
+
+</script>
+<style scoped lang="stylus" rel="stylesheet/stylus">
+@import "/assets/stylus/variable"
+@import '/assets/stylus/layui.css'
+      // import './js/layui-v2.4.5/layui/layui.js'
+  #app
+    background: $color-default-background
+    font-size $font-size-30
+</style>
+
+<style>
+html,body,#app,#app>div,.is-vertical{
+  height: 100%;
+}
+.van-nav-bar__text{
+  font-size: 36px
+}
+.van-nav-bar .van-nav-bar__title{
+  font-size: 36px;
+  font-weight:400;
+  color:rgba(3,3,3,1);
+}
+.van-pull-refresh__track{
+  height: 100%;
+}
+.van-nav-bar{
+  height: 88px;
+  line-height:88px;
+  /* background-color: initial; */
+  background:rgba(255,255,255,0.13);
+  /* filter:blur(12px); */
+}
+/* .van-pull-refresh__head{
+  height: 88px; */
+  /* top: 0; */
+/* } */
+
+</style>

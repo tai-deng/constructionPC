@@ -1,0 +1,117 @@
+<template>
+    <div class="adjust-wp" @click="showDialog=false" v-if="showDialog">
+        <div class="content" @click.stop>
+            <div class="dialog-header">
+                <h2 class="fl">调整进度</h2>
+                <img src="./addblack.svg" alt="" class="fr" @click="showDialog = false">
+            </div>
+            <div class="dialog-conter">
+                <el-row v-show='showGroupNumber'>
+                    <el-col :span="8"><div style="text-align: left">节点名称</div></el-col>
+                    <el-col :span="16"><el-input v-model="text" :disabled="true"></el-input></el-col>
+                </el-row>
+                <el-row  class="mt20">
+                    <el-col :span="8"><div style="text-align: left">调整策略</div></el-col>
+                    <el-col :span='16'>
+                        <el-select v-model="selectModel" placeholder="请选择" @change="selectTypeChange">
+                            <el-option
+                            v-for="item in selectNav"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value">
+                            </el-option>
+                        </el-select>
+                    </el-col>
+                </el-row>
+                <el-row class="mt20" v-show='showGroupNumber'>
+                    <el-col :span="8"><div style="text-align: left">分组数</div></el-col>
+                    <el-col :span="16"><el-input v-model="groupNumber" placeholder="请输入分组数"></el-input></el-col>
+                </el-row>
+                <el-row class="mt20">
+                    <el-col :span="8"><div style="text-align: left">完成时间</div></el-col>
+                    <el-col :span="16">
+                        <el-date-picker
+                            v-model="selectDate"
+                            type="date"
+                            placeholder="选择日期">
+                        </el-date-picker>
+                    </el-col>
+                </el-row>
+                <div class="dialog-footer">
+                    <div @click="showDialog=false">取消</div>
+                    <div @click="submitClick">确定</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+<style>
+    .adjust-wp{
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, .5);
+        z-index: 99;
+    }
+    .adjust-wp .content{
+        width: 400px;
+        height: 320px;
+        background: #fff;
+        border-radius: 10px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        margin: auto;
+    }
+    .adjust-wp .dialog-conter{
+        padding: 24px;
+    }
+    .adjust-wp .dialog-conter .el-input__icon{
+        line-height: 30px;
+    }
+    .adjust-wp .dialog-conter .el-input__inner{
+        background-color: #f5f9fc;
+    }
+    .adjust-wp .dialog-conter .el-date-editor.el-input{
+        width: 100%;
+    }
+</style>
+<script>
+
+export default {
+    data(){
+        return {
+            selectNav:[{label:'顺延',value:'deferred'},{label:'压缩',value:'reduce'},{label:'分组',value:'group'}],
+            selectModel:'',
+            groupNumber:'',
+            selectDate:'',
+            text:'',
+            showDialog:false,
+            showGroupNumber:true,
+        }
+    },
+    props:{
+        chartClickItmData:Object
+    },
+    methods:{
+        selectTypeChange(e){
+            if(e !== 'group') {this.showGroupNumber = false}else{this.showGroupNumber = true}
+        },
+        submitClick(){
+            if(this.selectModel === ''|| this.selectDate === ''){
+                this.$message.error('请确保数据填写齐全');
+                return false
+            }
+            this.$emit('adjustScheduleSubmit',{
+                selectType:this.selectModel,
+                groupNumber:this.groupNumber,
+                selectDate:this.selectDate
+            })
+        }
+    }
+}
+</script>

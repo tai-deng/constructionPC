@@ -1,0 +1,135 @@
+<!-- 登录 -->
+<template>
+  <div class="container-login">
+    <div class="wrapper">
+      <div class="login_logo"></div>
+      <p class="logo_title">数字化交付与智能运维平台</p>
+      <div class="login_box">
+        <!-- <form action=""> -->
+          <ul>
+            <li>
+              <span class="account"></span><i></i><input type="text" v-model="userName" placeholder="请输入登录账号">
+            </li>
+            <li>
+              <span class="password"></span><i></i><input type="password" v-model="passWord" placeholder="请输入登录密码">
+            </li>
+          </ul>
+          <input type="submit" @click="loging" value="登录" class="login_submit">
+        <!-- </form> -->
+      </div>
+      <p class="record_number">湖南建工集团有限公司  备案号某IPC备12345678号</p>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import {Login} from '@/api/api.js'
+export default {
+  data() {
+    return {
+      userName: '',
+      passWord:''
+    };
+  },
+  methods: {
+    loging(){
+      console.log('点击登录')
+      if(this.userName==''){
+        this.$message({type:'error',message:'请输入用户名！',center:'true'})
+        return
+      }
+      console.log('用户名不为空')
+      if(this.passWord==''){
+        this.$message({type:'error',message:'请输入密码！',center:'true'})
+        return
+      }
+      console.log('密码不为空')
+      // this.load() //调用加载中蒙层
+      this.Request(Login({LoginName:this.userName,LoginPwd:this.passWord})).then(data=>{
+        console.log('登录',data)
+        if(data.StatusCode === 200){
+          this.$store.commit('upisLogined',true)
+          this.$router.push({path:'/nav/to/index'})
+          this.$message({type:'success',message:'登录成功',center:'true'})
+          localStorage.setItem('token',data.Detiel[0].access_token)
+          localStorage.setItem('userId',data.Message)
+        }else{
+          this.$message({type:'error',message:data.Message,center:'true'})
+        }
+        // this.$toast.clear() //关闭加载中蒙层 
+      })
+    }
+  }
+};
+</script>
+<style lang='stylus' scoped  rel='stylesheet/stylus'>
+.container-login
+  width 100%
+  height 100%
+  .login_logo 
+    display block
+    margin 110px auto 22px
+  .logo_title
+    text-align center
+    font-size 26px
+    color #5C5C5C
+    font-weight bold
+    margin-bottom 70px
+  .login_box 
+    width 480px
+    height 320px
+    margin 0 auto
+    padding 54px 60px 0
+    background rgba(255,255,255,0.8)
+    border 4px solid rgba(255,255,255,1)
+    box-shadow 0px 3px 25px 2px rgba(203,208,207,0.43)
+    li
+      height 40px
+      border 1px solid #DDDDDD
+      background #ffffff
+      margin-bottom 20px
+      span 
+        width 51px
+        height 98%
+        display block
+        float left 
+      span.account
+        background url('../../assets/icons/success.png') center center no-repeat 
+        background-size 20px 20px
+      span.password
+        background url('../../assets/icons/success.png') center center no-repeat 
+        background-size 20px 20px
+      i 
+        display block
+        float left 
+        width 1px
+        height 20px
+        background-color #DDDDDD
+        margin 10px 0 0
+      input
+        border none
+        display block 
+        width 390px
+        padding 0 15px
+        float right
+        height 98%
+        font-size 18px
+    .login_submit
+      display block
+      width 100%
+      margin-top 66px
+      height 40px
+      border-radius 5px
+      border none
+      background-color #5C5C5C
+      font-size 18px
+      color #ffffff
+  .record_number
+    position fixed
+    width 100%
+    text-align center
+    left 0
+    bottom 86px
+    font-size 18px
+    color #999999
+</style>

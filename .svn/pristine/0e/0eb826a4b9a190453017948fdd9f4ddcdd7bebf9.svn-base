@@ -1,0 +1,7 @@
+/**
+ * mutation.js 常量集
+ */
+export default{
+    GET_MODEL_BOX:'GET_MODEL_BOX',////模型状态
+    IS_VIEW_ADDED:'IS_VIEW_ADDED',//模型是否加载完成
+}

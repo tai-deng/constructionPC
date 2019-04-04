@@ -1,0 +1,96 @@
+<template lang="pug">
+  el-dialog(
+    :title="title",
+    :width="width",
+    :visible.sync="visible",
+    :before-close="beforeClose"
+    :center='center'
+    @open="open"
+  )
+    slot
+    span.dialog-footer(v-if="!(closeText === '' && okText === '')" slot="footer" )
+      el-button(v-if="closeText !== ''" @click="beforeClose") {{String(closeText)}}
+      el-button(v-if="okText !== ''" type="primary" @click="ok") {{okText}}
+</template>
+
+<style lang="stylus" scoped>
+>>>
+  .el-dialog__header
+    background #4775CA
+
+  .el-dialog__close
+    color #fff
+
+  .el-dialog__header
+    background #548AFF
+    text-align center
+
+    span
+      color #fff
+      font-size 22px
+</style>
+
+
+<script type="textecmascript-6">
+export default {
+  components: {},
+  props: {
+    /**[标题是否居中] */
+    center: Boolean,
+    /**[弹框标题] */
+    title: String,
+    /**[当前弹框类型] */
+    type: String,
+    /**[宽度] */
+    width: {
+      type: String,
+      default: "30%"
+    },
+    /**[ok文字] '' --> 不显示按钮 */
+    okText: {
+      type: String,
+      default: "确 定"
+    },
+    /**[close文字]  '' --> 不显示按钮 */
+    closeText: {
+      type: String,
+      default: "取 消"
+    }
+  },
+  created() {},
+  mounted() {},
+  data() {
+    return {
+      /**[弹框显示隐藏] */
+      visible: false
+    };
+  },
+  computed: {
+    /**显示按钮组 */
+    showBtns: function() {
+      return !(this.okText || this.closeText);
+    }
+  },
+  methods: {
+    /**[显示弹框] */
+    show() {
+      this.visible = true;
+    },
+    /**[关闭弹框] */
+    hide() {
+      this.visible = false;
+    },
+
+    ok() {
+      this.$emit("ok", this.type ? this.type : "");
+    },
+    open() {
+      this.$emit("open", this.type ? this.type : "");
+    },
+
+    beforeClose() {
+      this.$emit("close", this.type ? this.type : "");
+    }
+  }
+};
+</script>

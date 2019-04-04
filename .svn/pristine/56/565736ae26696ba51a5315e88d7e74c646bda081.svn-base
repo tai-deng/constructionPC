@@ -1,0 +1,62 @@
+<div class="container-scope-detail">
+  <div class="content">
+    <el-form :model="form" label-width="100px">
+      <el-form-item label="采购批次">
+        <el-input v-model="form.purchase" :disabled="true" style="width: 180px;margin-right: 18px;"></el-input>
+        <el-button type="warning" :disabled="true" style="cursor: inherit;">有审核</el-button>
+      </el-form-item>
+      <el-form-item label-width="40px">
+        <div class="flex-between">
+          <p>{{ `申请人：${form.name}` }}</p>
+          <p>{{ `发起日期：${form.time}` }}</p>
+          <p>{{ `需要日期：${form.need_time}` }}</p>
+        </div>
+      </el-form-item>
+      <el-form-item label="采购审核">
+        <el-steps :active="1">
+            <el-step title="发起" icon="el-icon-dot"></el-step>
+            <el-step title="审核" icon="el-icon-circle-plus-outline"></el-step>
+            <el-step title="审批" icon="el-icon-circle-plus-outline"></el-step>
+            <el-step title="采购" icon="el-icon-circle-plus-outline"></el-step>
+          </el-steps>
+      </el-form-item>
+      <div class="flex">
+        <el-form-item label-width="40px" class="select">
+          <el-select v-model="form.people1" placeholder="楼栋">
+            <el-option label="aa" value="1"></el-option>
+            <el-option label="bb" value="2"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label-width="40px" class="select">
+            <el-select v-model="form.people2" placeholder="楼栋">
+              <el-option label="aa" value="1"></el-option>
+              <el-option label="bb" value="2"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label-width="40px" class="select">
+              <el-select v-model="form.people2" placeholder="楼栋">
+                <el-option label="aa" value="1"></el-option>
+                <el-option label="bb" value="2"></el-option>
+              </el-select>
+            </el-form-item>
+        </el-form-item>
+      </div>
+
+      <el-form-item label-width="40px">
+        <div class="teble-wrapper">
+          <el-table :data="tableData" border>
+            <el-table-column label="楼栋" prop="loudong"></el-table-column>
+            <el-table-column label="项目编码" prop="code"></el-table-column>
+            <el-table-column label="项目名称" prop="name"></el-table-column>
+            <el-table-column label="预算量" prop="yusuan"></el-table-column>
+            <el-table-column label="已采购" prop="yicaigou"></el-table-column>
+            <el-table-column label="本次采购" prop="bencicaigou"></el-table-column>
+          </el-table>
+        </div>
+      </el-form-item>
+      <!-- <el-form-item label-width="0" align="center">
+        <el-button type="primary">确认审核</el-button>
+      </el-form-item> -->
+    </el-form>
+  </div>
+</div>

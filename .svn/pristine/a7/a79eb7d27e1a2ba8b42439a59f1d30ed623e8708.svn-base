@@ -1,0 +1,953 @@
+<!-- artifactsAssociated构件关联 -->
+<template>
+  <div class="container-artifacts-associated">
+    <el-row>
+      <el-col :span="2">
+        <el-button @click="selected=false" :class="{selected:!selected}">清单关联</el-button>
+      </el-col>
+      <el-col :span="9">
+        <el-button @click="selected=true" :class="{selected:selected}">构件关联</el-button>
+      </el-col>
+      <el-col :span="11">
+        <el-button type="warning" @click="getCheckedKeys">确认关联</el-button>
+      </el-col>
+      <el-col :span="2">
+        <el-button type="primary" @click="centerDialogVisible = true">清单一键匹配</el-button>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="10">
+      <el-col :span="5">
+        <header>构件清单</header>
+        <el-select v-model="value" placeholder="请选择" id="select1">
+          <el-option
+            v-for="item in options"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          ></el-option>
+        </el-select>
+        <el-tree
+          :data="data2"
+          show-checkbox
+          default-expand-all
+          node-key="id"
+          ref="tree"
+          highlight-current
+          :props="defaultProps"
+        ></el-tree>
+      </el-col>
+      <el-col :span="6" v-show="!selected">
+        <el-select v-model="value2" placeholder="请选择">
+          <el-option
+            v-for="item in options2"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          ></el-option>
+        </el-select>
+        <!-- <div @click="insertEvent('1')" class="add_btn"></div> -->
+        <el-editable
+          ref="editable"
+          class="manual-table5"
+          :edit-config="{trigger: 'manual', mode: 'row',clearActiveMethod}"
+          :edit-rules="validRules"
+          :data.sync="list"
+          @clear-active="clearActiveEvent"
+          @row-click="rowClickEvent"
+          @selection-change="handleSelectionChange"
+        >
+          <el-editable-column class-name="tree-operate-node" width="45">
+            <template slot="header">
+              <el-checkbox
+                v-model="treeAllCheck"
+                :indeterminate="treeAllIndeterminate"
+                @change="treeAllChange(treeAllCheck)"
+              ></el-checkbox>
+            </template>
+            <template slot-scope="scope">
+              <i
+                class="tree-expand-icon fa"
+                :class="treeIcons(scope.row)"
+                @click="toggleCollapseNode(scope.row)"
+              ></i>
+              <el-checkbox
+                v-model="scope.row.isCheck"
+                :indeterminate="scope.row.indeterminate"
+                @change="treeNodeChange(scope.row)"
+              ></el-checkbox>
+            </template>
+          </el-editable-column>
+          <el-editable-column prop="name" label="构件名称" :edit-render="{name: 'ElInput'}"></el-editable-column>
+          <el-editable-column prop="m1" label="混凝土砌块(m³)" :edit-render="{name: 'ElInputNumber'}"></el-editable-column>
+          <el-editable-column prop="m2" label="模板面积（㎡）" :edit-render="{name: 'ElInputNumber'}"></el-editable-column>
+          <el-editable-column width="30">
+            <template slot-scope="scope">
+              <template v-if="$refs.editable.hasActiveRow(scope.row)">
+                <i class="el-icon-check" @click="saveRowEvent(scope.row)"></i>
+              </template>
+              <template v-else>
+                <i class="el-icon-plus" @click="insertEvent('1')" v-if ="scope.row.fileType === '0'"></i>
+                <i class="el-icon-close" @click="removeEvent(scope.row)" v-if ="scope.row.fileType === '1'"></i>
+              </template>
+            </template>
+          </el-editable-column>
+        </el-editable>
+      </el-col>
+      <el-col :span="6" v-show="selected">
+        <el-table
+          ref="singleTable"
+          :data="tableData2"
+          highlight-current-row
+          @current-change="handleCurrentChange"
+          :header-cell-class-name="tableheaderClassName"
+          style="width: 100%"
+        >
+          <el-table-column prop="name" label="任务名称"></el-table-column>
+          <el-table-column prop="date" label="计划完成时间"></el-table-column>
+          <el-table-column prop="duration" label="工期" show-overflow-tooltip></el-table-column>
+        </el-table>
+      </el-col>
+      <el-col :span="13">3</el-col>
+    </el-row>
+
+    <el-dialog title="字段映射" :visible.sync="centerDialogVisible" width="40%" center>
+      <!-- <span>需要注意的是内容是默认不居中的</span> -->
+      <el-row>
+        <el-col :offset="5" :span="9">
+          <div class="grid-content bg-purple">模型</div>
+        </el-col>
+        <el-col :span="10">
+          <div class="grid-content bg-purple-light">工程量清单</div>
+        </el-col>
+      </el-row>
+      <el-form ref="form" :model="form" label-width="80px">
+        <el-form-item label="楼层匹配">
+          <el-select v-model="form.floor" placeholder="请选择">
+            <el-option
+              v-for="item in options3"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            ></el-option>
+          </el-select>
+          <el-select v-model="form.floor2" placeholder="请选择">
+            <el-option
+              v-for="item in options4"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            ></el-option>
+          </el-select>
+          <div @click="addDomain(item)" class="add_btn"></div>
+        </el-form-item>
+        <el-form-item label="构件匹配">
+          <el-select v-model="form.artifact" placeholder="请选择">
+            <el-option
+              v-for="item in options3"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            ></el-option>
+          </el-select>
+          <el-select v-model="form.artifact2" placeholder="请选择">
+            <el-option
+              v-for="item in options4"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            ></el-option>
+          </el-select>
+          <div @click="addDomain(item)" class="add_btn"></div>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="centerDialogVisible = false">取 消</el-button>
+        <el-button class="selected" @click="centerDialogVisible = false">一键匹配</el-button>
+      </span>
+    </el-dialog>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import Vue from "vue";
+import ElementUI from "element-ui";
+import { Message, MessageBox } from "element-ui";
+Vue.use(ElementUI);
+import VueX from "vuex";
+Vue.use(VueX);
+import VueElementExtends from "vue-element-extends";
+import "vue-element-extends/lib/index.css";
+Vue.use(VueElementExtends);
+import XEUtils from "xe-utils";
+
+export default {
+  data() {
+    return {
+      selected: false,
+      centerDialogVisible: false, //控制模态框显示与否
+      loading: false,
+      isClearActiveFlag: true,
+      treeAllCheck: false,
+      treeAllIndeterminate: false,
+      currentRow: null,
+      validRules: {
+        //新增行验证规则
+        name: [{ required: true, message: "请输入构件名称", trigger: "blur" }],
+        m1: [{ required: true, message: "请输入混凝土砌块", trigger: "blur" }],
+        m2: [{ required: true, message: "请输入模板面积", trigger: "blur" }]
+      },
+      list: [],
+      treeNode: [],
+      treeList: [],
+      data2: [
+        {
+          label: "整体模型",
+          children: [
+            {
+              label: "建筑专业",
+              children: [
+                {
+                  id: 1,
+                  label: "1F"
+                },
+                {
+                  id: 2,
+                  label: "2F"
+                },
+                {
+                  id: 3,
+                  label: "3F"
+                },
+                {
+                  id: 4,
+                  label: "4F"
+                },
+                {
+                  id: 5,
+                  label: "5F"
+                },
+                {
+                  id: 6,
+                  label: "6F"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      defaultProps: {
+        children: "children",
+        label: "label"
+      },
+      options: [
+        {
+          value: "选项1",
+          label: "整体模型-XXX易地扶贫搬迁项目"
+        },
+        {
+          value: "选项2",
+          label: "整体模型-XXX易地扶贫搬迁项目1"
+        },
+        {
+          value: "选项3",
+          label: "整体模型-XXX易地扶贫搬迁项目2"
+        },
+        {
+          value: "选项4",
+          label: "整体模型-XXX易地扶贫搬迁项目3"
+        },
+        {
+          value: "选项5",
+          label: "整体模型-XXX易地扶贫搬迁项目4"
+        }
+      ],
+      value: "",
+      options2: [
+        {
+          value: "选项1",
+          label: "整体模型-XXX易地扶贫搬迁项目"
+        },
+        {
+          value: "选项2",
+          label: "整体模型-XXX易地扶贫搬迁项目1"
+        },
+        {
+          value: "选项3",
+          label: "整体模型-XXX易地扶贫搬迁项目2"
+        },
+        {
+          value: "选项4",
+          label: "整体模型-XXX易地扶贫搬迁项目3"
+        },
+        {
+          value: "选项5",
+          label: "整体模型-XXX易地扶贫搬迁项目4"
+        }
+      ],
+      value2: "",
+      tableData2: [
+        {
+          id: 1,
+          date: "2019.01.07",
+          name: "1F主体结构",
+          duration: "6"
+        },
+        {
+          id: 2,
+
+          date: "2019.01.08",
+          name: "2F主体结构",
+          duration: "9"
+        },
+        {
+          id: 3,
+
+          date: "2019.01.09",
+          name: "3F主体结构",
+          duration: "5"
+        },
+        {
+          id: 4,
+
+          date: "2019.01.10",
+          name: "4F主体结构",
+          duration: "6"
+        },
+        {
+          id: 5,
+          date: "2019.01.11",
+          name: "5F主体结构",
+          duration: "5"
+        },
+        {
+          id: 6,
+          date: "2019.01.12",
+          name: "6F主体结构",
+          duration: "6"
+        }
+      ],
+      // currentRow: null, //单选
+      options3: [
+        {
+          value: "选项1",
+          label: "1F"
+        },
+        {
+          value: "选项2",
+          label: "2F"
+        },
+        {
+          value: "选项3",
+          label: "3F"
+        },
+        {
+          value: "选项4",
+          label: "4F"
+        },
+        {
+          value: "选项5",
+          label: "5F"
+        }
+      ],
+      value3: "",
+      options4: [
+        {
+          value: "选项1",
+          label: "第一层"
+        },
+        {
+          value: "选项2",
+          label: "第二层"
+        },
+        {
+          value: "选项3",
+          label: "第三层"
+        },
+        {
+          value: "选项4",
+          label: "第四层"
+        },
+        {
+          value: "选项5",
+          label: "第五层"
+        }
+      ],
+      value4: "",
+      form: {
+        floor: "",
+        artifact: "",
+        floor2: "",
+        artifact2: ""
+      }
+    };
+  },
+  created() {
+    this.init();
+  },
+  methods: {
+    //获取选中的树节点组成的数组
+    getCheckedKeys() {
+      console.log(this.$refs.tree.getCheckedKeys(true)); //(leafOnly) 接收一个 boolean 类型的参数，若为 true 则仅返回被选中的叶子节点的 keys，默认值为 false
+      this.multipleSelection = this.$refs.tree.getCheckedKeys(true);
+      console.log(this.multipleSelection);
+    },
+    //获取选中表格中的数据组成的数组
+    handleSelectionChange(val) {
+      this.multipleSelection = val.map(val => val.id);
+      console.log(this.multipleSelection);
+    },
+    // resetChecked() {
+    //   this.$refs.tree.setCheckedKeys([]);
+    // }
+    //修改表格表头的背景颜色
+    tableheaderClassName() {
+      return "table-head-th";
+    },
+    setCurrent(row) {
+      this.$refs.singleTable.setCurrentRow(row);
+    },
+    // 由current-change事件来管理选中时触发的事件，它会传入currentRow，oldCurrentRow
+    handleCurrentChange(val) {
+      this.currentRow = val;
+      console.log(
+        "单选中的数据 " +
+          this.currentRow +
+          "单选中的数据的id " +
+          this.currentRow.id
+      );
+    },
+    // 新增 select 框
+    // addSelect() {}
+    init() {
+      this.findList();
+    },
+    clearActiveMethod() {
+      return this.isClearActiveFlag;
+    },
+    findList() {
+      this.loading = true;
+      return this.loadList()
+        .then(() => {
+          this.loading = false;
+        })
+        .catch(() => {
+          this.loading = false;
+        });
+    },
+    loadList() {
+      return this.getDataJSON().then(data => {
+        this.initTreeList(data);
+      });
+    },
+    getChildren(row) {
+      return this.treeList.filter(item => item.parentId === row.id);
+    },
+    hasDirectory(row) {
+      return this.getChildren(row).length > 0;
+    },
+    reloedTreeList(data) {
+      this.initTreeList(data, true);
+    },
+    initTreeList(data, isReload) {
+      let treeNode = XEUtils.toArrayTree(data, {
+        key: "id",
+        parentKey: "parentId",
+        children: "children"
+      });
+      let treeList = XEUtils.toTreeArray(treeNode, { children: "children" });
+      if (!isReload) {
+        treeList.forEach(item => {
+          Object.assign(item, {
+            expandNode: false,
+            showNode: false,
+            isCheck: false,
+            indeterminate: false
+          });
+        });
+      }
+      this.treeNode = treeNode;
+      this.treeList = treeList;
+      if (!isReload) {
+        treeNode.forEach((item, index) => {
+          Object.assign(item, {
+            treeLevel: 0,
+            treeIndex: index,
+            showNode: true
+          });
+        });
+      }
+      this.loadTree();
+    },
+    // 判断表格展开与否的图标样式
+    treeIcons(row) {
+      let clsName =
+        row.fileType === "0"
+          ? row.expandNode
+            ? "el-icon-caret-bottom"
+            : "el-icon-caret-top"
+          : "";
+      return clsName;
+    },
+    treeAllChange(value) {
+      this.treeAllIndeterminate = false;
+      this.treeList.forEach(item => {
+        item.isCheck = value;
+        item.indeterminate = false;
+      });
+    },
+    treeNodeChange(row) {
+      if (row.isCheck) {
+        row.indeterminate = false;
+      }
+      this.treeCheckChildNode(row, row.isCheck);
+      this.treeCheckParentNode(row);
+    },
+    treeCheckParentNode(row) {
+      let parent = this.treeList.find(item => item.id === row.parentId);
+      if (parent) {
+        let children = this.treeList.filter(
+          item => item.parentId === parent.id
+        );
+        parent.isCheck = children.every(item => item.isCheck);
+        parent.indeterminate =
+          !parent.isCheck &&
+          !children.every(item => !item.isCheck && !item.indeterminate);
+        this.treeCheckParentNode(parent);
+      } else {
+        let children = this.treeNode;
+        this.treeAllCheck = children.every(item => item.isCheck);
+        this.treeAllIndeterminate =
+          !this.treeAllCheck &&
+          !children.every(item => !item.isCheck && !item.indeterminate);
+      }
+    },
+    treeCheckChildNode(parent, check) {
+      let children = this.treeList.filter(item => item.parentId === parent.id);
+      children.forEach((child, index) => {
+        child.isCheck = check;
+        child.treeIndex = index;
+        child.treeLevel = parent.treeLevel + 1;
+        this.treeCheckChildNode(child, check);
+      });
+    },
+    treeCollapseNode(parent, expand) {
+      let children = this.treeList.filter(item => item.parentId === parent.id);
+      parent.expandNode = !!(expand && children.length);
+      children.forEach((child, index) => {
+        child.treeIndex = index;
+        child.treeLevel = parent.treeLevel + 1;
+        child.showNode = expand !== null ? expand : false;
+        this.treeCollapseNode(child, null);
+      });
+    },
+    loadTree() {
+      this.list = this.treeList.filter(item => item.showNode);
+    },
+    treeRowClassName({ row }) {
+      let clsName = `tree-level_${row.treeLevel}`;
+      if (this.currentRow && this.currentRow.id === row.id) {
+        clsName += " current-row";
+      }
+      return clsName;
+    },
+    toggleCollapseNode(row) {
+      this.treeCollapseNode(row, !row.expandNode);
+      this.loadTree();
+    },
+    rowClickEvent(row) {
+      this.currentRow = row;
+    },
+    // formatColumnDate(row, column, cellValue, index) {
+    //   return XEUtils.toDateString(cellValue);
+    // },
+    // formatColumnSize(row, column, cellValue, index) {
+    //   return cellValue ? `${cellValue} KB` : "";
+    // },
+    /**
+    type:新增的一行数据的父级数据的id
+    file:新增的一行数据
+     */
+    insertEvent(type, file) {
+      if (!this.$refs.editable.checkValid().error) {
+        console.log(this.currentRow)
+        let selectRow = this.currentRow;
+        if (selectRow.fileType === "0") {
+          console.log("error");
+          return;
+        }
+        let children = [];
+        let isAppand = false;
+        // let index = selectRow
+        //   ? XEUtils.findIndexOf(this.list, item => item.id === selectRow.id)
+        //   : 0;
+        let index = 0;
+        let data = Object.assign(
+          {
+            isNew: true,
+            id: Date.now(),
+            fileType: type,
+            parentId: null,
+            treeLevel: 0,
+            treeIndex: 0,
+            expandNode: false,
+            showNode: true,
+            isCheck: false,
+            indeterminate: false
+          },
+          file
+        );
+
+        if (selectRow) {
+          children = this.getChildren(selectRow);
+          isAppand =
+            selectRow.fileType === "0" &&
+            (selectRow.expandNode || !children.length);
+          if (isAppand) {
+            selectRow.expandNode = true;
+            data.parentId = selectRow.id;
+            data.treeLevel = selectRow.treeLevel + 1;
+          } else {
+            data.parentId = selectRow.parentId;
+            data.treeLevel = selectRow.treeLevel;
+          }
+        }
+        let row = this.$refs.editable.insertAt(
+          data,
+          isAppand ? index + children.length + 1 : index
+        );
+        this.currentRow = row;
+        this.$nextTick(() => {
+          if (selectRow) {
+            let dataIndex = XEUtils.findIndexOf(
+              this.treeList,
+              item => item.id === selectRow.id
+            );
+            this.treeList.splice(
+              isAppand ? dataIndex + children.length + 1 : dataIndex,
+              0,
+              row
+            );
+          } else {
+            this.treeList.push(row);
+          }
+          this.reloedTreeList(this.treeList);
+          if (!file) {
+            this.$nextTick(() => this.$refs.editable.setActiveRow(row));
+          }
+        });
+      }
+    },
+    openActiveRowEvent(row) {
+      let activeInfo = this.$refs.editable.getActiveRow();
+      // 如果当前行正在编辑中，禁止编辑其他行
+      if (activeInfo) {
+        if (activeInfo.row === row || !this.$refs.editable.checkValid().error) {
+          if (activeInfo.isUpdate) {
+            this.isClearActiveFlag = false;
+            MessageBox.confirm(
+              "检测到未保存的内容，是否在离开前保存修改?",
+              "温馨提示",
+              {
+                distinguishCancelAndClose: true,
+                confirmButtonText: "保存",
+                cancelButtonText: "放弃修改",
+                type: "warning"
+              }
+            )
+              .then(() => {
+                this.$refs.editable.setActiveRow(row);
+                this.updateRowEvent(activeInfo.row);
+              })
+              .catch(action => {
+                if (action === "cancel") {
+                  this.$refs.editable.revert(activeInfo.row);
+                  this.$refs.editable.setActiveRow(row);
+                  Message({ message: "放弃修改并离开当前行", type: "warning" });
+                } else {
+                  Message({ message: "停留在当前行编辑", type: "info" });
+                }
+              })
+              .then(() => {
+                this.isClearActiveFlag = true;
+              });
+          } else {
+            this.$refs.editable.setActiveRow(row);
+          }
+        }
+      } else {
+        this.$refs.editable.setActiveRow(row);
+      }
+    },
+    //取消当前编辑行
+    cancelRowEvent(row) {
+      let activeInfo = this.$refs.editable.getActiveRow();
+      if (activeInfo && activeInfo.isUpdate) {
+        MessageBox.confirm("检测到未保存的内容，确定放弃修改?", "温馨提示", {
+          confirmButtonText: "放弃更改",
+          cancelButtonText: "返回",
+          type: "warning"
+        })
+          .then(action => {
+            if (action === "confirm") {
+              this.$refs.editable.clearActive();
+              this.$refs.editable.revert(row);
+            } else {
+              this.$refs.editable.setActiveRow(row);
+            }
+          })
+          .catch(e => e);
+      } else {
+        this.$refs.editable.clearActive();
+      }
+    },
+    //移除当前行
+    removeEvent(row) {
+      MessageBox.confirm("确定删除该行数据?", "温馨提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      })
+        .then(() => {
+          this.updateRowEvent(row);
+        })
+        .catch(e => e);
+    },
+    clearActiveEvent(row) {
+      this.updateRowEvent(row);
+    },
+    updateRowEvent(row) {
+      this.$refs.editable.reloadRow(row);
+      Message({ message: "保存成功", type: "success" });
+    },
+    //保存当前编辑行
+    saveRowEvent(row) {
+      this.$refs.editable.validateRow(row, valid => {
+        if (valid) {
+          this.$refs.editable.clearActive();
+          this.$refs.editable.reloadRow(row);
+          Message({ message: "保存成功", type: "success" });
+        } else {
+          console.log("error row submit!!");
+        }
+      });
+    },
+    getInsertEvent() {
+      let rest = this.treeList.filter(item => item.isNew);
+      MessageBox({
+        message: JSON.stringify(rest),
+        title: `获取所有数据(${rest.length}条)`
+      }).catch(e => e);
+    },
+    //模拟数据
+    getDataJSON() {
+      return new Promise(resolve => {
+        setTimeout(
+          () =>
+            resolve([
+              {
+                id: 1,
+                name: "基础墙1",
+                fileType: "0",
+                parentId: null
+              },
+              {
+                id: 11,
+                name: "砌体墙-11",
+                fileType: "1",
+                parentId: 1,
+                m1: "69.65",
+                m2: "69.65"
+              },
+              {
+                id: 12,
+                name: "砌体墙-12",
+                fileType: "1",
+                parentId: 1,
+                m1: "69.95",
+                m2: "69.65"
+              },
+              {
+                id: 2,
+                name: "基础墙2",
+                fileType: "0",
+                parentId: null
+              },
+              {
+                id: 21,
+                name: "砌体墙-21",
+                fileType: "1",
+                parentId: 2,
+                m1: "69.65",
+                m2: "69.65"
+              },
+              {
+                id: 22,
+                name: "砌体墙-22",
+                fileType: "1",
+                parentId: 2,
+                m1: "69.95",
+                m2: "69.65"
+              },
+              {
+                id: 23,
+                name: "砌体墙-23",
+                fileType: "1",
+                parentId: 2,
+                m1: "69.95",
+                m2: "69.65"
+              },
+              {
+                id: 24,
+                name: "砌体墙-24",
+                parentId: 2,
+                fileType: "1",
+                m1: "69.95",
+                m2: "69.65"
+              },
+              {
+                id: 25,
+                name: "砌体墙-25",
+                parentId: 2,
+                fileType: "1",
+                m1: "69.95",
+                m2: "69.65"
+              },
+              {
+                id: 26,
+                name: "砌体墙-26",
+                parentId: 2,
+                fileType: "1",
+                m1: "69.95",
+                m2: "69.65"
+              }
+            ]),
+          350
+        );
+      });
+    }
+  }
+};
+</script>
+<style>
+.container-artifacts-associated * {
+  font-size: 28px;/*px*/ 
+  /* box-sizing: border-box; */
+}
+.container-artifacts-associated
+  .el-row:nth-child(2)
+  .el-col:nth-child(2)
+  .el-input--suffix
+  .el-input__inner {
+  background: #435089;
+  color: #ffffff;
+}
+.el-table .table-head-th {
+  background-color: #435089;
+  color: white;
+}
+/* select 下拉按按钮 */
+.container-artifacts-associated .el-dialog .el-select {
+  flex: 1;
+  height: 40px;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+  border-radius: 4px;
+}
+.container-artifacts-associated .el-dialog .el-input--suffix .el-input__inner {
+  border: none;
+}
+.container-artifacts-associated .el-dialog .el-input__suffix {
+  background: rgba(67, 80, 137, 1);
+  border-radius: 0px 4px 4px 0px;
+  right: 0;
+  width: 40px;
+}
+.container-artifacts-associated .el-dialog .el-icon-arrow-up:before {
+  /* content: "\e60b"; */
+  content: "\e60c";
+  /* font-size: 20px; */
+  color: rgba(255, 255, 255, 1);
+}
+.container-artifacts-associated .el-dialog .center-select {
+  margin: 0 20px;
+}
+.input-number .el-input-group--append .el-input__inner,
+.el-input-group__prepend {
+  height: 40px;
+  background: rgba(248, 248, 248, 1);
+  border-radius: 4px;
+  border: 1px solid rgba(229, 229, 229, 1);
+  border-right: 1px dashed #979797;
+}
+.editable-required-icon,
+.el-icon-edit-outline {
+  display: none;
+}
+tbody .el-table__row:nth-child(1) {
+  background: #f4f6ff;
+}
+</style>
+
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+* {
+  font-size: 18px;
+}
+
+.container-artifacts-associated {
+  // width: 100%;
+  height: 100%;
+  padding: 0 20px;
+}
+
+.container-artifacts-associated .el-row {
+  margin: 20px 0;
+}
+
+.container-artifacts-associated .el-row:nth-child(2) .el-col:nth-child(1), .container-artifacts-associated .el-row:nth-child(2) .el-col:nth-child(2) {
+  height: 100%;
+  background: rgba(255, 255, 255, 1);
+}
+
+.container-artifacts-associated .el-row:nth-child(2) .el-col header {
+  width: 100%;
+  background: #435089;
+  color: white;
+  text-align: center;
+  padding: 0.1rem 0;
+}
+
+.container-artifacts-associated .el-row:nth-child(2) .el-col .el-select {
+  width: 100%;
+  height: 50px;
+  color: white;
+  text-align: center;
+}
+
+.selected {
+  background: #4775CA;
+  color: white;
+}
+
+.el-form-item div {
+  margin: 0.1rem 0.6rem;
+}
+
+.add_btn {
+  background: url('../../../assets/icons/add.png') center 60% no-repeat;
+  width: 0.5rem;
+  height: 0.5rem;
+  display: inline-block;
+  float: right;
+}
+
+.container-artifacts-associated .el-dialog__head {
+  background: linear-gradient(
+    225deg,
+    rgba(105, 86, 255, 1) 0%,
+    rgba(84, 138, 255, 1) 100%
+  );
+  color: white;
+  /* height: 40px; */
+}
+</style>

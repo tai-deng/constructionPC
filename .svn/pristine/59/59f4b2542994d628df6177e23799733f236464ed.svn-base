@@ -1,0 +1,97 @@
+.container-scope
+    .house-model(:span="12") 房子模型区域
+    .filter-wrapper
+      .button-wrapper
+        el-button-group
+          el-button(:type="activeTab ? 'primary' : ''" @click="onPurchaseBtn" :autofocus="activeTab") 采购列表
+          el-button(:type="!activeTab ? 'primary' : ''" @click="onChangeBtn" :autofocus="!activeTab") 变更列表
+
+        el-button(type="warning" @click="startChange") 发起变更
+      
+      .filter
+        el-form(
+          ref="filterFormRef"
+          :model="filterForm"
+          :rules="filterRules"
+          :inline="true"
+          :validate-on-rule-change="false"
+        )
+          el-form-item
+            el-select(v-model="filterForm.house1" placeholder="楼栋")
+              el-option(
+                v-for="item in house1Options"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              )
+          el-form-item
+            el-select(v-model="filterForm.house2" placeholder="楼栋")
+              el-option(
+                v-for="item in house2Options"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              )
+          el-form-item
+            el-select(v-model="filterForm.house3" placeholder="楼栋")
+              el-option(
+                v-for="item in house3Options"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              )
+          el-form-item
+            el-input(v-model="filterForm.custom" placeholder="楼栋、专业、楼层、资源")
+              i(slot="prefix" class="el-input__icon el-icon-search")
+      
+      .table
+        .title
+          el-table
+            el-table-column(label="编码")
+            el-table-column(label="楼栋")
+            el-table-column(label="专业")
+            el-table-column(label="楼层")
+            el-table-column(label="变更主题")
+            el-table-column(label="截止时间")
+            el-table-column(label="状态")
+            el-table-column(label="处理")
+        .content
+          el-collapse(v-model="nowCollapse")
+            el-collapse-item(:title="`进行中（${dataIng.length}）`" name="1")
+              el-table(:data="dataIng" :show-header="false")
+                el-table-column(prop="code")
+                el-table-column(prop="building")
+                el-table-column(prop="major")
+                el-table-column(prop="floor")
+                el-table-column(prop="change_them")
+                el-table-column(prop="date_end")
+                el-table-column(prop="status")
+                el-table-column
+                  template(slot-scope="scope")
+                    i.el-icon-more(@click="onHandle(scope.row)")
+
+            el-collapse-item(:title="`处理中（${dataHandle.length}）`" name="2")
+              el-table(:data="dataHandle" :show-header="false")
+                el-table-column(prop="code")
+                el-table-column(prop="building")
+                el-table-column(prop="major")
+                el-table-column(prop="floor")
+                el-table-column(prop="change_them")
+                el-table-column(prop="date_end")
+                el-table-column(prop="status")
+                el-table-column
+                  template(slot-scope="scope")
+                    i.el-icon-more(@click="onHandle(scope.row)")
+
+            el-collapse-item(:title="`已结束（${dataOver.length}）`" name="3")
+              el-table(:data="dataOver" :show-header="false")
+                el-table-column(prop="code")
+                el-table-column(prop="building")
+                el-table-column(prop="major")
+                el-table-column(prop="floor")
+                el-table-column(prop="change_them")
+                el-table-column(prop="date_end")
+                el-table-column(prop="status")
+                el-table-column
+                  template(slot-scope="scope")
+                    i.el-icon-more(@click="onHandle(scope.row)")

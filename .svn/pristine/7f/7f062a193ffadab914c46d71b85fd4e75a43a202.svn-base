@@ -1,0 +1,16 @@
+<template>
+        <sd-app></sd-app>
+    
+
+</template>
+<script>
+import '../fiveDsimulation_components/simulate/config.js'
+import '../fiveDsimulation_components/simulate/js/shims.js'
+import '../fiveDsimulation_components/simulate/js/app.js'
+
+export default {
+}
+</script>
+<style>
+    @import '../fiveDsimulation_components/simulate/css/main.css';
+</style>

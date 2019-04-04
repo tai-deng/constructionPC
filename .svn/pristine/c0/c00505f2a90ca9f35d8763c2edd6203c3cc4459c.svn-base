@@ -1,0 +1,25 @@
+<!-- 人力资源human -->
+<template>
+ <div class='container-human'>
+ <div class='wrapper'>
+   {{data}}
+ </div>
+ </div>
+</template>
+
+<script type='textecmascript-6'>
+export default {
+ data() {
+   return {
+ data: '人力资源human'
+   }
+ },
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-human
+  width 100%
+  height 100%
+</style>

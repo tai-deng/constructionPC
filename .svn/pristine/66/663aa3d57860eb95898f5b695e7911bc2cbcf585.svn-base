@@ -1,0 +1,1252 @@
+<!-- 3dView 三维浏览 -->
+<template>
+ <div class='container-3d-view'>
+   <!-- 3d图片 -->
+   <div class='view_model'>
+     <div class="view_model_show">
+       显示模块区域
+     </div>
+   </div>
+   <!-- <div class="three_d"><img src="../../assets/imgs/upload_model.png" alt=""></div> -->
+   <!-- 结构树 -->
+   <div class="tree"  :class="treeStatus?'trees':''">
+     <div v-if="treeStatus" class="tree_box">
+       <div class="tree_title">
+         <div class="">构件清单 <span @click="colseTree">收起</span></div>
+         <div class="tree_title_select">
+           <div class="row" @click="switchTreeItem">
+             <span>{{treeList[treeCurrent].name}}</span><span class="el-icon-arrow-down"></span>
+           </div>
+           <ul v-if="treeListStatus" class="tree_title_item">
+             <li v-for='(item,index) in treeList' 
+              class=""   :key="index"    @click='selectTree(index)'
+              :class="treeCurrent==index?'tree_title_item_select1':'tree_title_item_select2'">{{item.name}}</li>
+           </ul>
+         </div>
+       </div>
+       <!-- 结构树box -->
+       <div class="tree_content">
+         <div class="row tree_item_name tree_item_name1"><span class="tree_check">-</span>整体模型</div>
+         <ul class="tree_item border_left" >
+           <li @click="getOneIndex(index)" v-for='(item,index) in treeDate' :key='index'>
+             <div class="row tree_item_name">
+               <!-- 二级菜单--专业 -->
+               <div v-if="item.children" class="row tree_node">
+                 <span @click="getThis()" v-if="item.status" class="tree_check">-</span>
+                 <span @click="getThis()" v-else class="tree_check">+</span>
+                </div>
+                <!-- <span class="tree_check"></span>{{item.label}} -->
+                <el-checkbox  v-model="item.checked"  >{{item.label}}</el-checkbox>
+              </div>
+             <ul v-if='item.children && item.status' class="border_left">
+                <li @click="getTwoIndex(index)" v-for='(item,index) in item.children' :key='index'>
+                  <div class="row tree_item_name">
+                    <!-- 三级菜单--楼层 -->
+                    <div v-if="item.children" class="row tree_node">
+                      <span @click="getThis()" v-if="item.status" class="tree_check">-</span>
+                      <span @click="getThis()" v-else class="tree_check">+</span>
+                    </div>
+                    <!-- <span class="tree_check"></span>{{item.label}} -->
+                    <el-checkbox  v-model="item.checked"  >{{item.label}}</el-checkbox>
+                  </div>
+                  <ul v-if='item.children && item.status' class="border_left">
+                    <li @click="getThreeIndex(index)" v-for='(item,index) in item.children' :key='index'>
+                      <div class="row tree_item_name">
+                        <!-- 四级菜单--设备 -->
+                        <div v-if="item.children" class="row tree_node">
+                          <span @click="getThis()" v-if="item.status" class="tree_check">-</span>
+                          <span @click="getThis()" v-else class="tree_check">+</span>
+                        </div>
+                        <!-- <span class="tree_check"></span>{{item.label}} -->
+                        <el-checkbox  v-model="item.checked"  >{{item.label}}</el-checkbox>
+                      </div>
+                      <ul v-if='item.children && item.status' class="no_border_left">
+                        <li v-for='(item,index) in item.children' :key='index'>
+                          <div class="row tree_item_name">
+                            <!-- 四级菜单--建筑材料 -->
+                            <div v-if="item.children" class="row tree_node">
+                              <span @click="getThis()" v-if="item.status" class="tree_check">-</span>
+                              <span @click="getThis()" v-else class="tree_check">+</span>
+                            </div>
+                            <!-- <span class="tree_check"></span>{{item.label}} -->
+                            <el-checkbox  v-model="item.checked"  >{{item.label}}</el-checkbox>
+                          </div>
+                          
+                        </li>
+                      </ul>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+           </li>
+         </ul>
+       </div>
+     </div>
+     <div v-else class="tree_img" @click='showTree'><img src="../../assets/imgs/order_tree.png" alt=""></div>
+   </div>
+   <!-- 表单 -->
+   <div class="my_other_from">
+      <!-- 表单box -->
+      <div v-if="fromStatus" class="froms">
+             <!-- 发起沟通 -->
+             <div v-if="fromCurrent==1" class="from">
+                 <div class="row froms_title">
+                     发起沟通
+                     <span class="el-icon-close" @click="closeFrom"></span>
+                 </div>
+                 <div class="froms_content">
+                    <el-form 
+                            label-position="center"
+                            :model="ruleForm" 
+                            :rules="rules" 
+                            ref="ruleForm" 
+                            label-width="100px" 
+                            class="demo-ruleForm"
+                            :hide-required-asterisk='true'
+                            :inline-message='false'
+                            >
+                            <el-form-item class="from_one1" label="主题：" prop="name">
+                                <el-input placeholder="请输入主题" v-model="ruleForm.name"></el-input>
+                            </el-form-item>
+                            <el-form-item class="from_one2" label="类型：" prop="region">  
+                                <el-select v-model="ruleForm.region" placeholder="请选择活动区域">
+                                    <el-option label="区域一" value="shanghai"></el-option>
+                                    <el-option label="区域二" value="beijing"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item class="from_one3" label="描述：" prop="desc">
+                              <!-- <textarea name="" id="" cols="30" rows="50"></textarea> -->
+                              <el-input rows="4" type="textarea" v-model="ruleForm.desc"></el-input>
+                            </el-form-item>
+                            <el-form-item class="from_one4" label="视点: " prop="desc">
+                              <label for="">
+                                <span class=""><img src="../../assets/imgs/camera.png" alt=""></span>
+                              </label>
+                            </el-form-item>
+                            <el-form-item class="from_one4" label="视点: " prop="desc">
+                              <label for="">
+                                <span class="el-icon-plus"></span>
+                              </label>
+                            </el-form-item>
+                            <el-form-item class="from_one5" label="构建关联：" prop="name">
+                              <el-button class="col" round><img src="../../assets/imgs/unlock.png" alt=""></el-button>
+                            </el-form-item>
+                            <el-form-item class="from_one6" label="设置工作流程" prop="name">
+                              <div class="row">
+                                <div class=""><span></span><span class="el-icon-caret-bottom"></span></div>
+                              </div>
+                            </el-form-item>
+                            <!-- <el-form-item class="el-form-item-box" label="活动区域" prop="region">
+                                <el-select size='small' v-model="value5" multiple placeholder="请选择">
+                                    <el-option
+                                    v-for="item in options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value">
+                                    </el-option>
+                                </el-select>
+
+                                <el-select
+                                    v-model="value11"
+                                    multiple
+                                    collapse-tags
+                                    size='medium'
+                                    style="margin-left: 20px;"
+                                    placeholder="请选择">
+                                    <el-option
+                                    v-for="item in options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value">
+                                    </el-option>
+                                </el-select>
+
+                                <el-select
+                                    v-model="value11"
+                                    multiple
+                                    size='medium'
+                                    collapse-tags
+                                    style="margin-left: 20px;"
+                                    placeholder="请选择">
+                                    <el-option
+                                    v-for="item in options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value">
+                                    </el-option>
+                                </el-select>
+
+                                <el-select
+                                    v-model="value11"
+                                    multiple
+                                    size='mini'
+                                    collapse-tags
+                                    style="margin-left: 20px;"
+                                    placeholder="请选择">
+                                    <el-option
+                                    v-for="item in options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item> -->
+                    </el-form>
+                 </div>
+             </div>
+             <!-- 工程变更 -->
+             <div v-else-if="fromCurrent==2" class="from">
+                 <div class="row froms_title">
+                     工程变更
+                     <span class="el-icon-close" @click="closeFrom"></span>
+                 </div>
+                 <div class="froms_content">
+                    <el-form 
+                            label-position="right" 
+                            :model="workForm" 
+                            :rules="workFormRules" 
+                            ref="workForm" 
+                            label-width="100px" 
+                            class="demo-ruleForm"
+                            :hide-required-asterisk='false'
+                            >
+                            <el-form-item label="编码" prop="number">
+                                <el-input v-model="workForm.number"></el-input>
+                            </el-form-item>
+                            <el-form-item label="主题" prop="title">
+                                <el-input v-model="workForm.title"></el-input>
+                            </el-form-item>
+                            <el-form-item class="el-form-item-box" label="变更类型" prop="type">
+                                <el-select  style="width:100%;"  v-model="workForm.type" placeholder="请选择变更类型">
+                                    <el-option   v-for="item in workFormSelect"   :key="item.value"
+                                      :label="item.label"   :value="item.value">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+
+                            <el-form-item    label="选择" >
+                                <el-form-item  style="width:30%;display:inline-block;margin-right:4%"   prop="build" >
+                                    <el-select  style="width:100%;"  v-model="workForm.build" placeholder="请选择楼栋">
+                                        <el-option   v-for="item in workFormBuild"   :key="item.value"
+                                          :label="item.label"   :value="item.value">
+                                        </el-option>
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item  style="width:30%;display:inline-block;margin-right:4%"   prop="techology" >
+                                    <el-select  style="width:100%;"  v-model="workForm.techology" placeholder="请选择专业">
+                                        <el-option   v-for="item in workFormTechology"   :key="item.value"
+                                          :label="item.label"   :value="item.value">
+                                        </el-option>
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item  style="width:30%;display:inline-block;"   prop="louceng" >
+                                    <el-select  style="width:100%;"  v-model="workForm.louceng" placeholder="请选择楼层">
+                                        <el-option   v-for="item in workFormLouceng"   :key="item.value"
+                                          :label="item.label"   :value="item.value">
+                                        </el-option>
+                                    </el-select>                                        
+                                </el-form-item>
+                            </el-form-item>
+
+                            <el-form-item label="详细位置" prop="desc">
+                                <el-input type="textarea" v-model="workForm.desc" placeholder="请输入详细位置"></el-input>
+                            </el-form-item>
+                            <el-form-item class="el-form-item-box"  label="发起时间" prop="beginTime">
+                                <el-date-picker  style="width:100%;"
+                                    v-model="workForm.beginTime"
+                                    type="date"
+                                    placeholder="选择日期">
+                                </el-date-picker>
+                            </el-form-item>
+                            <el-form-item label="发起人" >
+                                <el-input v-model="workForm.people" disabled="disabled"></el-input>
+                            </el-form-item>
+                            <el-form-item label="变更内容" prop="changeDesc">
+                                <el-input type="textarea" v-model="workForm.changeDesc" placeholder="请输入变更内容"></el-input>
+                            </el-form-item>
+
+                            <el-form-item class="el-form-item-box" label="模型视点" >
+                                <el-upload
+                                    action="https://jsonplaceholder.typicode.com/posts/"
+                                    list-type="picture-card"
+                                    :on-preview="handlePictureCardPreview"
+                                    :on-remove="handleRemove">
+                                    <i class="el-icon-plus"></i>
+                                </el-upload>
+                                <el-dialog :visible.sync="dialogVisible">
+                                    <img width="100%" :src="dialogImageUrl" alt="">
+                                </el-dialog>
+                            </el-form-item>
+                            <el-form-item class="el-form-item-box" label="现场照片" >
+                                <el-upload
+                                    action="https://jsonplaceholder.typicode.com/posts/"
+                                    list-type="picture-card"
+                                    :on-preview="handlePictureCardPreview"
+                                    :on-remove="handleRemove">
+                                    <i class="el-icon-plus"></i>
+                                    </el-upload>
+                                    <el-dialog  :visible.sync="dialogVisible">
+                                    <img width="100%" :src="dialogImageUrl" alt="">
+                                </el-dialog>
+                            </el-form-item>
+                            <el-form-item class="el-form-item-box" label="构件关联">
+                                <i class="box_relative_img" v-if="workForm.isRelation">
+                                  <img src="../../assets/imgs/unRelation.png" alt>
+                                </i>
+                                <i class="box_relative_img" v-if="!workForm.isRelation">
+                                  <img src="../../assets/imgs/allRelation.png" alt>
+                                </i>
+                            </el-form-item>
+
+                            <div   class="from_div_water">
+                              <p>设置工作流程</p>
+                              <div class="from_div_select">
+                                <el-select  style="width:28%;margin-right:20px"  v-model="responsibility" placeholder="责任单位">
+                                        <el-option   v-for="item in responList"   :key="item.value"
+                                          :label="item.label"   :value="item.value">
+                                        </el-option>
+                                </el-select>
+                                <el-select  style="width:28%;margin-right:20px"  v-model="workClass" placeholder="岗位部门">
+                                        <el-option   v-for="item in workClassList"   :key="item.value"
+                                          :label="item.label"   :value="item.value">
+                                        </el-option>
+                                </el-select>
+                                <el-select  style="width:28%;"  v-model="person" placeholder="人员">
+                                        <el-option   v-for="item in allPerson"   :key="item.value"
+                                          :label="item.label"   :value="item.value">
+                                        </el-option>
+                                </el-select>
+                                 
+                                <i class="model_list_add_img" @click="addWaterList()"> 
+                                    <img src="../../assets/imgs/model_add.svg" alt="">
+                                </i>   
+                                <div :class="warterList.length==0?'':'from_div_water_add'">
+                                    <ul>
+                                        <li v-for='(item ,index) in warterList' v-bind:key='item.index'>
+                                           <div class="model_list_add_span">
+                                                <b>{{index+1}}</b>
+                                                <span class="dash_right_line">{{item.person}}</span>
+                                                <span class="dash_right_line">{{item.respon}}</span>
+                                                <span>{{item.workClass}}</span> 
+                                                <i class='view_position_img'>
+                                                  <img src="../../assets/imgs/view_up.png" alt="">
+                                                </i>
+                                                <i class='view_position_img'>
+                                                  <img src="../../assets/imgs/view_down.png" alt="">
+                                                </i>
+                                                <i class="model_list_del_img" v-on:click='warterList.splice(index, 1)'> 
+                                                  <img src="../../assets/imgs/del_model.png" alt="">
+                                                </i>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>     
+                              </div>
+                            </div>
+
+                            <el-form-item class="align_center">
+                                <el-button class="return_btn" @click="resetWorkForm('workForm')">取消</el-button>
+                                <el-button class="submit_btn" @click="onWorkSubmit('workForm')">确认</el-button>
+                            </el-form-item>  
+
+                    </el-form>
+                 </div>
+             </div>
+             <!-- 风险控制 -->
+             <div v-else-if="fromCurrent==3" class="from">
+                 <div class="row froms_title">
+                     风险控制
+                     <span class="el-icon-close" @click="closeFrom"></span>
+                 </div>
+                 <div class="froms_content">
+                    <el-form 
+                            label-position="right" 
+                            :model="ruleForm" 
+                            :rules="rules" 
+                            ref="ruleForm" 
+                            label-width="100px" 
+                            class="demo-ruleForm"
+                            :hide-required-asterisk='false'
+                            :inline-message='false' >
+                            <el-form-item label="主题" prop="title">
+                                <el-input placeholder="请输入主题" v-model="ruleForm.title"></el-input>
+                            </el-form-item>
+                            <el-form-item label="问题类型" prop="problem">
+                                <el-select  style="width:100%;"  v-model="ruleForm.problem" placeholder="请选择问题类型">
+                                    <el-option   v-for="item in ruleFormSelet"   :key="item.value"
+                                      :label="item.label"   :value="item.value">
+                                    </el-option>
+                                </el-select>
+
+                            </el-form-item>
+                            <el-form-item label="发起人" prop="name">
+                                <el-input placeholder="请输入发起人的姓名" v-model="ruleForm.name"></el-input>
+                            </el-form-item>
+                            <el-form-item label="发起时间" prop="beginTime">
+                                <el-date-picker
+                                    style="width:100%;"
+                                    v-model="ruleForm.beginTime"
+                                    type="date"
+                                    placeholder="选择日期">
+                                </el-date-picker>
+                            </el-form-item>
+                            <el-form-item label="问题描述" prop="desc">
+                                <el-input type="textarea" placeholder="请输入问题描述" v-model="ruleForm.desc"></el-input>
+                            </el-form-item>
+                            <el-form-item class="el-form-item-box" label="模型视点">
+                                <el-upload
+                                    action="https://jsonplaceholder.typicode.com/posts/"
+                                    list-type="picture-card"
+                                    :on-preview="handlePictureCardPreview"
+                                    :on-remove="handleRemove">
+                                    <i class="el-icon-plus"></i>
+                                </el-upload>
+                            </el-form-item>
+                            <el-form-item class="el-form-item-box" label="活动形式">
+                                <el-upload
+                                    action="https://jsonplaceholder.typicode.com/posts/"
+                                    list-type="picture-card"
+                                    :on-preview="handlePictureCardPreview"
+                                    :on-remove="handleRemove">
+                                    <i class="el-icon-plus"></i>
+                                    </el-upload>
+                            </el-form-item>
+                            <el-form-item class="el-form-item-box" label="接收人" prop="people">
+                                <el-select  style="width:100%;"  v-model="ruleForm.people" multiple  placeholder="请选择接收人">
+                                    <el-option   v-for="item in ruleFormPeople"   :key="item.value"
+                                      :label="item.label"   :value="item.value">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item class="el-form-item-box" label="整改截止时间" prop="time">
+                                <el-date-picker
+                                    style="width:100%;"
+                                    v-model="ruleForm.time"
+                                    type="date"
+                                    placeholder="选择日期"></el-date-picker>                
+                            </el-form-item>
+                            <el-form-item class="align_center">
+                                <el-button class="return_btn" @click="resetForm('ruleForm')">取消</el-button>
+                                <el-button class="submit_btn" @click="onSubmit('ruleForm')">确认</el-button>
+                            </el-form-item>                          
+                    </el-form>
+                 </div>
+             </div>
+      </div>
+      <!-- 表单btns -->
+      <div v-else class="row btn">
+        <el-button type="info" @click="showFrom(3)">风险控制</el-button>
+        <el-button type="success" @click="showFrom(2)">工程变更</el-button> 
+        <el-button  type="primary" @click="showFrom(1)">发起沟通</el-button>
+      </div>
+   </div>
+   
+ </div>
+</template>
+
+<script type='textecmascript-6'>
+
+export default {
+ data() {
+   return {
+      // 结构树的状态
+      treeStatus:false,
+      // 结构树列表
+      treeList:[
+        {name:'XXX易地扶贫搬迁项目-整体模型',id:1},
+        {name:'搬迁项目-整体模型',id:1},
+        {name:'XXX贫搬迁项目-整模型',id:1},
+        {name:'XXX贫整体模型',id:1},
+      ],
+      treeCurrent:0,
+      treeListStatus:false,
+      //结构树数据
+      treeDate: [
+        {
+          id: 1,
+          label: '一级 2',
+          status:false,
+          checked:false,
+          children: [
+            {
+              id: 3,
+              label: '二级 2-1',
+              status:false,
+              checked:false,
+              children: [
+                {
+                  id: 4,
+                  label: '三级 3-1-1',
+                  status:false,
+                  checked:false,
+                  children:[
+                    {
+                      id: 5,
+                      label: '四级 4-1-2',
+                      status:false,
+                      checked:true,
+                    },
+                    {
+                      id: 5,
+                      label: '四级 4-1-2',
+                      status:false,
+                      checked:false,
+                    },
+                  ]
+                }, 
+                 {
+                  id: 5,
+                  label: '三级 3-1-2',
+                  status:false,
+                  checked:false,
+                }
+              ]
+            }, 
+            {
+              id: 2,
+              label: '二级 2-2',
+              status:false,
+              checked:false,
+              children: [
+                {
+                  id: 6,
+                  label: '三级 3-2-1',
+                  status:false,
+                  checked:false,
+                }, 
+                {
+                  id: 7,
+                  label: '三级 3-2-2',
+                  status:false,
+                  checked:false,
+                }
+              ]
+            }
+          ]
+        },
+        {
+          id: 1,
+          label: '一级 2',
+          status:false,
+          checked:false,
+          children: [
+            {
+              id: 3,
+              label: '二级 2-1',
+              status:false,
+              checked:false,
+              children: [
+                {
+                  id: 3,
+              label: '二级 2-1',
+              status:false,
+              checked:false,
+              children: [
+                {
+                  id: 4,
+                  label: '三级 3-1-1',
+                  status:false, 
+                  checked:false,
+                }, 
+                 {
+                  id: 5,
+                  label: '三级 3-1-2',
+                  status:false,
+                  checked:false,
+                }
+                ]
+                }, 
+                 {
+                  id: 5,
+                  label: '三级 3-1-2',
+                  status:false,
+                  checked:false,
+                }
+              ]
+            }, 
+            {
+              id: 2,
+              label: '二级 2-2',
+              status:false,
+              checked:false,
+              children: [
+                {
+                  id: 6,
+                  label: '三级 3-2-1',
+                  status:false,
+                  checked:false,
+                }, 
+                {
+                  id: 7,
+                  label: '三级 3-2-2',
+                  status:false,
+                  checked:false,
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      
+      treeIndx:[],
+      //from状态管理、数据
+      fromStatus:false,
+      fromCurrent:1,
+      //风险控制-表单------(模型视点/活动形式)
+      ruleForm: {
+        title: '',//主题
+        problem: '',//问题类型
+        name: '',//发起人
+        beginTime: '',//发起时间
+        desc: '',//问题描述
+        people:[], //接收人--多选
+        time:''  //整改截止时间
+      },
+      //风险控制-表单验证
+      rules: {
+                title: [{ required: true, message: '请输入主题', trigger: 'blur' }, //主题
+                        { min: 3, max: 5, message: '长度在 3 到 5 个字符', trigger: 'blur' }],
+                problem: [{ required: true, message: '请选择问题类型', trigger: 'change' }],//问题类型
+                name: [ { required: true, message: '请输入发起人', trigger: 'blur' },
+                  { min: 2, max: 5, message: '长度在 2 到 5 个字符', trigger: 'blur' }],//发起人
+                beginTime: [ { type: 'date', required: true, message: '请选择发起时间', trigger: 'change' } ], //发起时间
+                desc: [ { required: true, message: '请填写问题描述', trigger: 'blur' } ],     //问题描述
+                people: [ { required: true, message: '请选择接收人', trigger: 'change' } ],   //接收人
+                time: [ { type: 'date', required: true, message: '请选择整改时间', trigger: 'change' } ], //整改时间
+      },
+      //风险控制-风险类型
+      ruleFormSelet:[{value: '基础施工',label: '基础施工'},{value: '安全文明',label: '安全文明'},{value: '模板工程',label: '模板工程'},{value: '脚手架工程',label: '脚手架工程'}],
+      //风险控制-接收人
+      ruleFormPeople:[{value: '黄晓明',label: '黄晓明'},{value: '刘德华',label: '刘德华'},{value: '黎明',label: '黎明'}],
+      //风险控制-上传文件的地址
+      dialogImageUrl: '',
+
+      //工程变更
+      workForm:{
+        number:'',//编码
+        title: '',//主题
+        type:'', //变更类型
+        build:'',//楼栋
+        techology:'',//专业
+        louceng:'',//楼层
+        desc:'', //详细位置
+        beginTime:'',// 发起时间
+        people:'',//发起人---不可以更改 （禁用）
+        changeDesc:'', //变更内容
+        isrelation:false, //构件是否关联
+      },
+      workFormRules:{
+        number:[ {required: true, message: '请输入编码', trigger: 'blur' }],//编码
+        title:[ {required: true, message: '请输入主题', trigger: 'blur' }],//主题
+        type: [ { required: true, message: '请选择变更类型', trigger: 'change' } ],   //变更类型
+        build: [ { required: true, message: '请选择楼栋', trigger: 'change' } ],   //楼栋
+        techology: [ { required: true, message: '请选择专业', trigger: 'change' } ],   //专业
+        louceng: [ { required: true, message: '请选择楼层', trigger: 'change' } ],   //楼层
+        desc:[ {required: true, message: '请输入详细位置', trigger: 'blur' }],//详细位置
+        beginTime: [ { type: 'date', required: true, message: '请选择发起时间', trigger: 'change' } ], //发起时间
+        changeDesc: [ { required: true, message: '请填写变更内容', trigger: 'blur' } ],     //变更内容
+      },
+
+      //工程变更-变更类型
+      workFormSelect:[{value: '设计变更',label: '设计变更'},{value: '法令变更',label: '法令变更'},{value: '工程签证',label: '工程签证'},
+            {value: '工程洽商',label: '工程洽商'},{value: '其他',label: '其他'}],
+      //工程变更-楼栋     
+      workFormBuild:[{value: 'A1',label: 'A1'},{value: 'A2',label: 'A2'},{value: 'A3',label: 'A3'}],
+      //工程变更-专业     
+      workFormTechology:[{value: '建筑专业',label: '建筑专业'},{value: '结构专业',label: '结构专业'},{value: '消防专业',label: '消防专业'},{value: '强电系统',label: '强电系统'}],
+      //工程变更-专业     
+      workFormLouceng:[{value: '1楼',label: '1楼'},{value: '2楼',label: '2楼'},{value: '3楼',label: '3楼'},{value: '4楼',label: '4楼'}],
+      //工程变更-排序--责任单位
+      responsibility:'',
+      responList:[{value: '中国重工',label: '中国重工'},{value: '中国交建',label: '中国交建'}],
+      //工程变更-排序--岗位部门
+      workClass:'',
+      workClassList:[{value: '设计部',label: '设计部'},{value: '技术部',label: '技术部'}],
+      //工程变更-排序--人员
+      person:'',
+      allPerson:[{value: '李老板',label: '李老板'},{value: '刘老板',label: '刘老板'}],
+      //工程变更-排序--显示的数据列表
+      warterList:[],
+
+
+
+
+      dialogVisible: false,
+      value1:'',
+      value5: [],
+      value11: [],
+      options: [
+            {
+                value: '选项1',
+                label: '黄金糕'
+            }, 
+            {
+                value: '选项2',
+                label: '双皮奶'
+            },    
+            {
+                value: '选项3',
+                label: '蚵仔煎'
+            }, 
+            {
+                value: '选项4',
+                label: '龙须面'
+            }, 
+            {
+                value: '选项5',
+                label: '北京烤鸭'
+            }
+      ],
+    }
+ },
+ mounted(){
+  //  console.log(this.treeDate[0].children[0].children[0].children)
+ },
+ methods:{
+   //显示隐藏tree-box
+   showTree(){
+     this.treeStatus=true;
+   },
+   colseTree(){
+     this.treeStatus=false;
+   },
+   //treeList管理
+   switchTreeItem(){
+     this.treeListStatus=!this.treeListStatus
+   },
+   selectTree(index){
+     this.treeCurrent=index
+   },
+   //结构树的舒展处理
+   getOneIndex(index){
+     this.treeIndx[0]=index
+    //  console.log('a='+index)
+   },
+   getTwoIndex(index){
+     this.treeIndx[1]=index
+    //  console.log('b='+index)
+   },
+   getThreeIndex(index){
+     this.treeIndx[2]=index
+    //  console.log('c='+index)
+   },
+   getThis(){
+    //  console.log(this.treeIndx)
+    //  console.log(index,n)
+    setTimeout(() => {
+      let length=this.treeIndx.length
+      if(length==1){
+        this.treeDate[this.treeIndx[0]].status=!this.treeDate[this.treeIndx[0]].status
+      }
+      else if(length==2){
+        this.treeDate[this.treeIndx[0]].children[this.treeIndx[1]].status=!this.treeDate[this.treeIndx[0]].children[this.treeIndx[1]].status
+      }
+      else if(length==3){
+        this.treeDate[this.treeIndx[0]].children[this.treeIndx[1]].children[this.treeIndx[2]].status=!this.treeDate[this.treeIndx[0]].children[this.treeIndx[1]].children[this.treeIndx[2]].status
+      }
+    }, 100);
+    this.treeIndx=[]
+   },
+  //  切换表单
+    showFrom(n){
+      this.fromStatus=true;
+      this.fromCurrent=n
+    }, 
+    selectProject(index){
+      this.projectCurent=index
+    },
+    switchProject(){
+      this.projectStatus=!this.projectStatus
+    },
+    //关闭右边的弹出框
+    closeFrom(){
+      this.fromStatus=false;
+    },
+    submitForm(formName) {
+        this.$refs[formName].validate((valid) => {
+          if (valid) {
+            alert('submit!');
+          } else {
+            console.log('error submit!!');
+            return false;
+          }
+        });
+    },
+    resetForm(formName) {
+        this.$refs[formName].resetFields();
+    },
+    handleRemove(file, fileList) {
+        console.log(file, fileList);
+    },
+    handlePictureCardPreview(file) {
+        this.dialogImageUrl = file.url;
+        this.dialogVisible = false;
+    },
+    handleNodeClick(data) {
+      console.log(data);
+    },
+
+    //风险控制的--提交按钮
+    onSubmit(formName) {
+        this.$refs[formName].validate((valid) => {
+          if (valid) {
+            alert('submit!');
+          } else {
+            console.log('error submit!!');
+            return false;
+          }
+        });
+      },
+    //风险控制的--取消按钮
+    resetForm(formName) {
+        this.$refs[formName].resetFields();
+      },
+
+    //工程变更的--提交按钮
+    onWorkSubmit(formName) {
+        this.$refs[formName].validate((valid) => {
+          if (valid) {
+            alert('submit!');
+          } else {
+            console.log('error submit!!');
+            return false;
+          }
+        });
+    },
+    //工程变更的--取消按钮
+    resetWorkForm(formName) {
+        this.$refs[formName].resetFields();
+    },
+    addWaterList(){
+      var text={
+        respon:this.responsibility,   //责任单位
+        workClass:this.workClass,  //岗位部门
+        person:this.person,   //人员
+      }
+      this.warterList.push(text);
+
+    },
+
+
+
+
+
+
+
+    },
+   
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+@import "../../assets/stylus/variable"
+.container-3d-view
+  width 100%
+  height 100%
+  font-size $font-size-18
+
+  
+.from_one_note
+  font-size $font-size-16
+
+</style>
+<style scoped>
+  .container-3d-view{
+    position: relative;
+    width:100%;
+    height:100%;
+
+  }
+  .three_d,.three_d>img{
+    width: 100%;
+    height: 100%;
+  }
+  .view_model{
+    width: 100%;
+    height: 100%;
+    border:1px solid #F5F6FA;
+    box-sizing: border-box;
+    background-color: #F5F6FA;
+  }
+  .view_model_show{
+    margin-left: 440px;
+    margin-top: 280px;
+    width: 1150px;
+    height: 700px;
+    border:1px solid #333;
+  }
+  .tree{
+    position: absolute;
+    width: 360px;
+    top:20px;
+    left: 20px;
+    height: 96%;
+    overflow-y: scroll;
+  }
+  .tree::-webkit-scrollbar {display:none}
+  .trees{
+    background:rgba(255,255,255,1);
+    box-shadow:0px 3px 7px 0px rgba(216,223,238,1);
+  }
+  .tree_img>img{
+    display: block;
+    height: auto;
+  }
+  .tree_title{
+    position: fixed;
+    width: 360px;
+    height: 100px;
+    z-index: 1000;
+    /* background: red; */
+  }
+  .tree_content{
+    padding: 90px 10px 20px 10px;
+  }
+  .tree_title>div:first-child{
+    position: relative;
+    height:40px;
+    background:rgba(67,80,137,1);
+    line-height: 40px;
+    color:rgba(255,255,255,1);
+    text-align: center;
+  }
+  .tree_title>div:first-child>span{
+    position: absolute;
+    right: 20px;
+  }
+  .tree_title_select{
+    position: relative;
+    width: 86%;
+    padding: 0 7%;
+    height: 50px;
+    text-align: left;
+    line-height: 50px;
+    font-family:SourceHanSansCN-Normal;
+    font-weight:400;
+    color:rgba(102,102,102,1);
+    border-bottom: 1px solid #eeeeee;
+    background: white;
+    z-index:1000;
+  }
+  .col{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .row{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+  .tree_title_select>div:first-child{
+    justify-content: space-between;
+  }
+  .tree_title_item{
+    position: absolute;
+    left: 0;
+    top:51px;
+    width: 100%;
+  }
+  .tree_title_item>li{
+    width: 86%;
+    padding: 0 7%;
+    height: 46px;
+    text-align: left;
+    line-height: 46px;
+    font-family:SourceHanSansCN-Normal;
+    font-weight:400;
+    border-bottom: 1px solid #eeeeee;
+  }
+  .tree_title_item_select2{
+    color:rgba(102,102,102,1);
+    background: white;
+  }
+  .tree_title_item_select1{
+    background: blue;
+    color:white;
+  }
+  .tree_content li{
+    margin: 10px 0;
+    
+  }
+  .tree_content span{
+    background: white;
+  }
+  .tree_content ul{
+    margin-left: 40px
+  }
+  .tree_content>ul{
+    margin-left: 20px
+  }
+  .tree_content ul.border_left{
+    border-left: 1px solid #eeeeee
+  }
+  .tree_content ul.no_border_left{
+    border-left: none
+  }
+  .tree_content>ul>li li::before{
+    display: inline-block;
+    position: relative;
+    left: -20px;
+    top:20px;
+    content: '';
+    width:20px;
+    height: 2px;
+    background: #eeeeee
+  }
+  .tree_content>ul ul::before{
+    display: inline-block;
+    position: absolute;
+    left: 30px;
+    content: '';
+    width:22px;
+    height: 22px;
+    background: white;
+    margin-top: 2px;
+  }
+  .tree_content ul::after{
+    display: inline-block;
+    position: absolute;
+    margin: -14px 0 0 -10px;
+    content: '';
+    width:20px;
+    height: 20px;
+    background: white;
+  }
+  .tree_content li {
+    position: relative;
+    left: -10px;
+  }
+  .tree_item_name>span{
+    margin-right: 12px;
+  }
+  .tree_node{
+    margin-right: 10px;
+  }
+  .tree_item_name{
+    height: 30px;
+    line-height: 30px;
+  }
+  .tree_check{
+    text-align: center;
+    line-height: 20px;
+    width: 20px;
+    height: 20px;
+    border:1px solid #eeeeee;
+  }
+  /* 表单 */
+  .my_other_from{
+    position: absolute;
+    height: 96%;
+    width: 800px;
+    top:20px;
+    right:20px;
+    overflow: auto;
+      border:1px solid #EFEFF2;
+  }
+  .other_from{
+    background:rgba(255,255,255,1);
+    box-shadow:0px 3px 7px 0px rgba(229,229,229,1);
+  }
+  .my_other_from::-webkit-scrollbar {display:none}
+
+  /* 合并复制过来的 */
+  .froms{
+    background: white;
+    height: 100%;
+  }
+  .btn{
+    flex-direction: row-reverse
+  }
+  .btn>button:nth-child(1){
+        background:rgba(71,117,202,1);
+  }
+  .btn>button:nth-child(2){
+        background:rgba(69,128,255,1);
+  }
+  .btn>button:nth-child(3){
+        background:rgba(253,161,67,1);
+  }
+  .btn>button{
+        margin-left: 20px;
+  }
+
+  .froms_title>span{
+        position: absolute;
+        right: 20px;
+  }
+  .froms_title{
+        position: fixed;
+        width: 800px;
+        justify-content: center;
+        height: 50px;
+        box-sizing: border-box;
+        border-radius: 0px;
+        background-color:#435089;
+        color: rgba(255, 255, 255, 1);
+        box-shadow: 0px 0px 1px 0px rgba(170, 170, 170, 1);
+        font-family: Roboto;
+        border: 1px solid rgba(255, 255, 255, 0);
+        z-index: 1000;
+  }
+  .froms_content{
+    padding-top: 70px;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    background-color: #ffffff;
+    box-sizing: border-box;
+  }
+  .tree_item_name1{
+      position: relative;
+      left: 10px;
+      top: 10px;
+  }
+  /* 重置element ui 样式 */
+  .from_one1{
+    width: 400px;
+  }
+  .from_one2{
+    width: 315px;
+  }
+  .from_one3{
+    width: 696px;
+  }
+  .from_one4 span{
+    display: inline-block;
+    text-align: center;
+    width: 120px;
+    height: 90px;
+    line-height: 90px;
+    border-radius: 10px;
+    border:1px #999999 dashed
+  }
+  .from_one5 button{
+    width:64px;
+    height:40px;
+    /* line-height: 40px; */
+    background:rgba(248,248,248,1);
+    border-radius:4px;
+    border:1px solid rgba(229,229,229,1);
+  }
+  .from_one_note{
+    display: inline;
+    color: rgba(153, 153, 153, 1);
+    font-family: SourceHanSansSC-regular;
+    position: absolute;
+    left: 160px;
+    bottom: 0px;
+  }
+  /* 下拉框的样式更改 */
+  .demo-ruleForm  .el-input__suffix {
+    background: rgba(67, 80, 137, 1);
+    border-radius: 0px 4px 4px 0px;
+    right: 0;
+    width: 40px;
+  }
+
+  .demo-ruleForm .el-icon-arrow-up:before {
+    content: "\e60c";
+    color: rgba(255, 255, 255, 1);
+  }
+    /* 表单按钮样式 */
+  .submit_btn{
+    color: #ffffff;
+    background-color :#4775CA;
+    border-radius:  5px;
+    height: 48px;
+    vertical-align :middle;
+    font-size :20px;
+    padding :0px 44px;
+    margin-left: 30px;
+  }
+  .return_btn{
+    color: #ffffff;
+    background-color: #999999;
+    border-radius:  5px;
+    height: 48px;
+    vertical-align: middle;
+    font-size: 20px;
+    padding: 0px 44px;
+  }
+  .align_center{
+    text-align: center;
+  }
+  /* 构件关联 */
+  .box_relative_img{
+    border :1px solid #E6E6E6;
+    display: inline-block;
+    width :40px;
+    height :40px;
+    padding :9px;
+    box-sizing :border-box;
+    background-color :#F8F8F8;
+    cursor: pointer;
+  }
+  /* 发起变更里面的工作流程 */
+  .from_div_water{
+    width: 100%;
+    height: 460px;
+    box-sizing: border-box;
+    padding: 10px 20px;
+  }
+  .from_div_water>p{
+    font-weight: bolder;
+    color:#555555;
+  }
+  .from_div_select{
+    height: 60px;
+
+  }
+  
+  .model_list_add_img{
+    display :inline-block;
+    width: 50px;
+    height :50px;
+    cursor: pointer;
+    position :relative;
+    top: 30px;
+  }
+  .from_div_water_add{
+    background-color: #EFF3FF;
+    border-radius: 8px;
+    padding-top:10px;
+    padding-bottom:10px;
+    padding-left:20px;
+    margin-top: 10px;
+    text-align: center;
+    font-size: 18px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    max-height: 300px;
+  }
+  .model_list_add_span>span{
+    background-color: #ffffff;
+    padding: 11px 42px;
+    display: inline-block;
+    border-radius:5px;
+  }
+  .model_list_add_span>b{
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-color: #4775C9;
+    border-radius: 50%;
+    color: #ffffff;
+    text-align: center;
+    margin-right: 20px;
+  }
+  .dash_right_line{
+    box-sizing: border-box;
+    border-right:1px dashed #D8D8D8;
+  }
+  .model_list_del_img>img{
+    width: 40px;
+    height: auto;
+    position: relative;
+    top :10px;
+  }
+
+</style>

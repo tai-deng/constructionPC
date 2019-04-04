@@ -1,0 +1,162 @@
+<template>
+  <div ref="gantt"></div>
+</template>
+
+<script>
+import "dhtmlx-gantt";
+import "dhtmlx-gantt/codebase/locale/locale_cn.js";
+import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_marker.js";
+import config from "./config.js";
+
+export default {
+  name: "gantt",
+  props: {
+    tasks: {
+      type: Object,
+      default() {
+        return { data: [], links: [] };
+      }
+    },
+    selModel: null
+  },
+  watch: {
+    selModel(curVal, oldVal) {
+      if (curVal == 0) {
+        console.log(1);
+      }
+    }
+  },
+  methods: {
+    $_initGanttEvents: function() {
+      if (gantt.$_eventsInitialized) return;
+      gantt.attachEvent("onTaskSelected", id => {
+        let task = gantt.getTask(id);
+        this.$emit("task-selected", task);
+      });
+
+      gantt.attachEvent("onAfterTaskAdd", (id, task) => {
+        this.$emit("task-updated", id, "inserted", task);
+        task.progress = task.progress || 0;
+        if (gantt.getSelectedId() == id) {
+          this.$emit("task-selected", task);
+        }
+      });
+
+      gantt.attachEvent("onAfterTaskUpdate", (id, task) => {
+        this.$emit("task-updated", id, "updated", task);
+      });
+
+      gantt.attachEvent("onAfterTaskDelete", id => {
+        this.$emit("task-updated", id, "deleted");
+        if (!gantt.getSelectedId()) {
+          this.$emit("task-selected", null);
+        }
+      });
+
+      gantt.attachEvent("onAfterLinkAdd", (id, link) => {
+        this.$emit("link-updated", id, "inserted", link);
+      });
+
+      gantt.attachEvent("onAfterLinkUpdate", (id, link) => {
+        this.$emit("link-updated", id, "updated", link);
+      });
+
+      gantt.attachEvent("onAfterLinkDelete", (id, link) => {
+        this.$emit("link-updated", id, "deleted");
+      });
+      gantt.$_eventsInitialized = true;
+    },
+    addTask(task) {
+      // 添加一项新任务
+      gantt.addTask(task);
+    },
+
+    closeTask(id) {
+      // 关闭一个任务
+      gantt.close(id);
+    },
+    userLabelById(id) {
+      for (var i = 0; i < this.tasks.length; i++) {
+        if (this.tasks[i].data.id == id) {
+          return this.tasks[i].data.text;
+        }
+      }
+      return "";
+    }
+  },
+  /**
+   * %D %d %Y %F %j %M
+   */
+  mounted() {
+    this.$_initGanttEvents(); // 分发所有事件
+    config.init();
+    // console.log(config)
+    gantt.init(this.$refs.gantt); // 初始化gantt 节点
+    gantt.parse(this.$props.tasks); // 解析任务数据
+
+    let a = gantt.calculateDuration({
+      // 项目持续时间
+      start_date: new Date("2013/02/15"),
+      end_date: new Date("2018/02/25")
+    });
+    console.log(a);
+  }
+};
+</script>
+
+<style>
+/* 加载gantt 样式 */
+@import "~dhtmlx-gantt/codebase/dhtmlxgantt.css";
+/* 右边标题背景/颜色 */
+.day_scale {
+  background-color: rgba(108,123,188,1);
+}
+.week_scale {
+  background-color: #666666;
+}
+.month_scale {
+  background-color: #333333;
+}
+.grid_header_class {
+  color: red;
+  background-color: #f1f1f1;
+}
+.gantt_task .gantt_task_scale .gantt_scale_cell {
+  font-size: 18px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+}
+/* 左边标题背景/颜色 */
+.gantt_grid_scale {
+  background-color: rgba(67, 80, 137, 1);
+}
+.gantt_grid_scale .gantt_grid_head_cell {
+  font-size: 18px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+}
+/* 灯箱按钮 */
+.gantt_btn_set div {
+  display: flex;
+  align-items: center;
+  justify-items: center;
+  margin: 0;
+}
+.gantt_delete_btn,
+.gantt_cancel_btn,
+.gantt_save_btn {
+  padding-right: 8px;
+}
+.gantt_section_time {
+  line-height: 2em;
+}
+.gantt_duration {
+  line-height: 2em;
+}
+.gantt_section_time .gantt_time_selects select,
+.gantt_section_time .gantt_duration {
+  height: 2em !important;
+}
+</style>

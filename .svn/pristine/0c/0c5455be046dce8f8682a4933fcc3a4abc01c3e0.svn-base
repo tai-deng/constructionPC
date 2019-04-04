@@ -1,0 +1,34 @@
+/**
+ * 信息配置接口
+ */
+/**
+ * 
+ * @param {this} that 
+ * @param {接口名} infaceName 
+ * @param {参数} param 
+ */
+export const infaces= (that,infaceName,param) =>{
+    return new Promise((resolve,reject)=>{
+        that.Request(infaceName(param)).then(res=>{
+            console.log(res)
+            if(res.StatusCode==200){
+                resolve(res.Detiel)
+            }else{
+                reject(new Error(res.Message))
+            }
+        })
+    })
+}
+
+export const infaces2= (that,infaceName,getParam,postParam) =>{
+    return new Promise((resolve,reject)=>{
+        that.Request(infaceName(getParam,postParam)).then(res=>{
+            console.log(res)
+            if(res.StatusCode==200){
+                resolve(res.Detiel)
+            }else{
+                reject(new Error(res.Message))
+            }
+        })
+    })
+}

@@ -1,0 +1,373 @@
+<template>
+  <div class="container-procurement container-procurement-list">
+    <el-form :inline="true" :model="formInline" class="demo-form-inline" style="text-align: right;">
+      <el-form-item>
+        <el-select v-model="formInline.region" placeholder="楼栋">
+          <el-option label="区域一" value="shanghai"></el-option>
+          <el-option label="区域二" value="beijing"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-select v-model="formInline.region" placeholder="专业">
+          <el-option label="区域一" value="shanghai"></el-option>
+          <el-option label="区域二" value="beijing"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-select v-model="formInline.region" placeholder="楼层">
+          <el-option label="区域一" value="shanghai"></el-option>
+          <el-option label="区域二" value="beijing"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-select v-model="formInline.region" placeholder="物资类别">
+          <el-option label="区域一" value="shanghai"></el-option>
+          <el-option label="区域二" value="beijing"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item class="ser-bg">
+        <el-input
+          placeholder="楼栋、专业、楼层、物资"
+          prefix-icon="el-icon-search"
+          v-model="formInline.contnet"
+        ></el-input>
+      </el-form-item>
+      <el-form-item class="bgeee">
+        <el-button type="warning" class @click="onSubmit">导出</el-button>
+      </el-form-item>
+    </el-form>
+
+    <el-table :data="tableData" :span-method="objectSpanMethod" style="width: 100%">
+      <el-table-column prop="num" label="序号" width="50"></el-table-column>
+      <el-table-column prop="name" label="物资名称"></el-table-column>
+      <el-table-column prop="type" label="规格型号"></el-table-column>
+      <el-table-column prop="building" label="楼栋"></el-table-column>
+      <el-table-column prop="budget" label="施工预算量"></el-table-column>
+      <el-table-column label="入库">
+        align="right">
+        <template slot="header" slot-scope="scope">
+          <div class="box">
+            <span class="tableBox" @click="put(scope.row)">
+              <i class="el-icon-circle-plus-outline"></i>
+            </span>
+            <span class="tableBox">入库</span>
+          </div>
+        </template>
+        <el-table-column prop="time" label="入库时间"></el-table-column>
+        <el-table-column label="入库量" class="bgeee">
+          <template slot-scope="scope">
+            <div class="bgeee" style="padding: 5px;border-radius: 5px;">{{scope.row.quantity}}</div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="total" label="总量"></el-table-column>
+      </el-table-column>
+      <el-table-column label="出库">
+        <template slot="header" slot-scope="scope">
+          <div class="box">
+            <span class="tableBox" @click="out(scope.row)">
+              <i class="el-icon-circle-plus-outline"></i>
+            </span>
+            <span class="tableBox">出库</span>
+          </div>
+        </template>
+        <el-table-column prop="deliveryTime" label="出库时间"></el-table-column>
+        <el-table-column label="出库量" class="bgeee">
+          <template slot-scope="scope">
+            <div class="bgeee" style="padding: 5px;border-radius: 5px;">{{scope.row.bgeee}}</div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="name1" label></el-table-column>
+      </el-table-column>
+      <el-table-column label="退还">
+        <template slot="header" slot-scope="scope">
+          <div class="box">
+            <span class="tableBox" @click="back(scope.row)">
+              <i class="el-icon-circle-plus-outline"></i>
+            </span>
+            <span class="tableBox">退还</span>
+          </div>
+        </template>
+        <el-table-column prop="returnTime" label="退还时间"></el-table-column>
+        <el-table-column label="退还量" class="bgeee">
+          <template slot-scope="scope">
+            <div class="bgeee" style="padding: 5px;border-radius: 5px;">{{scope.row.returnQuantity}}</div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="gross" label="总量"></el-table-column>
+      </el-table-column>
+      <el-table-column prop="inventory" label="库存"></el-table-column>
+      <el-table-column prop="section" label="节超"></el-table-column>
+      <el-table-column label="定位">
+        <template slot-scope="scope">
+          <i class="el-icon-location" @click="location(scope.row)"></i>
+        </template>
+      </el-table-column>
+    </el-table>
+  </div>
+</template>
+<script type='textecmascript-6'>
+export default {
+  data() {
+    return {
+      formInline: {
+        user: "",
+        region: "",
+        contnet: ""
+      },
+      tableData: [
+        {
+          num: "1",
+          name: "混凝土",
+          type: "C20",
+          building: "A1栋",
+          budget: "44.00m³",
+          time: "2018.05.01",
+          quantity: "10.00m³",
+          total: "50.00m³",
+          deliveryTime: "2018.05.05",
+          bgeee: "6.00m³",
+          name1: "38.00m³",
+          returnTime: "2018.05.10",
+          returnQuantity: "2.00m³",
+          gross: "38.00m³",
+          inventory: "14.00m³",
+          section: "14.00m³"
+        },
+        {
+          num: "1",
+          name: "混凝土",
+          type: "C20",
+          building: "A1栋",
+          budget: "44.00m³",
+          time: "2018.05.01",
+          quantity: "10.00m³",
+          total: "50.00m³",
+          deliveryTime: "2018.05.05",
+          bgeee: "6.00m³",
+          name1: "38.00m³",
+          returnTime: "/",
+          returnQuantity: "/",
+          gross: "38.00m³",
+          inventory: "2.00m³",
+          section: "14.00m³"
+        },
+        {
+          num: "1",
+          name: "混凝土",
+          type: "C20",
+          building: "A1栋",
+          budget: "44.00m³",
+          time: "2018.05.01",
+          quantity: "10.00m³",
+          total: "50.00m³",
+          deliveryTime: "2018.05.05",
+          bgeee: "6.00m³",
+          name1: "38.00m³",
+          returnTime: "/",
+          returnQuantity: "/",
+          gross: "38.00m³",
+          inventory: "14.00m³",
+          section: "14.00m³"
+        }
+      ]
+    };
+  },
+  methods: {
+    // 材料入库
+    put() {
+      this.$router.push({
+        path: "putStorage"
+      });
+    },
+    // 材料入库
+    out() {
+      this.$router.push({
+        path: "outStorage"
+      });
+    },
+    // 退还
+    back() {
+      this.$router.push({
+        path: "returnStorage"
+      });
+    },
+    onSubmit() {
+      console.log("submit!");
+    },
+    objectSpanMethod({ row, column, rowIndex, columnIndex }) {
+      if (columnIndex === 0) {
+        if (rowIndex % 4 === 0) {
+          return {
+            rowspan: 4,
+            colspan: 1
+          };
+        } else {
+          return {
+            rowspan: 0,
+            colspan: 0
+          };
+        }
+      } else if (columnIndex === 1) {
+        if (rowIndex % 4 === 0) {
+          return {
+            rowspan: 4,
+            colspan: 1
+          };
+        } else {
+          return {
+            rowspan: 0,
+            colspan: 0
+          };
+        }
+      } else if (columnIndex === 2) {
+        if (rowIndex % 4 === 0) {
+          return {
+            rowspan: 3,
+            colspan: 1
+          };
+        } else {
+          return {
+            rowspan: 0,
+            colspan: 0
+          };
+        }
+      } else if (columnIndex === 3) {
+        if (rowIndex % 4 === 0) {
+          return {
+            rowspan: 3,
+            colspan: 1
+          };
+        } else {
+          return {
+            rowspan: 0,
+            colspan: 0
+          };
+        }
+      } else if (columnIndex === 4) {
+        if (rowIndex % 4 === 0) {
+          return {
+            rowspan: 3,
+            colspan: 1
+          };
+        } else {
+          return {
+            rowspan: 0,
+            colspan: 0
+          };
+        }
+      }
+    }
+  }
+};
+</script>
+<style lang='stylus' rel='stylesheet/stylus'>
+.container-procurement {
+  width: 100%;
+  height: 100%;
+  background: #f0f2f5;
+}
+
+.container-procurement-list {
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.container-procurement-list .box {
+  display: flex;
+  flex-flow: row;
+  justify-content: flex-start;
+  align-items: center;
+  line-height: 0 !important;
+}
+
+.container-procurement-list .box .tableBox {
+  width: 50%;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.container-procurement-list .box .tableBox i {
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.container-procurement-list .el-input__suffix {
+  width: 0.666667rem;
+  background: #44508a;
+  right: 0;
+  border-radius: 0 0.066667rem 0.066667rem 0;
+}
+
+.container-procurement-list .el-table thead.is-group th {
+  background: #44508a;
+  color: #fff;
+  text-align: center;
+}
+
+.container-procurement-list .el-select .el-input .el-select__caret {
+  color: #fff;
+}
+
+.container-procurement-list .el-table--enable-row-transition .el-table__body td {
+  text-align: center;
+}
+
+.container-procurement-list .el-button--warning {
+  color: #FFF;
+  background-color: #E6A23C;
+  border-color: #E6A23C;
+  padding: 8px 30px;
+}
+
+.container-procurement-list .bgeee {
+  background: #eee;
+}
+
+.container-procurement-list .el-form--inline .el-form-item__content {
+  width: 160px;
+  height: 40px;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0px 1px 7px 0px rgba(216, 223, 238, 0.75);
+  border-radius: 4px;
+  font-size: 18px;
+  font-family: SourceHanSansCN-Normal;
+  font-weight: 400;
+}
+
+.container-procurement-list .el-select .el-input__inner::placeholder {
+  color: rgba(51, 51, 51, 1);
+}
+
+.container-procurement-list .ser-bg .el-form-item__content {
+  width: 340px;
+  height: 40px;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0px 1px 7px 0px rgba(216, 223, 238, 0.75);
+  border-radius: 20px;
+}
+
+.container-procurement-list .ser-bg .el-form-item__content .el-input__inner {
+  border-radius: 20px;
+}
+
+.container-procurement-list .bgeee .el-form-item__content {
+  background: #f0f2f5;
+  box-shadow: none;
+  width: auto;
+}
+
+.container-procurement-list .el-button--warning {
+  padding: 0;
+  width: 100px;
+  height: 40px;
+  line-height: 40px;
+  background: rgba(253, 161, 67, 1);
+  box-shadow: 0px 1px 7px 0px rgba(176, 148, 119, 0.75);
+  border-radius: 4px;
+}
+
+.container-procurement-list .el-icon-location {
+  color: #4775ca;
+  box-shadow: 0px 1px 7px 0px rgba(216, 223, 238, 0.5);
+}
+</style>

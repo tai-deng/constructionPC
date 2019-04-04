@@ -1,0 +1,25 @@
+<!-- artifactsAssociated构件关联 -->
+<template>
+ <div class='container-artifacts-associated'>
+ <div class='wrapper'>
+   {{data}}
+ </div>
+ </div>
+</template>
+
+<script type='textecmascript-6'>
+export default {
+ data() {
+   return {
+ data: 'artifactsAssociated构件关联'
+   }
+ },
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-artifacts-associated
+  width 100%
+  height 100%
+</style>

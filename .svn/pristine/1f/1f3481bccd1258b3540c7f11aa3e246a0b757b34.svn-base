@@ -1,0 +1,61 @@
+/**
+ * model.vue侦听器
+ */
+export default {
+  watch: {
+    /**
+     * 
+     * @param {侦听模型加载完成} isViewAdded 
+     */
+    isViewAdded(isViewAdded) {
+      if (isViewAdded) {
+        console.log('模型加载完成：', isViewAdded)
+        this.$store.commit('upisViewAdded', true)
+        // 如果父组件要求模型在渲染完成后定位构件(序号30)
+        // if (!this.operation && this.operation.length==0){
+        //    return
+        // }
+        // console.log(this.operation)
+        // if (this.operation.indexOf(30) != -1 && this.ElementIDs.length != 0){
+        //   console.log(this.operation.indexOf(30), this.ElementIDs)
+        //   setTimeout(()=>{
+        //     this.positioningComponentsHidden(this.ElementIDs)
+        //   },1000)
+        // }
+      }
+    },
+    /**
+     * 侦听模型容器宽高变化，动太改变模型宽高
+     */
+    widthAndHeight(widthAndHeight) {
+      console.log(widthAndHeight)
+      console.log(window.screen.width)
+      console.log(window.screen.height)
+      this.viewer3D.resize(window.screen.width, window.screen.height)
+    },
+    /**
+     * 侦听传入的序号以调用函数
+     */
+    functionNumber(arr) {
+      console.log('侦听传入的序号以调用函数', arr)
+      if (arr.indexOf(29) != -1) {
+        this.setCameraStatusAndElementIDs(this.ElementIDs)
+      }
+      if (arr.indexOf(30) != -1) {
+        this.positioningComponentsHidden(this.ElementIDs)
+      }
+      if (arr.indexOf(31) != -1) {
+        this.showComponentsById(this.ElementIDs)
+      }
+      if (arr.indexOf(32) != -1) {
+        this.showComponentsByIdAndColor(this.ElementIDs, this.lastNameElementID)
+      }
+      if(arr.indexOf(33) != -1){
+        this.positioningComponentsMakeOthers(this.ElementIDs, this.lastNameElementID)
+      }
+      if (arr.indexOf(61) != -1) {//高亮楼层专用  61
+        this.setCameraStatusFloor(this.ElementIDs, this.lastNameElementID)
+      }
+    }
+  }
+}

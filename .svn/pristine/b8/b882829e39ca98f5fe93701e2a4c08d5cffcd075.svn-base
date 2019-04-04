@@ -1,0 +1,25 @@
+<!-- 智能报表-资料员intelligenceReports -->
+<template>
+ <div class='container-intelligence-reports'>
+ <div class='wrapper'>
+   {{data}}
+ </div>
+ </div>
+</template>
+
+<script type='textecmascript-6'>
+export default {
+ data() {
+   return {
+ data: '智能报表-资料员intelligenceReports'
+   }
+ },
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-intelligence-reports
+  width 100%
+  height 100%
+</style>

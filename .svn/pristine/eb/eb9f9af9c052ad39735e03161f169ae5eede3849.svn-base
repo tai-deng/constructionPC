@@ -1,0 +1,481 @@
+
+<!-- risk风险详情 -->
+<template>
+  <div class="container-risk2">
+    <div class="leftBox">
+      <div class="box-card">
+        <div class="title">
+          <i class="el-icon-menu icon"></i>
+          <el-button @click="onStartQuestion()">发起问题</el-button>
+        </div>
+      </div>
+    </div>
+    <div class="rightBox">
+      <div class="box-card">
+        <!-- 详情 -->
+        <div class="riskManage">
+          <div class="titleBg notice">
+            <el-button round icon="el-icon-back" @click="goto()">返回列表</el-button>风险详情
+          </div>
+          <el-row>
+            <el-col :span="24">
+              <el-form ref="form" :model="form" label-width="80px">
+                <el-form-item label="主题:">
+                  <div class="info">地下室隐蔽工程技术交流</div>
+                </el-form-item>
+                <el-form-item label="问题类型:">
+                  <div class="info">基坑处理</div>
+                </el-form-item>
+                <el-form-item label="发起人:">
+                  <div class="info">李小丽</div>
+                </el-form-item>
+                <el-form-item label="发起时间:">
+                  <div class="info">2019-01-01</div>
+                </el-form-item>
+                <el-form-item label="问题描述:">
+                  <el-input type="textarea" v-model="form.content"></el-input>
+                </el-form-item>
+                <el-form-item label="问题描述:">
+                  <ul class="uploadImg">
+                    <li class="imgWrap">
+                      <img src="../../../assets/imgs/img.png" alt>
+                    </li>
+                    <li class="imgWrap">
+                      <img src="../../../assets/imgs/img.png" alt>
+                    </li>
+                  </ul>
+                </el-form-item>
+                <el-form-item label="模型视点:">
+                  <div class="imgWrap model">
+                    <img src="../../../assets/imgs/img.png" alt>
+                  </div>
+                </el-form-item>
+                <el-form-item label="接收人:">
+                  <div class="info">李小小</div>
+                </el-form-item>
+                <el-form-item label="完成时间:">
+                  <div class="box">
+                    <el-input v-model="form.completeTime" placeholder="单行输入"></el-input>
+                  </div>
+                </el-form-item>
+                <el-form-item label="整改认证:">
+                  <div class="box">
+                    <div class="upload">
+                      <el-upload
+                        action="https://jsonplaceholder.typicode.com/posts/"
+                        list-type="picture-card"
+                        :on-preview="handlePictureCardPreview1"
+                        :on-remove="handleRemove1"
+                        multiple
+                        :limit="3"
+                      >
+                        <i class="el-icon-plus"></i>
+                      </el-upload>
+                    </div>
+                    <el-dialog :visible.sync="dialogVisible1">
+                      <img width="100%" :src="dialogImageUrl1" alt>
+                    </el-dialog>
+                  </div>
+                </el-form-item>
+                <el-form-item label="时间认证">
+                  <div class="box">
+                    <el-date-picker
+                      type="date"
+                      placeholder="选择日期"
+                      v-model="form.date"
+                      style="width: 100%;"
+                    ></el-date-picker>
+                  </div>
+                </el-form-item>
+                <el-form-item label="状态:">
+                  <el-steps align-center :active="1">
+                    <el-step title="已接收"></el-step>
+                    <el-step title="整改中"></el-step>
+                    <el-step title="整改中"></el-step>
+                  </el-steps>
+                </el-form-item>
+                <el-form-item>
+                  <div class="btn">
+                    <el-button>取消</el-button>
+                    <el-button type="primary" @click="onSubmit">提交</el-button>
+                  </div>
+                </el-form-item>
+              </el-form>
+            </el-col>
+          </el-row>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+export default {
+  data() {
+    return {
+      data: "",
+      form: {
+        content:
+          "A1栋地下室地下室A1栋地下室地下室A1栋地下室地下室A1栋地下室地下室",
+        completeTime: "",
+        date: ""
+      },
+      dialogImageUrl1: "", //认证照片
+      dialogVisible1: false //认证照片列表
+    };
+  },
+  methods: {
+    // 返回列表
+    goto() {
+      this.$router.go(-1);
+    },
+    /**[发起问题] */
+    onStartQuestion() {
+      this.$router.push({
+        path: "newQuestion"
+      });
+    },
+    onSubmit() {
+      //表单提交
+      console.log("submit!");
+    },
+    // 认证照片
+    handleRemove1(file, fileList) {
+      //图标删除
+      console.log(file, fileList);
+    },
+    handlePictureCardPreview1(file) {
+      //认证照片列表
+      this.dialogImageUrl1 = file.url;
+      this.dialogVisible1 = true;
+    }
+  }
+};
+</script>
+<style lang='stylus' rel='stylesheet/stylus'>
+
+.container-risk2 {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.container-risk2 .title {
+  height: 40px;
+}
+
+.container-risk2 .el-form-item {
+  width: 100%;
+  height: auto !important;
+}
+
+.container-risk2 .title .el-button {
+  float: right;
+  width: 120px;
+  height: 40px;
+  line-height: 40px;
+  border: none !important;
+  padding: 0;
+  cursor: pointer;
+  background: #FDA143 !important;
+  color: #fff;
+  text-align: center;
+}
+
+.container-risk2 .title i {
+  float: left;
+  color: #FDA143;
+}
+
+.container-risk2 .avatar-uploader .el-upload {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.container-risk2 .el-upload--picture-card {
+  background: #F8F8F8 !important;
+}
+
+.container-risk2 .avatar-uploader .el-upload:hover {
+  border-color: #409EFF;
+}
+
+.container-risk2 .avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 145px;
+  height: auto;
+  text-align: center;
+}
+
+.container-risk2 .avatar {
+  width: 145px;
+  height: auto;
+  display: block;
+}
+
+.container-risk2 .el-form-item__content .tip {
+  color: #999999;
+  font-size: 18px;
+  padding-left: 10px;
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+.container-risk2 .upload {
+  display: inline-block;
+  text-align: center;
+}
+
+.container-risk2 .box {
+  float: left;
+}
+
+.container-risk2 .imgWrap {
+  float: left;
+  margin-right: 10px;
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+}
+
+.container-risk2 .imgWrap img {
+  width: 160px;
+  height: 120px;
+  display: block;
+}
+
+.container-risk2 .model img {
+  width: 128px !important;
+  height: 100px !important;
+  display: block;
+}
+
+.el-upload--picture-card {
+  width: 145px;
+  height: 120px;
+  line-height: 120px;
+  display: block;
+}
+
+.container-risk2 .workflowBox {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  float: left;
+  margin: -20px 0 0 -80px;
+}
+
+.container-risk2 .info {
+  color: #333;
+  font-size: 18px;
+  float: left;
+}
+
+.container-risk2 .workflowBox .workflow1 {
+  width: 156px;
+  margin-right: 10px;
+}
+
+.container-risk2 .workflowBox .add {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #435089;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container-risk2 .workflowBox .add i {
+  color: #435089;
+  font-size: 18px;
+}
+
+.container-risk2 .el-date-editor--date {
+  width: 260px !important;
+}
+
+.container-risk2 .el-select .el-input__suffix {
+  width: 0.666667rem;
+  background: #435089;
+  border-radius: 0 0.066667rem 0.066667rem 0;
+  right: 0 !important;
+}
+
+.container-risk2 .el-select input {
+  background: #fff !important;
+}
+
+.container-risk2 .el-step.is-horizontal .el-step__line {
+  top: 0.25rem;
+  background: #E5E5E5;
+}
+
+.container-risk2 .el-steps--horizontal {
+  margin: 0 120px 0 -100px;
+}
+
+.container-risk2 .relevance {
+  width: 64px;
+  height: 40px;
+  border: 1px solid #E5E5E5;
+  background: #F8F8F8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container-risk2 .btn {
+  padding: 20px 20%;
+}
+
+.container-risk2 .el-step__icon .is-text {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #E5E5E5;
+  background: #F8F8F8;
+}
+
+.container-risk2 .el-step__main div {
+  color: #333 !important;
+}
+
+.container-risk2 .el-button {
+  width: 100px;
+  color: #fff;
+}
+
+.container-risk2 .el-button--default {
+  background: #999999;
+}
+
+.container-risk2 .el-button--default:focus, .container-risk2 .el-button--default:hover {
+  background: #999999;
+  color: #fff;
+}
+
+.container-risk2 .el-button--primary {
+  background: #4775CA;
+}
+
+.container-risk2 .el-button--primary:focus, .el-button--primary:hover {
+  background: #4775CA;
+  color: #fff;
+}
+
+// 图标颜色
+.container-risk2 .container-risk2.icon {
+  color: #ffa147;
+}
+
+.container-risk2 .titleBg {
+  background: #44508a;
+}
+
+.container-risk2 .riskManage {
+  margin-bottom: 26px;
+}
+
+.container-risk2 .el-row .el-col-24 {
+  font-size: 22px;
+  color: #28292b;
+}
+
+.container-risk2 .el-date-editor--date .el-input__prefix {
+  left: calc(100% - 30px) !important;
+}
+
+.container-risk2 .riskManage .el-row .el-col-24 {
+  margin: 20px 0px;
+}
+
+.container-risk2 .notice {
+  color: #fff;
+  font-size: 20px;
+  height: 40px;
+  line-height: 40px;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.container-risk2 .notice .el-button--default {
+  width: 130px;
+  height: 30px;
+  line-height: 30px;
+  position: absolute;
+  left: 15px;
+  border: none !important;
+  padding: 0;
+  margin: 5px 0;
+  cursor: pointer;
+  background: #FDA143;
+  color: #fff;
+  text-align: center;
+}
+
+.container-risk2 .el-form {
+  padding: 0 72px;
+}
+
+.container-risk2 .el-input {
+  width: 260px;
+  height: 40px;
+  line-height: 40px;
+}
+
+.container-risk2 .el-input input, .container-risk2 .el-textarea .el-textarea__inner {
+  background: #F8F8F8;
+  color: #666666;
+  font-size: 16px;
+}
+
+.container-risk2 .el-textarea .el-textarea__inner {
+  min-height: 120px !important;
+}
+
+.container-risk2 .el-form-item__label {
+  color: #333333;
+  font-size: 18px;
+}
+
+.container-risk2 .leftBox, .container-risk2 .rightBox {
+  width: 50%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  background: #f5f6fa;
+}
+
+.container-risk2 .leftBox {
+  left: 0;
+}
+
+.container-risk2 .rightBox {
+  right: 0;
+}
+
+.container-risk2 .leftBox .box-card {
+  width: calc(100% - 30px);
+  height: calc(100% - 42px);
+  margin: 20px 10px 20px 20px;
+}
+
+.container-risk2 .rightBox .box-card {
+  width: calc(100% - 30px);
+  height: calc(100% - 42px);
+  padding: 20px 20px 20px 10px;
+  background: #f5f6fa;
+  border: none;
+  box-shadow: none;
+  background: #fff;
+  overflow: auto;
+}
+</style>
+
+
+

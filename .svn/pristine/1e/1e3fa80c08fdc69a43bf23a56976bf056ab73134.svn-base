@@ -1,0 +1,644 @@
+<!-- 首页 -->
+<template>
+  <div class="container-index">
+    <el-row :gutter="20">
+      <el-col :lg="11" :xl="9">
+        <div>
+          <p>
+            建设单位：
+            <span>XXX投资发展有限公司</span>
+          </p>
+          <p>
+            建设单位：
+            <span>XXX投资发展有限公司</span>
+          </p>
+          <p>
+            施工单位：
+            <span>XXX建工集团有限公司</span>
+          </p>
+        </div>
+        <div>建设规模： 共 3 栋，总建筑面积 30000 ㎡</div>
+        <div>
+          <el-table :data="tableData" style="width: 100%" max-height="150">>
+            <el-table-column prop="date" label="栋号"></el-table-column>
+            <el-table-column prop="name" label="建筑面积㎡"></el-table-column>
+            <el-table-column prop="address" label="地上层数"></el-table-column>
+            <el-table-column prop="underground" label="地下层数"></el-table-column>
+          </el-table>
+        </div>
+        <div>智慧工地</div>
+        <div>
+          <div>
+            <p>8456</p>
+            <span>今日考勤人数</span>
+          </div>
+          <div>
+            <p>47</p>
+            <span>特种作业人数</span>
+          </div>
+          <div>
+            <p>6</p>
+            <span>塔吊24小时预警次数</span>
+          </div>
+          <div>
+            <p>34</p>
+            <span>升降机24小时预警次数</span>
+          </div>
+          <div>
+            <p>96%</p>
+            <span>环境24小时监测达标率</span>
+          </div>
+        </div>
+        <div>人员组织</div>
+        <div id="dynamicTree"></div>
+      </el-col>
+      <el-col :lg="13" :xl="15">
+        <el-row class="select">
+          <el-col :span="7">
+            <div>
+              <el-select v-model="value" placeholder="请选择">
+                <el-option
+                  v-for="item in options"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                ></el-option>
+              </el-select>
+            </div>
+          </el-col>
+          <el-col :span="1"></el-col>
+          <el-col :span="16">
+            <div>
+              <el-select v-model="value6" placeholder="请选择">
+                <el-option
+                  v-for="item in cities"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                >
+                  <span style="float: left">{{ item.label }}</span>
+                  <span style="float: right; color: #8492a6; font-size: 13px">{{ item.value }}</span>
+                </el-option>
+              </el-select>
+            </div>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="2">项目进度：</el-col>
+          <el-col :span="22" class="process">
+            <el-row>2018.01.01</el-row>
+            <el-row :gutter="20">
+              <el-col :span="20">
+                <div>
+                  <el-progress
+                    :text-inside="true"
+                    :stroke-width="21"
+                    :percentage="70"
+                    color="#4775CA"
+                  ></el-progress>
+                </div>
+              </el-col>
+              <el-col :span="4">
+                <div>总工期：560天</div>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="20">
+                <div>
+                  <el-progress
+                    :text-inside="true"
+                    :stroke-width="21"
+                    :percentage="80"
+                    color="#FDA143"
+                  ></el-progress>
+                </div>
+              </el-col>
+              <el-col :span="4">
+                <div>剩余工期：234天</div>
+              </el-col>
+            </el-row>
+            <el-row class="sign">
+              <div>计划进度</div>
+              <div>实际进度</div>
+            </el-row>
+          </el-col>
+        </el-row>
+      </el-col>
+    </el-row>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+// vuex
+import { mapMutations } from "vuex";
+// 组件
+import Vue from "vue";
+import ElementUI from "element-ui";
+Vue.use(ElementUI);
+import * as d3 from "d3";
+Vue.use(d3);
+
+export default {
+  data() {
+    return {
+      count: 0,
+      isLoading: false,
+      tableData: [
+        {
+          date: "A1",
+          name: 200,
+          address: 22,
+          underground: 2
+        },
+        {
+          date: "A2",
+          name: 200,
+          address: 22,
+          underground: 2
+        },
+        {
+          date: "A3",
+          name: 200,
+          address: 22,
+          underground: 2
+        },
+        {
+          date: "A4",
+          name: 200,
+          address: 22,
+          underground: 2
+        }
+      ],
+      options: [
+        {
+          value: "选项1",
+          label: "整体模型-XXX易地扶贫搬迁项目"
+        },
+        {
+          value: "选项2",
+          label: "整体模型-XXX易地扶贫搬迁项目1"
+        },
+        {
+          value: "选项3",
+          label: "整体模型-XXX易地扶贫搬迁项目2"
+        },
+        {
+          value: "选项4",
+          label: "整体模型-XXX易地扶贫搬迁项目3"
+        },
+        {
+          value: "选项5",
+          label: "整体模型-XXX易地扶贫搬迁项目4"
+        }
+      ],
+      value: "",
+      cities: [
+        {
+          value: "2018.02.16",
+          label: "XX时间节点，资料、图片未及时进行认证。11"
+        },
+        {
+          value: "2018.02.15",
+          label: "XX时间节点，资料、图片未及时进行认证。22"
+        },
+        {
+          value: "2018.02.14",
+          label: "XX时间节点，资料、图片未及时进行认证。33"
+        },
+        {
+          value: "2018.02.13",
+          label: "XX时间节点，资料、图片未及时进行认证。44"
+        },
+        {
+          value: "2018.02.12",
+          label: "XX时间节点，资料、图片未及时进行认证。55"
+        }
+      ],
+      value6: ""
+    };
+  },
+  created() {
+    console.log(this.$store.state);
+  },
+  mounted() {
+    function Tree(option) {
+      const defaultOpt = {
+        width: 580, // 组织图宽度
+        height: 500,
+        rectHeight: 30, // 节点rect高度
+        rectWidth: 100,
+        selector: null, // 挂载元素
+        fontSize: 14,
+        fontColors: ["#FFFFFF", "#FFFFFF", "#333333"], // 字体颜色
+        bgColors: ["#4775CA", "#FDA143", "#D8DFEE"], // 字体颜色
+        dataUrl: "" // 组织图信息
+      };
+
+      option = Object.assign({}, defaultOpt, option);
+
+      this.width = option.width;
+      this.height = option.height;
+      this.rectHeight = option.rectHeight;
+      this.rectWidth = option.rectWidth;
+      this.selector = option.selector == null ? "body" : option.selector;
+      this.fontColors = option.fontColors;
+      this.bgColors = option.bgColors;
+      this.dataUrl = option.dataUrl;
+      this.fontSize = option.fontSize;
+    }
+
+    Tree.prototype.init = function() {
+      var that = this;
+      var tree = d3.layout.tree().size([that.width, that.height]);
+      // .separation((a, b) => (a.parent == b.parent ? 1 : 2) / a.depth); //间隔函数
+
+      var svg = d3
+        .select(that.selector)
+        .append("svg")
+        .attr("width", that.width)
+        .attr("height", that.height)
+        .append("g"); //整个组织图的样式信息
+      // .attr("transform", "translate(0,0)");
+
+      if (Object.prototype.toString.call(that.dataUrl) == "[object String]") {
+        d3.json(that.dataUrl, (error, root) => {
+          if (error) throw error;
+          render(root);
+        });
+      } else {
+        render(that.dataUrl);
+      }
+
+      function render(root) {
+        const nodes = tree.nodes(root);
+        const links = tree.links(nodes);
+        svg
+          .selectAll(".link")
+          .data(links)
+          .enter()
+          .append("path")
+          // .attr("class", "link")
+          .attr(
+            "d",
+            d =>
+              "M" +
+              d.source.y +
+              " " +
+              d.source.x / 2.5 +
+              "L" +
+              (d.source.y + that.rectWidth + 10) +
+              " " +
+              d.source.x / 2.5 +
+              " L" +
+              (d.source.y + that.rectWidth + 10) +
+              " " +
+              d.target.x / 2.5 +
+              " L" +
+              d.target.y +
+              " " +
+              d.target.x / 2.5
+          )
+          .attr("style", "stroke:#979797;fill: none;stroke-width: 1.5px;"); //连接线样式
+        const node = svg
+          .selectAll(".node")
+          .data(nodes)
+          .enter()
+          .append("g")
+          .attr("class", "node")
+          .attr(
+            "transform",
+            d => "translate(" + d.y + "," + (d.x - that.rectHeight) / 2.5 + ")"
+          )
+          .attr("style", "font: " + that.fontSize + "px sans-serif;"); //节点位置
+
+        node
+          .append("rect")
+          .attr("width", that.rectWidth)
+          .attr("height", that.rectHeight)
+          .attr("x", 0)
+          .attr("y", 0)
+          .attr("style", d => "fill:" + that.bgColors[d.type]); //节点背景颜色
+
+        node
+          .append("text")
+          .attr("dx", that.fontSize)
+          .attr("dy", (that.fontSize + that.rectHeight) / 2 - 2)
+          .style("text-anchor", "start")
+          .attr("style", d => "fill:" + that.fontColors[d.type])
+          .text(d => d.name); //节点文字颜色
+      }
+    };
+
+    const jsonObject = {
+      name: "领导",
+      type: "0",
+
+      children: [
+        {
+          name: "工程部",
+          type: "1",
+          children: [
+            {
+              name: "o",
+              type: "2",
+              children: [
+                {
+                  name: "n",
+                  type: "2",
+                  children: []
+                }
+              ]
+            },
+            {
+              name: "b",
+              type: "2",
+              children: [
+                {
+                  name: "n",
+                  type: "2",
+                  children: []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          name: "施工部",
+          type: "1",
+          children: [
+            {
+              name: "XX",
+              type: "2",
+              children: [
+                {
+                  name: "n",
+                  type: "2",
+                  children: [
+                    {
+                      name: "nn",
+                      type: "2",
+                      children: []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              name: "XXX",
+              type: "2",
+              children: [
+                {
+                  name: "n",
+                  type: "2",
+                  children: []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          name: "项目经理",
+          type: "2",
+          children: [
+            {
+              name: "XX",
+              type: "2",
+              children: [
+                {
+                  name: "n",
+                  type: "2",
+                  children: []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          name: "项目副经理",
+          type: "2",
+          children: [
+            {
+              name: "XX",
+              type: "2",
+              children: [
+                {
+                  name: "n",
+                  type: "2",
+                  children: []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+    const option = {
+      dataUrl: jsonObject, //节点信息 JSON
+      selector: "#dynamicTree" //挂载 div 的 id
+    };
+    const tree = new Tree(option);
+    tree.init();
+  },
+  computed: {
+    // 测试vuex
+    demoIndex() {
+      console.log(this.$store.state.demo);
+      console.log(this.$store);
+      return this.$store.getters.getIndex + this.$store.state.demo.demo_index;
+    }
+  },
+  methods: {
+    // 测试vuex
+    up() {
+      this.re_demo_index();
+    },
+    ...mapMutations({
+      re_demo_index: "DEMO_INDEX"
+    })
+  }
+};
+</script>
+
+<style>
+.container-index .el-input {
+  font-size: 18px;
+}
+.container-index .el-progress-bar__outer,
+.container-index .el-progress-bar__inner {
+  border-radius: 0;
+}
+.el-col-7 .el-input__inner {
+  background: #4775ca;
+  color: #fff;
+}
+.container-index .el-select {
+  flex: 1;
+  height: 40px;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+  border-radius: 4px;
+}
+.container-index .el-input--suffix .el-input__inner {
+  border: none;
+}
+.container-index .el-input__suffix {
+  background: rgba(67, 80, 137, 1);
+  border-radius: 0px 4px 4px 0px;
+  right: 0;
+  width: 40px;
+}
+.container-index .el-icon-arrow-up:before {
+  /* content: "\e60b"; */
+  content: "\e60c";
+  /* font-size: 20px; */
+  color: rgba(255, 255, 255, 1);
+}
+.container-index .center-select {
+  margin: 0 20px;
+}
+.input-number .el-input-group--append .el-input__inner,
+.el-input-group__prepend {
+  height: 40px;
+  background: rgba(248, 248, 248, 1);
+  border-radius: 4px;
+  border: 1px solid rgba(229, 229, 229, 1);
+  border-right: 1px dashed #979797;
+}
+/* 滚动条的宽度 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background-color: transparent;
+}
+
+/* 滚动条的滑块 */
+::-webkit-scrollbar-thumb {
+  background-color: #a1a3a9;
+  border-radius: 6px;
+}
+</style>
+
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+* {
+  font-size: 18px;
+}
+
+.container-index {
+  width: 100%;
+  height: 100%;
+  font-size: 0.3rem;
+  background: #F5F6FA;
+  color: #000;
+}
+
+.container-index> div {
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+
+.container-index>.el-row>.el-col>div, .select {
+  margin: 0.15rem 0.2rem;
+  padding: 0.1rem 0.2rem;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+p {
+  padding: 0.1rem;
+}
+
+span {
+  color: #666;
+}
+
+.container-index>.el-row>.el-col:nth-child(1) >div:nth-child(2) {
+  background: #4775CA;
+  color: #fff;
+}
+
+.el-col:nth-child(1)>div:nth-child(4), .el-col:nth-child(1)>div:nth-child(6) {
+  border-left: 4px solid #FDA143;
+  background: #F5F6FA;
+  padding: 0 0.3rem;
+}
+
+.el-col>div:nth-child(5) {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  height: 162px;
+}
+
+.el-col>div:nth-child(5)>div {
+  margin: 5px;
+  border: 1px solid #D8DFEE;
+  flex: 1;
+  padding: 5px;
+  text-align: center;
+  font-size: 0.2rem;
+}
+
+.el-col>div:nth-child(5)>div>p {
+  font-size: 0.5rem;
+}
+
+.el-col>div:nth-child(5)>div:nth-child(2n+1) {
+  border-bottom: 2px solid #4775CA;
+  color: #4775CA;
+}
+
+.el-col>div:nth-child(5)>div:nth-child(2n) {
+  border-bottom: 2px solid #FDA143;
+  color: #FDA143;
+}
+
+.el-col>div:nth-child(7) {
+  height: 500px;
+  overflow: scroll;
+}
+
+.el-select {
+  width: 100%;
+}
+
+.el-col-7, .el-col-17 {
+  // height: 40px;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0px 3px 7px 0px rgba(216, 223, 238, 1);
+  border-radius: 4px;
+  padding: 0;
+}
+
+.el-select-dropdown__item {
+  margin: 0.1rem;
+  // padding: 0;
+  // border-bottom: 1px solid rgb(82, 94, 113);
+}
+
+a {
+  color: #4775CA;
+}
+
+.el-col-2 {
+  padding: 40px 0;
+}
+
+// }
+.sign, .sign div {
+  display: inline-block;
+}
+
+.sign div::before {
+  content: '•';
+  padding: 0.15rem;
+  vertical-align: middle;
+  color: #4775CA;
+}
+
+.sign div:nth-child(2)::before {
+  color: #FDA143;
+}
+</style>

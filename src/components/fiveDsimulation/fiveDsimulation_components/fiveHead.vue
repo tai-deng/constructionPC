@@ -1,0 +1,201 @@
+<template>
+  <div class="plan-container">
+    <el-form :model="modeValue" ref="formData">
+      <div class="plan-left">
+        <div class="mode-type">
+          <el-select v-model="mode" @change="selOp" placeholder="请选择模型">
+            <el-option v-for="item in modeList" :key="item.id" :label="item.label" :value="item.id"></el-option>
+          </el-select>
+        </div>
+
+        <div class="date">
+          <el-date-picker
+            v-model="shop"
+            value-format="yyyy-MM-dd"
+            format="yyyy-MM-dd"
+            type="daterange"
+            @change="chooseTimeRange"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+          ></el-date-picker>
+        </div>
+
+        <div class="plan-play">
+          <div class="plan-play-l" @click="pause">
+            <img src="../../../assets/icons/gantt-pause.png" class="el-icon-error pause">
+          </div>
+          <div class="plan-play-r" @click="play">
+            <img src="../../../assets/icons/gantt-play.png" class="el-icon-success play">
+          </div>
+        </div>
+      </div>
+    </el-form>
+    <div class="plan-right">
+      <div class="road-week flex-row" :class="{'day-opt':dayP==1}" @click="roadWeek(1)">
+        <i class="el-icon-upload2"></i>
+        施工组织计划导出
+      </div>
+      <div class="show-mode flex-row" :class="{'day-opt':dayP==1}" @click="showMode(2)">显示模型</div>
+    </div>
+  </div>
+</template>
+<script>
+// vuex
+import { mapMutations } from "vuex";
+export default {
+  name: "plan",
+  data() {
+    return {
+      point: 0,
+      dayP: 3,
+      shop: null, // 时间选择
+      mode: null, // 模型选择
+      modeValue: null,
+      modeList: [ // 模型数据
+        {
+          ScheduleID: "0",
+          label: "模型0"
+        },
+        {
+          ScheduleID: "1",
+          label: "模型1"
+        }
+      ]
+    };
+  },
+  methods: {
+    // 获取模型数据
+    getModeDate(){},
+
+    // 选择模块
+    selOp(p) {
+      let v= this.modeList[Number(p)];
+      this.gantState({ selModel: v });
+    },
+
+    // 暂停播放
+    pause() {
+      this.gantState({ pause: true });
+    },
+
+    // 播放
+    play() {
+      this.gantState({ play: true });
+    },
+
+    // 施工计划导出
+    roadWeek() {
+      this.gantState({ educe: true });
+    },
+
+    // 显示模型
+    showMode() {
+      let showMode= !this.$store.getters.getGanttState.showMode;
+      this.gantState({ showMode});
+    },
+
+    // 筛选日期
+    chooseTimeRange(p) {
+      this.gantState({ selDate: p });
+    },
+    
+    ...mapMutations({
+      gantState: "GET_GANTT_STATE"
+    })
+  }
+};
+</script>
+<style>
+.plan-container {
+  height: 100px;
+  font-size: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.plan-left,
+.plan-right {
+  display: flex;
+}
+.plan-play-l,
+.plan-play-r {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.plan-play-l {
+  border-right: 1px dashed rgba(229, 229, 229, 1);
+}
+.plan-left .el-input--suffix,
+.plan-left .el-date-editor {
+  width: 343px !important;
+  height: 40px !important;
+  margin-right: 20px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.plan-left .el-date-editor i:nth-child(1) {
+  display: none;
+}
+.plan-left .el-date-editor .el-range__close-icon::before {
+  content: "\E608";
+}
+.plan-play {
+  width: 100px;
+  height: 40px;
+  color: #000000;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  border-radius: 6px;
+}
+.plan-play img {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+.road-week {
+  width: 200px;
+  height: 40px;
+  background: rgba(71, 117, 202, 1);
+  box-shadow: 0px 2px 4px 0px rgba(161, 192, 250, 1);
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+  margin-right: 20px;
+}
+.show-mode {
+  font-size: 16px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+
+  width: 120px;
+  height: 40px;
+  background: rgba(253, 161, 67, 1);
+  box-shadow: 0px 2px 4px 0px rgba(176, 148, 119, 0.5);
+  border-radius: 4px;
+}
+.flex-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+/* 下拉框变色---没有变色 */
+.plan-left .el-input__suffix {
+  background: rgba(67, 80, 137, 1);
+  border-radius: 0px 4px 4px 0px;
+  right: 0;
+  width: 40px !important;
+}
+.plan-left .el-icon-arrow-up:before {
+  content: "\e60c";
+  color: rgba(255, 255, 255, 1);
+}
+</style>
+

@@ -1,0 +1,64 @@
+<!-- 功能配置configuration -->
+<template>
+  <div class="container-configuration">
+    <div class="wrapper">
+      <div class="model-container" ref="modelContainer">
+
+      </div>
+    </div>
+    
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+// vuex
+import { mapMutations } from "vuex";
+export default {
+  data() {
+    return {
+      data: "功能配置configuration",
+      
+    };
+  },
+  created(){
+    this._initData()
+  },
+  methods: {
+    _initData(){
+      // this.$nextTick(() => {
+      //   this.$util.getDomLocation(this, "modelContainer").then(res => {
+      //     this.modelBox({
+      //       isShowModel:true,//是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+      //       isLoadModel:true,//是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+      //       top: res.top,//距离顶部距离‘px'
+      //       left: res.left,//距离左边距离‘px'
+      //       width: res.width,//模型宽‘px'
+      //       height: res.height,//模型高 ‘px'
+      //       zIndex:100,//模型层级
+      //       background:'',
+      //       ElementIDs:[],// 所有要显示的构件数组，包括半隐藏构件
+      //       highLightElementIDs: [],// 高亮显示的构件
+      //       functionNumber:[],// 需要模型调用的函数编号数组
+      //     })
+      //   });
+      // });
+    },
+    ...mapMutations({
+      modelBox:'GET_MODEL_BOX'
+    })
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-configuration
+  width 100%
+  height 100%
+  .wrapper
+    height 100%
+    .model-container
+      box-sizing border-box
+      padding 100px 20px
+      width 500px
+      height 500px
+      border 1px solid
+</style>

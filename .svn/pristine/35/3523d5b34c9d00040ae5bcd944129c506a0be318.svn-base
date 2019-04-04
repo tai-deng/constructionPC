@@ -1,0 +1,227 @@
+<!-- 清单导入首页index -->
+<template>
+  <div class="container-import-index">
+    <div class="wrapper">
+      <div class="top"></div>
+      <div class="center">
+        <header class="center-head">温馨提示</header>
+        <div class="import-icon">
+          <img src="@/assets/imgs/listingImport.png" alt>
+        </div>
+        <div class="content">
+          <p>您可以选择导入施工图预算工程量清单或全费用清单与模型关联，进行项目成本控制；</p>
+          <p>也可以通过模型自动提取工程量清单，进行项目成本控制。</p>
+          <p>以下三种方案，只能选择其中一种进行配置。</p>
+        </div>
+        <div class="but">
+          <el-button size="small" type="primary" @click="emitJump(0)">Plan1 施工图预算导入</el-button>
+          <el-button size="small" type="primary" @click="emitJump(1)">Plan2 全费用清单导入</el-button>
+          <el-button size="small" type="primary" @click="emitJump(2)">Plan3 构件清单生成</el-button>
+        </div>
+      </div>
+    </div>
+    <!-- 单体选择弹窗 -->
+    <div class="dialog" v-if="isShowBuildingListSelect&&[0,1].indexOf(toPageNum)!=-1">
+      <div class="select-monomer">
+        <header class="head-title">选择单体</header>
+        <div class="selectd">
+          <el-select v-model="Building" placeholder="请选择">
+            <el-option
+              v-for="item in BuildingList"
+              :key="item.id"
+              :label="item.val"
+              :value="item.val"
+            ></el-option>
+          </el-select>
+        </div>
+        <p>*选择楼栋后上传xlsx表数据</p>
+        <div class="buts">
+          <el-button type="info" @click="closeBuildingListSelect">取消</el-button>&nbsp;&nbsp;&nbsp;
+          <!-- <el-button type="primary" @click="sub">确定</el-button> -->
+          <el-upload
+            action
+            :http-request="uploadFileXLSX"
+            :file-list="fileList"
+            :show-file-list="false"
+            style="display: inline-block;"
+          >
+            <el-button size="small" type="primary" v-if="Building">确定</el-button>
+          </el-upload>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import readxlsx from "../modules/readXLSX.js";
+import { GetBuilding } from "@/api/api.js";
+export default {
+  mixins: [readxlsx],
+  data() {
+    return {
+      data: "清单导入首页",
+      toPageNum: 0, //跳转到哪个页面 0 --plan1 , 2 --plan2 ,  3-- plan3
+      fileList: [], //上传的文件数组
+      BuildingList: [], //楼栋集
+      Building: "", //选择的楼栋
+      isShowBuildingListSelect: false, //是否显示楼栋选择器蒙层弹窗。
+      projectid: "12345678"
+    };
+  },
+  methods: {
+    /**
+     * 点击哪个按钮
+     */
+    async emitJump(id) {
+      console.log(id);
+      this.toPageNum = id;
+      this.isShowBuildingListSelect = true;
+      //获取楼栋列表
+      let list = await this.getDataBySessionStorageAll(
+        GetBuilding,
+        { projectid: this.projectid },
+        "BuildingList",
+        false
+      );
+      console.log(list);
+      if (list.StatusCode === 200) {
+        if (list.Detiel && list.Detiel.length != 0) {
+          this.BuildingList = [];
+          // 楼栋列表  数组转对象数组
+          list.Detiel.forEach((i, index) => {
+            this.BuildingList.push({
+              id: index,
+              val: i
+            });
+          });
+          console.log(this.BuildingList);
+        }
+      } else {
+        this.$message({
+          type: "error",
+          message: "获取楼栋列表失败",
+          center: "true"
+        });
+      }
+    },
+    /**
+     * 关闭楼栋选择蒙层
+     */
+    closeBuildingListSelect() {
+      this.isShowBuildingListSelect = false;
+    }
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+@import '../../../../assets/stylus/variable.styl'
+
+.container-import-index
+  width 100%
+  height 100%
+  .wrapper
+    width 100%
+    height 100%
+    .top
+      width 100%
+      height 100px
+    .center
+      box-sizing border-box
+      width 1200px
+      height 675px
+      margin 0 auto
+      background $color-default-background
+      box-shadow 0px 3px 7px 0px rgba(216, 223, 238, 1)
+      .center-head
+        width 100%
+        height 50px
+        background-color $font-color-13
+        text-align center
+        color $font-color-03
+        font-size $font-size-18
+        font-family SourceHanSansCN-Normal
+        font-weight 400
+        line-height 50px
+      .import-icon
+        margin 0 auto
+        width 76px
+        height 136px
+        margin-top 80px
+        img
+          height 76px
+          width 76px
+      .content
+        height 120px
+        p
+          text-align center
+          color $font-color-10
+          font-size $font-size-18
+          font-family SourceHanSansCN-Normal
+          font-weight 400
+          line-height 27px
+      .but
+        text-align center
+        display flex
+        width 650px
+        margin 0 auto
+        justify-content space-around
+        .in-center
+          margin 0 30px
+  .dialog
+    position fixed
+    top 0
+    left 0
+    width 100%
+    height 100%
+    background-color rgba(0, 0, 0, 0.6)
+    z-index 999
+    .select-monomer
+      width 600px
+      height 400px
+      margin 0 auto
+      margin-top 100px
+      background-color $font-color-03
+      p
+        font-size $font-size-16
+        color $font-color-04
+        box-sizing border-box
+        padding-left 100px
+        padding-top 10px
+      .head-title
+        width 100%
+        height 40px
+        background-color $font-color-13
+        color $font-color-03
+        font-size $font-size-16
+        line-height 40px
+        text-align center
+      .selectd
+        width 100%
+        margin-top 100px
+      .buts
+        text-align center
+        margin-top 100px
+</style>
+<style>
+.center .el-button--primary {
+  background-color: #4775ca;
+  border-color: #4775ca;
+}
+.center .el-button--primary span {
+  font-size: 16px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+  line-height: 24px;
+}
+.selectd .el-select {
+  margin: 0 auto;
+  display: block;
+  width: 400px;
+}
+.buts .el-button--small {
+  font-size: 18px;
+  padding: 12px 20px;
+}
+</style>

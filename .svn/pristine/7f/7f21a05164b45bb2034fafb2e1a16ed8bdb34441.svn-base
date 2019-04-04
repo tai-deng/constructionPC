@@ -1,0 +1,687 @@
+<!-- 信息配置information -->
+<template>
+  <div class="container-information">
+    <div class="wrapper">
+      <div class="left">
+        <div class="left-contain">
+          <el-form :model="formData" :rules="rules" ref="formData">
+            <!-- 下拉菜单 -->
+            <el-form-item prop="projectType">
+              <div class="project-type">
+                <span class="project-title">工程类型</span>
+                <el-select
+                  v-model="formData.projectType"
+                  @change="onProjectType"
+                  placeholder="请选择工程类型"
+                >
+                  <el-option
+                    v-for="item in projectTypeList"
+                    :key="item.id"
+                    :label="item.text"
+                    :value="item"
+                  ></el-option>
+                </el-select>
+              </div>
+            </el-form-item>
+            <!-- 项目地址 -->
+            <div class="project-address">
+              <p class="project-address-title">项目选址</p>
+              <div class="address-select">
+                <!-- 省 -->
+                <el-form-item prop="Province">
+                  <el-select
+                    v-model="formData.Province"
+                    placeholder="选择省"
+                    popper-class="drwn-address"
+                  >
+                    <el-option
+                      v-for="item in provinceList"
+                      :key="item.id"
+                      :label="item.text"
+                      :value="item.id"
+                    ></el-option>
+                  </el-select>
+                </el-form-item>
+                <!-- 市 -->
+                <el-form-item prop="City">
+                  <el-select
+                    v-model="formData.City"
+                    placeholder="选择市"
+                    class="center-select"
+                    popper-class="drwn-address"
+                  >
+                    <el-option
+                      v-for="item in cityList"
+                      :key="item.id"
+                      :label="item.text"
+                      :value="item.id"
+                    ></el-option>
+                  </el-select>
+                </el-form-item>
+                <!-- 区县 -->
+                <el-form-item prop="Country">
+                  <el-select
+                    v-model="formData.Country"
+                    placeholder="选择区/镇"
+                    popper-class="drwn-address"
+                  >
+                    <el-option
+                      v-for="item in CountryList"
+                      :key="item.id"
+                      :label="item.text"
+                      :value="item.text"
+                    ></el-option>
+                  </el-select>
+                </el-form-item>
+              </div>
+
+              <!-- 详细地址 -->
+              <el-form-item prop="Address">
+                <el-input
+                  :maxlength="100"
+                  type="textarea"
+                  :rows="4"
+                  resize="none"
+                  placeholder="请输入详细地址"
+                  v-model="formData.Address"
+                ></el-input>
+              </el-form-item>
+            </div>
+
+            <!-- 总建筑面积 -->
+            <div class="input-building">
+              <p>
+                总建筑面积
+                <span>（如果BIM模型中设置了房间属性，将自动识别建筑面积）</span>
+              </p>
+              <div class="input-number">
+                <el-form-item prop="area">
+                  <el-input type="number" placeholder="请输入建筑面积数" v-model="formData.TotalArea">
+                    <template slot="append">㎡</template>
+                  </el-input>
+                </el-form-item>
+              </div>
+            </div>
+            <!-- 建筑单体 -->
+            <div class="input-building">
+              <p>
+                建筑单体
+                <span>（自动识别模型上传中建筑单体数量）</span>
+              </p>
+              <div class="input-number">
+                <el-form-item prop="BuildMon">
+                  <el-input type="number" placeholder="请输入单体数量" v-model="formData.BuildMon">
+                    <template slot="append">栋</template>
+                  </el-input>
+                </el-form-item>
+              </div>
+            </div>
+            <!-- 表格 -->
+            <div class="tab">
+              <el-table :data="tableData" style="width: 100%" max-height="250">
+                <el-table-column label="栋号">
+                  <template slot-scope="scope">
+                    <el-input
+                      :ref="`focus${scope.column.id}`"
+                      @blur="onBlur(scope.$index, scope.row)"
+                      readonly
+                      ondblclick="this.readOnly=false"
+                      v-model="scope.row.BuildName"
+                      placeholder="输入栋号"
+                    ></el-input>
+                  </template>
+                </el-table-column>
+                <el-table-column label="建筑面积㎡">
+                  <template slot-scope="scope">
+                    <el-input
+                      readonly
+                      ondblclick="this.readOnly=false"
+                      :ref="`focus${scope.column.id}`"
+                      @blur="onBlur(scope.$index, scope.row)"
+                      type="number"
+                      v-model="scope.row.BuiltArea"
+                      placeholder="输入面积"
+                    ></el-input>
+                  </template>
+                </el-table-column>
+                <el-table-column label="地上层数">
+                  <template slot-scope="scope">
+                    <el-input
+                      readonly
+                      ondblclick="this.readOnly=false"
+                      :ref="`focus${scope.column.id}`"
+                      @blur="onBlur(scope.$index, scope.row)"
+                      type="number"
+                      v-model="scope.row.FloorUp"
+                      placeholder="输入层数"
+                    ></el-input>
+                  </template>
+                </el-table-column>
+                <el-table-column label="地下层数">
+                  <template slot-scope="scope">
+                    <el-input
+                      readonly
+                      ondblclick="this.readOnly=false"
+                      :ref="`focus${scope.column.id}`"
+                      @blur="onBlur(scope.$index, scope.row)"
+                      type="number"
+                      v-model="scope.row.FloorDown"
+                      placeholder="输入层数"
+                    ></el-input>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+            <!-- 提交 -->
+            <div class="sub">
+              <el-button type="warning" @click="isSub('formData')">提&nbsp;交</el-button>
+            </div>
+          </el-form>
+        </div>
+      </div>
+      <div class="right">
+        <div
+          class="right-map"
+          ref="allmap"
+          v-loading="!isMapLoaded"
+          element-loading-text="定位中..."
+          element-loading-spinner="el-icon-loading"
+          element-loading-background="rgba(0, 0, 0, 0.6)"
+          spinner="spinner"
+          customClass="spinner"
+        ></div>
+        <!-- 地图搜索框 -->
+        <div class="map-search" v-if="isMapLoaded">
+          <el-input id="input-entry" placeholder="搜地点" v-model="entry">
+            <i class="el-icon-search el-input__icon" slot="suffix" @click="mapSearch"></i>
+          </el-input>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+//混入
+import baiduMap from "./modules/map.js";
+import menus from "./modules/menu.js";
+// vuex
+import { mapMutations } from "vuex";
+//接口
+import { infaces,infaces2 } from "./modules/interfaces.js";
+import {
+  GetEngingTypeList,
+  GetEngingConfigByTypeId,
+  GetProvinceList,
+  GetCityList,
+  GetCountryList,
+  SubModelEngingConfig
+} from "@/api/api.js";
+export default {
+  mixins: [baiduMap, menus],
+  data() {
+    return {
+      projectTypeList: [], //工程类型数组
+      provinceList: [],
+      cityList: [], // 市数组
+      CountryList: [],
+      formData: {
+        //表单对象
+        ProjectID:localStorage.getItem("projectid"),
+        projectType: localStorage.getItem("projectType"), //已选择的工程类型
+        EngingTypeId: localStorage.getItem("projectTypeId"),
+        Province: "", //已选择的省份
+        ProvinceId:0,
+        City: "", //已选择的市
+        CityId:0,//已选择城市的ID
+        Country: "", //已选择的区/镇
+        CountryId:0,//区ID
+        Address: "", //详情地址
+        TotalArea: "", //建筑面积
+        BuildMon: "", //建筑单体数
+        buildList: [
+          // BuiId: "16ada8e5-9dac-434c-a1e2-9796a801bc07"
+          // BuildName: "A1"
+          // BuiltArea: 99
+          // EngingId: "89d5d35b-350c-441d-80b3-d798e5e92e06"
+          // FloorDown: 22
+          // FloorUp: 22
+          // ID: 1
+          // bDelFlag: null
+          // dCreateTime: "2019-03-12T10:48:18.17"
+          // dUpdateTime: "2019-03-20T10:23:36.213"
+          // iCreator: 0
+          // iUpdator: 5
+        ], //建筑集合
+      },
+      dataArr: [], //当已选择了工程类型之后获取 的数据
+      rules: {
+        //表单效验
+        projectType: [
+          { required: true, message: "请选择工程类型", trigger: "change" }
+        ],
+        Province: [{ required: true, message: "请选择省", trigger: "change" }],
+        City: [{ required: true, message: "请选择市", trigger: "change" }],
+        Country: [{ required: true, message: "请选择区/镇", trigger: "change" }],
+        Address: [
+          { required: true, message: "请输入详细地址", trigger: "blur" }
+        ],
+        TotalArea: [
+          { required: true, message: "请输入建筑面积数", trigger: "blur" }
+        ],
+        BuildMon: [
+          { required: true, message: "请输入建筑单体数", trigger: "blur" }
+        ]
+      },
+      tableData: [] //单体表数据
+    };
+  },
+
+  mounted() {
+    this._initData();
+  },
+  methods: {
+    async _initData() {
+      this.modelBox({
+        isShowModel: false, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+        isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+        zIndex: 100, //模型层级
+        background: "",
+        ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+        highLightElementIDs: [], // 高亮显示的构件
+        functionNumber: [] // 需要模型调用的函数编号数组
+      });
+      let ProjectID = localStorage.getItem("projectid"),
+        EngingTypeId = localStorage.getItem("projectTypeId");
+      console.log(EngingTypeId);
+      if (EngingTypeId) {
+        this.dataArr = await infaces(this, GetEngingConfigByTypeId, {
+          ProjectID,
+          EngingTypeId
+        });
+        this.formData.TotalArea = this.dataArr[0].TotalArea;
+        this.formData.BuildMon = this.dataArr[0].BuildMon;
+        this.tableData = this.dataArr[0].StoriedBuildlList;
+        // console.log(this.dataArr[0].StoriedBuildlList)
+
+        this.getMap(true, this.dataArr[0].City);
+      } else {
+        this.getMap(false, "");
+      }
+      //获取工程类型列表
+      this.projectTypeList = await infaces(this, GetEngingTypeList, {});
+      //获取省份列表
+      this.provinceList = await infaces(this, GetProvinceList, {});
+      console.log(this.dataArr);
+      if (this.dataArr.length) {
+        this.formData.Province = this.dataArr[0].Province; //已选择的省份
+        this.formData.ProvinceId = this.dataArr[0].ProvinceId; //已选择的省份
+
+        this.formData.Country = this.dataArr[0].Country;
+        this.formData.CountryId = this.dataArr[0].CountryId;
+        this.formData.Address = this.dataArr[0].Address;
+      }
+    },
+    /** * 事件 */
+    /**
+     * 提交
+     */
+    isSub(formName) {
+      this.$refs[formName].validate(valid => {
+        console.log(formName);
+        if (valid) {
+          this.$dialog
+            .confirm({
+              title: "提示",
+              className: "sub-dialog",
+              message: "是否确定提交？"
+            })
+            .then(async () => {
+              console.log("确定");
+              console.log(this.tableData)
+              await infaces2(this, SubModelEngingConfig, this.formData,this.tableData);
+              this.$message({type:'success',message:'提交成功',center:'true'})
+            })
+        } else {
+          this.$message({
+            type: "error",
+            message: "选择或输入不能为空",
+            center: "true"
+          });
+          return false;
+        }
+      });
+    },
+    /**
+     * 双击编辑单元格
+     */
+    editorCell(index, row, column, scope) {
+      console.log(index, row, column, scope);
+      console.log(this.tableData[index][`isCaneditor${index}`]);
+      this.tableData[index][`isCaneditor${index}`] = true;
+      //点开input自动获取焦点
+      this.$nextTick(() => {
+        this.$refs[`focus${column.id}`].focus();
+      });
+    },
+    /**
+     * 失去焦点事件
+     */
+    onBlur(index, row) {
+      console.log(index, row);
+      console.log(this.tableData);
+      this.tableData[index][`isCaneditor${index}`] = false;
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    }),
+    /**
+     * 工程类型选择
+     */
+    async onProjectType(d) {
+      console.log(d);
+      //保存已选择的工程类型
+      localStorage.setItem("projectTypeId", d.id);
+      localStorage.setItem("projectType", d.text);
+      let ProjectID = localStorage.getItem("projectid"),
+        EngingTypeId = d.id;
+      console.log(EngingTypeId);
+
+      let dataArr = await infaces(this, GetEngingConfigByTypeId, {
+        ProjectID,
+        EngingTypeId
+      });
+      this.dataArr = dataArr;
+      this.formData.Province = dataArr[0].Province; //已选择的省份
+      this.formData.ProvinceId = this.dataArr[0].ProvinceId; //已选择的省份
+      this.formData.Country = dataArr[0].Country;
+      this.formData.CountryId = this.dataArr[0].CountryId;
+      this.formData.Address = dataArr[0].Address;
+      this.formData.TotalArea = dataArr[0].TotalArea;
+      this.formData.BuildMon = dataArr[0].BuildMon;
+
+      this.tableData = dataArr[0].StoriedBuildlList;
+      console.log(dataArr[0].StoriedBuildlList)
+    }
+  },
+
+  computed: {
+    /**返回省份选择 */
+    upProvince() {
+      console.log(this.formData);
+      return this.formData.Province;
+    },
+    /**返回已选城市 */
+    upCity() {
+      return this.formData.City;
+    },
+    /**返回已选城市 */
+    upCountry() {
+      return this.formData.Country;
+    },
+    /**返回输入单体数 */
+    upBuildMon() {
+      return this.formData.BuildMon;
+    }
+  },
+  // 侦听器
+  watch: {
+    /**侦听省份选择 */
+    async upProvince(id) {
+      console.log(id);
+      if (!id) return;
+      // 清空下级
+      // this.formData.City = ''
+      // this.cityList = []
+      // this.formData.Country = ''
+      // this.CountryList = []
+      // this.formData.Address='' //详情地址
+      //处理地图返回省份字段为字符串，转换成省份对应ID
+      console.log(isNaN(Number(id)));
+      if (!Number(id)) {
+        console.log(this.provinceList);
+        id = Number(
+          this.provinceList.filter(i => {
+            return i.text == id;
+          })[0].id
+        );
+      }
+      //获取城市列表
+      this.cityList = await infaces(this, GetCityList, { id });
+      this.formData.City = this.dataArr[0].City;
+      this.formData.CityId = this.dataArr[0].CityId;
+      console.log("省：", id);
+      //定位地图 获取省名
+      let name = this.provinceList.filter(l => {
+        return id == l.id;
+      })[0].text;
+      console.log(name);
+
+      this.centerAndZoomByAddress(name, this.map, 9);
+    },
+    /**返回已选城市 */
+    async upCity(id) {
+      if (!id) return;
+
+      //处理地图返回省份字段为字符串，转换成省份对应ID
+      if (!Number(id)) {
+        id = Number(
+          this.cityList.filter(i => {
+            return i.text == id;
+          })[0].id
+        );
+      }
+      //清空下级
+      // this.formData.Country = ''
+      // this.CountryList = []
+      // this.formData.Address='' //详情地址
+      console.log("城市：", id);
+
+      //获取城市列表
+      this.CountryList = await infaces(this, GetCountryList, { id });
+
+      //定位地图 获取省名
+      let name = this.cityList.filter(l => {
+        return id == l.id;
+      })[0].text;
+      this.centerAndZoomByAddress(name, this.map, 12);
+    },
+    /**返回已选区/镇 */
+    upCountry(address) {
+      if (!address) return;
+      console.log("区、县：", address);
+      this.centerAndZoomByAddress(address, this.map, 13);
+    },
+    /**返回输入单体数 */
+    upBuildMon(num) {
+      //增加表行
+      let oldTableData = this.tableData; //保存上个表数据
+      this.tableData = []; //清空表数据
+      for (let i = 0; i < Number(num); i++) {
+        if (oldTableData[i]) {
+          this.tableData.push(oldTableData[i]);
+        } else {
+          //原表数据不足，则添加新单体
+          this.tableData.push({
+            buildingNumber: "",
+            area: "",
+            layerNumberUP: "",
+            layerNumberDown: ""
+          });
+        }
+      }
+    },
+    /**
+     * 侦听地图搜索框词条
+     */
+    entry(entry) {
+      console.log(entry);
+      // this.searchControl(this.map, entry)
+    }
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+@import '../../../assets/stylus/variable.styl'
+
+.container-information
+  width 100%
+  height 100%
+  .wrapper
+    display flex
+    height 100%
+    .left
+      width 35%
+      box-shadow 1px 0px 7px 0px rgba(216, 223, 238, 1)
+      z-index 10
+      .left-contain
+        width 96%
+        margin 20px auto
+        .project-type
+          width 100%
+          display flex
+          .project-title
+            font-size $font-size-18
+            font-family SourceHanSansCN-Normal
+            font-weight 400
+            color $font-color-10
+            line-height 40px
+            margin-right 20px
+        .project-address
+          margin-top 20px
+          .project-address-title
+            font-size $font-size-18
+            font-family SourceHanSansCN-Medium
+            font-weight 500
+            color $font-color-10
+            line-height $font-size-18
+          .address-select
+            display flex
+            justify-content space-between
+            margin 20px 0 0 0
+        .input-building
+          margin 20px 0 0 0
+          p
+            font-size $font-size-18
+            font-family SourceHanSansCN-Medium
+            font-weight 500
+            color $font-color-10
+            line-height $font-size-18
+            span
+              font-size $font-size-14
+              font-family SourceHanSansCN-Medium
+              color $font-color-04
+              line-height $font-size-14
+          .input-number
+            margin-top 16px
+        .tab
+          margin-top 20px
+          padding-top 1px
+          background rgba(244, 246, 255, 1)
+          border 1px solid #e6e6e6
+          border-bottom none
+          .cell-style
+            display inline-block
+            width 100%
+            height 100%
+        .sub
+          width 100%
+    .right
+      position relative
+      flex 1
+      height 100%
+      .right-map
+        width 100%
+        height 100%
+    .map-search
+      position absolute
+      top 30px
+      left 40px
+      width 460px
+</style>
+<style>
+.container-information .el-select {
+  flex: 1;
+  /* height: 50px; */
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+  border-radius: 4px;
+}
+.container-information .el-input--suffix .el-input__inner {
+  border: 1px solid #f1f1f1;
+  height: 50px;
+}
+.container-information .el-input__suffix {
+  background: rgba(67, 80, 137, 1);
+  border-radius: 0px 4px 4px 0px;
+  right: 0;
+  width: 40px;
+}
+.container-information .el-icon-arrow-up:before {
+  /* content: "\e60b"; */
+  content: "\e60c";
+  /* font-size: 20px; */
+  color: rgba(255, 255, 255, 1);
+}
+.container-information .center-select {
+  margin: 0 20px;
+}
+.input-number .el-input-group--append .el-input__inner,
+.el-input-group__prepend {
+  height: 40px;
+  background: rgba(248, 248, 248, 1);
+  border-radius: 4px;
+  border: 1px solid rgba(229, 229, 229, 1);
+  border-right: 1px dashed #979797;
+}
+.input-number .el-input-group__append {
+  color: #4774c9;
+}
+.tab .el-table .cell {
+  text-align: center;
+}
+.sub .el-button--warning {
+  color: #fff;
+  background-color: #fda143;
+  border-color: #fda143;
+  margin: 0 auto;
+  display: inherit;
+  width: 120px;
+  margin-top: 100px;
+  font-size: 16px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+}
+.sub-dialog {
+  width: 16%;
+  /* height: 200px; */
+  font-size: 30px;
+}
+.left-contain .el-form-item__error {
+  right: 20px;
+  left: initial;
+}
+.el-loading-spinner i,
+.el-loading-spinner .el-loading-text {
+  font-size: 30px;
+}
+.tab .el-input__inner {
+  height: 30px;
+  border: none;
+  text-align: center;
+}
+.el-table td,
+.el-table th {
+  padding: 10px 0;
+}
+.right .el-autocomplete {
+  width: 100%;
+}
+.right .el-input {
+  box-shadow: 1px 0px 7px 0px rgba(216, 223, 238, 1);
+  height: 50px;
+}
+.drwn-address .el-select-dropdown__item.selected {
+  color: #333;
+}
+</style>

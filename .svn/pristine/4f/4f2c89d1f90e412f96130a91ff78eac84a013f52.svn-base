@@ -1,0 +1,144 @@
+<!-- 质量管理 -->
+<!--<template lang="pug" src="./index.pug"></template>-->
+<template lang="pug" src="./detail2.pug"></template>
+<style lang="stylus" src="./index.styl"></style>
+
+<script type='textecmascript-6'>
+export default {
+  components: {},
+  created() {},
+  mounted() {},
+  data() {
+    return {
+      /**[当前选项卡]
+       *  @ture   采购列表
+       *  @false  变更列表
+       */
+      activeTab: true,
+      /**[当前折叠面板] */
+      nowCollapse: ["1", "2", "3"],
+      /**[楼栋1] 可选项 */
+      house1Options: [{ label: "AAA", value: 1 }, { label: "BBB", value: 2 }],
+      /**[楼栋1] 可选项 */
+      house2Options: [{ label: "CCC", value: 3 }, { label: "DDD", value: 4 }],
+      /**[楼栋1] 可选项 */
+      house3Options: [{ label: "EEE", value: 5 }, { label: "FFF", value: 6 }],
+      /**[筛选表单] */
+      filterForm: {},
+      /**[筛选表单规则] */
+      filterRules: {},
+      /**[进行中] */
+      dataIng: [
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        },
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        }
+      ],
+      /**[处理中] */
+      dataHandle: [
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        },
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        }
+      ],
+      /**[已处理] */
+      dataOver: [
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        },
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        }
+      ]
+    };
+  },
+  computed: {},
+  methods: {
+    /**[采购列表按钮] */
+    onPurchaseBtn() {
+      this.activeTab = !this.activeTab;
+    },
+    /**[变更列表按钮] */
+    onChangeBtn() {
+      this.activeTab = !this.activeTab;
+    },
+    /**[发起变更] */
+    startChange() {},
+    /**[表格处理]
+     *  @row  当前行的数据
+     */
+    onHandle(row) {
+      console.log(row);
+    }
+  },
+  watch: {}
+};
+</script>||||||| .r395
+ data() {
+   return {
+ data: 'quality质量管理'
+   }
+ },
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-quality
+  width 100%
+  height 100%
+</style>=======
+ data() {
+   return {
+      data: 'quality质量管理'
+   }
+ },
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-quality
+  width 100%
+  height 100%
+</style>>>>>>>> .r396

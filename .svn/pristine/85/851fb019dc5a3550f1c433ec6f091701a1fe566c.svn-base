@@ -1,0 +1,67 @@
+.container-time
+  .top
+    .type
+      el-select(v-model="type")
+        el-option(
+          v-for="item in typeOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        )
+    .left
+      div.model
+      span.title 实际进度
+    .right
+      div.model
+      span.title 计划进度
+  .progress
+    .left
+      p 整体进度：70%
+      p 滞后8天
+      el-button 查看详情
+    .right-wrapper
+      el-carousel(arrow="always" :autoplay="false" height="180px")
+        el-carousel-item
+          .right
+            .after-title
+              p 计划进度
+              .line
+              p 实际进度
+            el-timeline(:reverse="true")
+              Timeline(:isShowLastLine="true" :width="340" v-model="porgressOptions"  @action="onAction")
+        el-carousel-item
+          .right
+            .after-title
+              p 计划进度
+              .line
+              p 实际进度
+            el-timeline(:reverse="true")
+              Timeline(:isShowLastLine="true" :width="340" v-model="porgressOptions" @action="onAction")
+
+  common-dialog(:title="dialogType === 'add' ? '新增': '详情'" ref="commonDialogRef" @ok="dialogOk" @close="dialogClose")
+    el-form(:data="dialogForm" label-width="110px" :disabled="dialogType === 'look'")
+      el-form-item(label="认证时间")
+        el-date-picker(
+          v-model="dialogForm.time"
+          type="date"
+          placeholder="选择日期"
+        )
+      el-form-item(label="完成百分比")
+        el-input(v-model="dialogForm.progress")
+      el-form-item.flex(label="认证凭证")
+        el-upload(
+          action="https://jsonplaceholder.typicode.com/posts/"
+          list-type="picture-card"
+          :on-preview="handlePictureCardPreview"
+          :on-remove="handleRemove"
+        )
+          i(class="el-icon-plus")
+        el-upload(
+          action="https://jsonplaceholder.typicode.com/posts/"
+          list-type="picture-card"
+          :on-preview="handlePictureCardPreview"
+          :on-remove="handleRemove"
+        )
+          i(class="el-icon-plus")
+
+

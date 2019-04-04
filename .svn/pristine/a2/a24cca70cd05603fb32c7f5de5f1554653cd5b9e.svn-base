@@ -1,0 +1,131 @@
+.container-quality
+  padding 18px
+  width 100%
+  height 100%
+  box-sizing border-box
+  background-color rgba(245,246,251,1)
+  display flex
+  justify-content space-between
+  box-sizing border-box
+
+  .house-model
+    margin-right 20px
+    width 49.5%
+    height 100%
+    background-color #fff
+
+  .button-wrapper
+    display flex
+    justify-content space-between
+
+  .filter-wrapper
+    width 49.5%
+
+    .el-tabs__header
+      border-bottom none
+
+  .filter
+    margin-top 18px
+
+
+      .el-select .el-input__inner
+        border 1px solid #ecedf1
+        border-radius 5px
+        overflow hidden
+
+      .el-input__suffix
+        width 50px
+        background #44508a
+        border-radius 0 5px 5px 0
+
+      .el-input--suffix
+        overflow hidden
+
+      .el-select .el-input .el-select__caret
+        color #fff
+
+  .table
+    .title
+
+        th
+          background #44508a
+        th .cell
+          color #fff
+        .el-table__body-wrapper
+          display none
+
+    .content
+
+        .el-collapse-item__content
+          padding-bottom 0
+          
+        .el-table td
+          border-style dashed
+
+        .el-table tr:last-child td
+          border none
+
+        .el-table::before
+          display none
+
+        .el-collapse-item, .el-collapse-item .el-collapse-item__header
+          text-indent 18px
+          background #F5F6FB
+
+      tbody tr:last-child td
+        border-bottom none
+
+
+.container-quality .house-model-left
+  background-color: #f5f6fb
+
+.container-quality .new-quality-detail .table .content .el-collapse-item .el-collapse-item__header
+  background: #fff
+  border-bottom 1px solid #eee
+.container-quality .new-quality-detail .el-table td,.container-quality .new-quality-detail.el-table th.is-leaf
+  border-bottom 0
+.container-quality .new-quality-detail .table .title th
+  background: #f5f6fb
+
+.container-quality .new-quality-detail .table .title th .cell
+  color: #333
+
+.container-quality .notice
+  color: #fff;
+  font-size: 0.266667rem;
+  padding-left: 0.266667rem;
+  height: 0.533333rem;
+  line-height: 0.533333rem;
+  display: flex;
+  background: #44508a
+.text-center
+  width: 97%
+  text-align center
+.container-quality .control-detail .el-form--inline
+  padding: 20px
+  background: #fff
+.container-quality .control-detail .el-form--inline .el-button
+  background: #3656e5
+  border: #3656e5
+  margin-right: 10px
+.container-quality .control-detail .el-form--inline i
+  margin-right: 10px
+  font-size: 14px
+.container-quality .control-detail .el-form--inline .el-icon-search
+  color: #ffbf5e
+.container-quality .control-detail .el-form--inline .el-icon-download
+  color: #333
+.container-quality .control-detail .el-form--inline .el-icon-delete
+  color: #FD482C
+.container-quality .control-detail .el-form--inline .margin-bottom
+    margin-bottom: 20px
+.container-quality .control-detail .el-form--inline .el-input
+  width 60%
+.container-quality .control-detail .el-form--inline input
+  background: #d8dfee
+  color: #999
+.container-quality .control-detail .el-form--inline .el-form-item
+  margin-right: -20px
+.fz14
+  font-weight: bold
+  font-size: 14px

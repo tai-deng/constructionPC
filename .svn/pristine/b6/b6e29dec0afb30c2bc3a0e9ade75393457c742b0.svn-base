@@ -1,0 +1,134 @@
+.container-quality
+    .house-model(:span="12" class="house-model-left") 房子模型区域
+    .filter-wrapper
+        .filter
+            el-form(
+            ref="filterFormRef"
+                :model="filterForm"
+                    :rules="filterRules"
+                    :inline="true"
+                    :validate-on-rule-change="false"
+            )
+                el-form-item
+                    el-select(v-model="filterForm.house1" placeholder="楼栋")
+                        el-option(
+                        v-for="item in house1Options"
+                            :key="item.value"
+                                :label="item.label"
+                                :value="item.value"
+                        )
+                el-form-item
+                    el-select(v-model="filterForm.house2" placeholder="楼栋")
+                        el-option(
+                        v-for="item in house2Options"
+                            :key="item.value"
+                                :label="item.label"
+                                :value="item.value"
+                        )
+                el-form-item
+                    el-select(v-model="filterForm.house3" placeholder="楼栋")
+                        el-option(
+                        v-for="item in house3Options"
+                            :key="item.value"
+                                :label="item.label"
+                                :value="item.value"
+                        )
+                el-form-item
+                    el-input(v-model="filterForm.custom" placeholder="楼栋、专业、楼层、资源")
+                        i(slot="prefix" class="el-input__icon el-icon-search")
+        el-row
+            el-col(:span="12" style="padding-right: 10px;width: 49%;")
+                div(class="grid-content bg-purple new-quality-detail")
+                    div(class="titleBg notice") A1栋进度计划
+                    .table
+                        .title
+                            el-table
+                                el-table-column(label="序号")
+                                el-table-column(label="任务名称")
+                                el-table-column(label="结束时间")
+                                el-table-column(label="工期")
+                                el-table-column(label="状态")
+                        .content
+                            el-collapse(v-model="nowCollapse")
+                                el-collapse-item(:title="`1（${dataIng.length}）`" name="1")
+                                    el-table(:data="dataIng" :show-header="false")
+                                        el-table-column(prop="code")
+                                        el-table-column(prop="building")
+                                        el-table-column(prop="major")
+                                        el-table-column(prop="floor")
+                                        el-table-column(prop="change_them")
+
+                                el-collapse-item(:title="`2（${dataHandle.length}）`" name="2")
+                                    el-table(:data="dataHandle" :show-header="false")
+                                        el-table-column(prop="code")
+                                        el-table-column(prop="building")
+                                        el-table-column(prop="major")
+                                        el-table-column(prop="floor")
+                                        el-table-column(prop="change_them")
+
+
+            el-col(:span="12")
+                div(class="grid-content bg-purple-light control-detail")
+                    div(class="titleBg notice text-center")
+                        .text-center 管控详情
+                    el-form(:inline="true" class="demo-form-inline")
+                     div(class="margin-bottom fz14") 1、施工方案:
+                     div(class="margin-bottom")
+                        el-button(size="mini" type="primary") 承重xxx方案
+                        i(class="el-icon-search")
+                        i(class="el-icon-download")
+                        i(class="el-icon-delete")
+                     div(class="margin-bottom")
+                         el-button(size="mini" type="primary") 承重xxx方案
+                         i(class="el-icon-search")
+                         i(class="el-icon-download")
+                         i(class="el-icon-delete")
+                     div
+                         el-form-item
+                            el-input
+                     el-form-item(label="上传人")
+                        el-input
+                     el-form-item(label="认证时间")
+                         el-input
+                    el-form(:inline="true" class="demo-form-inline")
+                        div(class="margin-bottom fz14") 2、技术交底:
+                        div(class="margin-bottom")
+                            el-button(size="mini" type="primary") 承重xxx方案
+                            i(class="el-icon-search")
+                            i(class="el-icon-download")
+                            i(class="el-icon-delete")
+                        div(class="margin-bottom")
+                            el-button(size="mini" type="primary") 承重xxx方案
+                            i(class="el-icon-search")
+                            i(class="el-icon-download")
+                            i(class="el-icon-delete")
+                        div(class="margin-bottom")
+                            el-button(size="mini" type="primary") 承重xxx方案
+                            i(class="el-icon-search")
+                            i(class="el-icon-download")
+                            i(class="el-icon-delete")
+                        el-form-item(label="上传人")
+                            el-input
+                        el-form-item(label="交底时间")
+                            el-input
+                    el-form(:inline="true" class="demo-form-inline")
+                        div(class="margin-bottom fz14") 3、工序验收:
+                        div(class="margin-bottom")
+                            el-button(size="mini" type="primary") 承重xxx方案
+                            i(class="el-icon-search")
+                            i(class="el-icon-download")
+                            i(class="el-icon-delete")
+                        div(class="margin-bottom")
+                            el-button(size="mini" type="primary") 承重xxx方案
+                            i(class="el-icon-search")
+                            i(class="el-icon-download")
+                            i(class="el-icon-delete")
+                        div(class="margin-bottom")
+                            el-button(size="mini" type="primary") 承重xxx方案
+                            i(class="el-icon-search")
+                            i(class="el-icon-download")
+                            i(class="el-icon-delete")
+                        el-form-item(label="上传人")
+                            el-input
+                        el-form-item(label="验收时间")
+                            el-input

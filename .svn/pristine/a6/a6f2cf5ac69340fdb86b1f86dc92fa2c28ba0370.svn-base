@@ -1,0 +1,293 @@
+<template>
+    <div class="container-procurement container-procurement-list">
+        <el-form :inline="true" :model="formInline" class="demo-form-inline" style="text-align: right;">
+            <el-form-item>
+                <el-select v-model="formInline.region" placeholder="楼栋">
+                    <el-option label="区域一" value="shanghai"></el-option>
+                    <el-option label="区域二" value="beijing"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item>
+                <el-select v-model="formInline.region" placeholder="专业">
+                    <el-option label="区域一" value="shanghai"></el-option>
+                    <el-option label="区域二" value="beijing"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item>
+                <el-select v-model="formInline.region" placeholder="楼层">
+                    <el-option label="区域一" value="shanghai"></el-option>
+                    <el-option label="区域二" value="beijing"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item>
+                <el-select v-model="formInline.region" placeholder="物资类别">
+                    <el-option label="区域一" value="shanghai"></el-option>
+                    <el-option label="区域二" value="beijing"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item>
+                <el-input
+                        placeholder="请输入内容"
+                        prefix-icon="el-icon-search"
+                        v-model="input21">
+                </el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="warning" class="" @click="onSubmit">导出</el-button>
+            </el-form-item>
+        </el-form>
+
+        <el-table
+                :data="tableData"
+                :span-method="objectSpanMethod"
+                style="width: 100%">
+            <el-table-column
+                    prop="date"
+                    label="序号"
+                    width="50">
+            </el-table-column>
+            <el-table-column
+                    prop="date"
+                    label="物资名称"
+            >
+            </el-table-column>
+            <el-table-column
+                    prop="date"
+                    label="规格型号"
+            >
+            </el-table-column>
+            <el-table-column
+                    prop="date"
+                    label="楼栋"
+            >
+            </el-table-column>
+            <el-table-column
+                    prop="date"
+                    label="施工预算量"
+            >
+            </el-table-column>
+            <el-table-column label="入库">
+                <el-table-column
+                        prop="name"
+                        label="入库时间"
+                >
+                </el-table-column>
+                <el-table-column
+                        prop="name"
+                        label="入库量"
+                        class="bgeee"
+                >
+                </el-table-column>
+                <el-table-column
+                        prop="name"
+                        label="总量"
+                >
+                </el-table-column>
+            </el-table-column>
+            <el-table-column label="出库">
+                <el-table-column
+                        prop="name"
+                        label="出库时间"
+                >
+                </el-table-column>
+                <el-table-column
+                        prop="name"
+                        label="出库量"
+                        class="bgeee"
+                >
+                </el-table-column>
+                <el-table-column
+                        prop="name"
+                        label=""
+                >
+                </el-table-column>
+            </el-table-column>
+            <el-table-column label="退还">
+                <el-table-column
+                        prop="name"
+                        label="退还时间"
+                >
+                </el-table-column>
+                <el-table-column
+                        prop="name"
+                        label="退还量"
+                        class="bgeee"
+                >
+                </el-table-column>
+                <el-table-column
+                        prop="name"
+                        label="总量"
+                >
+                </el-table-column>
+            </el-table-column>
+            <el-table-column
+                    prop="date"
+                    label="库存"
+            >
+            </el-table-column>
+            <el-table-column
+                    prop="date"
+                    label="节超"
+            >
+            </el-table-column>
+            <el-table-column
+                    prop="date"
+                    label="定位"
+            >
+            </el-table-column>
+        </el-table>
+    </div>
+</template>
+<script type='textecmascript-6'>
+export default {
+  data() {
+    return {
+       formInline: {
+          user: '',
+          region: ''
+        },
+         tableData: [
+         {
+            date: '1',
+            name: '王小虎',
+            province: '上海',
+            city: '普陀区',
+            address: '上海市普陀区金沙江路 1518 弄',
+            zip: 200333
+          },
+          {
+            date: '1',
+            name: '王小虎',
+            province: '上海',
+            city: '普陀区',
+            address: '上海市普陀区金沙江路 1518 弄',
+            zip: 200333
+          },
+          {
+            date: '1',
+            name: '王小虎',
+            province: '上海',
+            city: '普陀区',
+            address: '上海市普陀区金沙江路 1518 弄',
+            zip: 200333
+          },
+          {
+            date: '1',
+            name: '王小虎',
+            province: '上海',
+            city: '普陀区',
+            address: '上海市普陀区金沙江路 1518 弄',
+            zip: 200333
+          },
+          {
+            date: '1',
+            name: '王小虎',
+            province: '上海',
+            city: '普陀区',
+            address: '上海市普陀区金沙江路 1518 弄',
+            zip: 200333
+          },
+        ]
+    };
+  },
+  methods: {
+    onSubmit() {
+      console.log("submit!");
+    },
+     objectSpanMethod({ row, column, rowIndex, columnIndex }) {
+        if (columnIndex === 0) {
+          if (rowIndex % 4 === 0) {
+            return {
+              rowspan: 4,
+              colspan: 1
+            };
+          }  else {
+            return {
+              rowspan: 0,
+              colspan: 0
+            };
+          }
+        }else if (columnIndex === 1) {
+          if (rowIndex % 4 === 0) {
+            return {
+              rowspan: 4,
+              colspan: 1
+            };
+          }  else {
+            return {
+              rowspan: 0,
+              colspan: 0
+            };
+          }
+        }else if (columnIndex === 2) {
+          if (rowIndex % 4 === 0) {
+            return {
+              rowspan: 3,
+              colspan: 1
+            };
+          }  else {
+            return {
+              rowspan: 0,
+              colspan: 0
+            };
+          }
+        }else if (columnIndex === 3) {
+          if (rowIndex % 4 === 0) {
+            return {
+              rowspan: 3,
+              colspan: 1
+            };
+          }  else {
+            return {
+              rowspan: 0,
+              colspan: 0
+            };
+          }
+        }else if (columnIndex === 4) {
+          if (rowIndex % 4 === 0) {
+            return {
+              rowspan: 3,
+              colspan: 1
+            };
+          }  else {
+            return {
+              rowspan: 0,
+              colspan: 0
+            };
+          }
+        }
+      }
+  }
+};
+</script>
+<style lang='stylus' rel='stylesheet/stylus'>
+    .container-procurement {
+        width: 100%;
+        height: 100%;
+        background: #f0f2f5;
+    }
+    .container-procurement-list
+        padding:20px
+        box-sizing: border-box;
+    .container-procurement-list .el-input__suffix
+        width 0.666667rem
+        background #44508a
+        right 0
+        border-radius 0 0.066667rem 0.066667rem 0
+    .container-procurement-list .el-table thead.is-group th
+        background #44508a
+        color: #fff
+        text-align center
+    .container-procurement-list .el-select .el-input .el-select__caret
+        color: #fff
+    .container-procurement-list .el-table--enable-row-transition .el-table__body td
+        text-align center
+    .container-procurement-list .el-button--warning {
+        color: #FFF;
+        background-color: #E6A23C;
+        border-color: #E6A23C;
+        padding:8px 30px
+    }
+    .container-procurement-list .bgeee
+        background: #eee
+</style>

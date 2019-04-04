@@ -1,0 +1,91 @@
+<div class="container-change-detail">
+  <div class="title">变更详情<span class="el-icon-close"></span></div>
+  <div class="content">
+    <el-form :model="form" label-width="100px" size="large">
+      <el-form-item label="采购批次">
+        <el-input v-model="form.purchase" :disabled="true" style="width: 280px;margin-right: 18px;"></el-input>
+      </el-form-item>
+      <el-form-item label="主题">
+        <el-input v-model="form.them" :disabled="true" style="width: 280px;margin-right: 18px;"></el-input>
+      </el-form-item>
+      <el-form-item label="变更内容">
+        <el-input v-model="form.content" type="textarea"  :disabled="true" style="width: 280px;margin-right: 18px;"></el-input>
+      </el-form-item>
+      <el-form-item label="状态">
+        <el-steps :active="form.active" finish-status="success">
+          <el-step title="建设单位工程部"></el-step>
+          <el-step title="设计单位工程部"></el-step>
+          <el-step title="建设单位工程部"></el-step>
+          <el-step title="施工单位工程部"></el-step>
+        </el-steps>
+        <div class="step-imgs flex-between">
+            <el-upload
+              action="https://jsonplaceholder.typicode.com/posts/"
+              list-type="picture-card"
+              :on-preview="handlePictureCardPreview"
+              :on-remove="handleRemove"
+            >
+              <i class="el-icon-plus"></i>
+            </el-upload>
+            <el-upload
+              action="https://jsonplaceholder.typicode.com/posts/"
+              list-type="picture-card"
+              :on-preview="handlePictureCardPreview"
+              :on-remove="handleRemove"
+            >
+              <i class="el-icon-plus"></i>
+            </el-upload>
+            <el-upload
+              action="https://jsonplaceholder.typicode.com/posts/"
+              list-type="picture-card"
+              :on-preview="handlePictureCardPreview"
+              :on-remove="handleRemove"
+            >
+              <i class="el-icon-plus"></i>
+            </el-upload>
+            <el-upload
+              action="https://jsonplaceholder.typicode.com/posts/"
+              list-type="picture-card"
+              :on-preview="handlePictureCardPreview"
+              :on-remove="handleRemove"
+            >
+              <i class="el-icon-plus"></i>
+            </el-upload>
+        </div>
+      </el-form-item>
+      <el-form-item label-width="40px">
+        <div class="teble-wrapper">
+          <el-table :data="tableData" border>
+            <el-table-column label="物料名称" prop="loudong"></el-table-column>
+            <el-table-column label="楼栋" prop="code"></el-table-column>
+            <el-table-column label="楼层" prop="name"></el-table-column>
+            <el-table-column label="变更前施工预算量" prop="yusuan"></el-table-column>
+            <el-table-column label="变更后施工预算量" prop="yicaigou"></el-table-column>
+            <el-table-column label="差额" prop="bencicaigou"></el-table-column>
+          </el-table>
+        </div>
+      </el-form-item>
+      <el-form-item label="上传凭证">
+        <el-upload
+          action="https://jsonplaceholder.typicode.com/posts/"
+          list-type="picture-card"
+          :on-preview="handlePictureCardPreview"
+          :on-remove="handleRemove"
+        >
+          <i class="el-icon-plus"></i>
+        </el-upload>
+      </el-form-item>
+      <el-form-item label="变更截止时间">
+        <el-date-picker
+          v-model="form.end_time"
+          type="date"
+          placeholder="选择日期">
+        </el-date-picker>
+      </el-form-item>
+      <el-form-item label-width="0" align="center">
+        <el-button type="danger">拒绝</el-button>
+        <el-button type="success">接受</el-button>
+      </el-form-item>
+    </el-form>
+  </div>
+</div>

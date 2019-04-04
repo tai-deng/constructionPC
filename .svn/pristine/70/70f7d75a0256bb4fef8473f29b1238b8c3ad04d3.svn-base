@@ -1,0 +1,323 @@
+<!-- navigatorBar导航栏 -->
+<template>
+  <div class="container-navigator-bar">
+    <div style="height:100%">
+      <el-container>
+        <el-header>
+          <ul class="layui-nav">
+            <li class="layui-nav-item">
+              <a href>
+                控制台
+                <span class="layui-badge">9</span>
+              </a>
+            </li>
+            <li class="layui-nav-item">
+              <a href>
+                个人中心
+                <span class="layui-badge-dot"></span>
+              </a>
+            </li>
+            <li class="layui-nav-item" lay-unselect>
+              <a>
+                <img src class="layui-nav-img">我
+              </a>
+              <dl class="layui-nav-child">
+                <dd>
+                  <a>修改信息</a>
+                </dd>
+                <dd>
+                  <a>安全管理</a>
+                </dd>
+                <dd>
+                  <a>退了</a>
+                </dd>
+              </dl>
+            </li>
+          </ul>
+        </el-header>
+        <el-container>
+          <el-aside>
+            <div class="nav-d">
+              <ul class="layui-nav layui-nav-tree" lay-filter="test">
+                <!-- 侧边导航: <ul class="layui-nav layui-nav-tree layui-nav-side"> -->
+                <!-- 渲染主类名 -->
+                <li
+                  :class="[mainItem=='PM节点'?'layui-nav-itemed':'','layui-nav-item']"
+                  @click="toMainClass(index)"
+                  v-for="(mainItem,index) in mainsClass"
+                  :key="mainItem.index"
+                >
+                  <a>{{mainItem}}</a>
+                  <!-- 渲染虚拟建造 -->
+                  <dl class="layui-nav-child" v-if="mainItem=='智慧工地'">
+                    <dd
+                      v-for="(wisdomSite,siteIndex) in wisdomSiteClass"
+                      :key="wisdomSite.siteIndex"
+                      @click.stop="toWisdomSiteClass(siteIndex)"
+                    >
+                      <a>{{wisdomSite}}</a>
+                    </dd>
+                  </dl>
+                  <dl class="layui-nav-child" v-if="mainItem=='虚拟建造-技术员'">
+                    <dd
+                      v-for="(virtualItem,virtuaIndex) in virtualClass"
+                      :key="virtualItem.virtuaIndex"
+                      @click.stop="toVirtualClass(virtuaIndex)"
+                    >
+                      <a>{{virtualItem}}</a>
+                    </dd>
+                  </dl>
+                  <dl class="layui-nav-child" v-if="mainItem=='PM节点'">
+                    <dd
+                      v-for="(PMnode,pmIndex) in PMnodeClass"
+                      :key="PMnode.pmIndex"
+                      @click.stop="toPMnodeClass(pmIndex)"
+                    >
+                      <a>{{PMnode}}</a>
+                    </dd>
+                  </dl>
+                </li>
+              </ul>
+            </div>
+          </el-aside>
+          <el-main>
+            <!-- 内容区 -->
+            <keep-alive>
+              <router-view v-if="$route.meta.keepAlive"/>
+            </keep-alive>
+            <router-view v-if="!$route.meta.keepAlive"/>
+          </el-main>
+        </el-container>
+      </el-container>
+    </div>
+
+    <!-- 导航栏 -->
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+export default {
+  data() {
+    return {
+      // active: 0 // tab导航下标
+      mainsClass: [
+        "项目主页",
+        "智慧工地",
+        "虚拟建造-技术员",
+        "三维浏览",
+        "PM节点",
+        "5D模拟",
+        "智能报表-资料员",
+        "功能配置"
+      ], //主类
+      wisdomSiteClass: [
+        "数据总览",
+        "劳务实名制",
+        "视频监控",
+        "环境监测",
+        "塔吊监测",
+        "升降机监测"
+      ], //智慧工地子类
+      virtualClass: [
+        "step1 模型上传",
+        "step2 信息配置",
+        "step3 协同设定",
+        "step4 进度规划",
+        "step5 清单导入",
+        "step6 构件关联",
+        "step7 清单调优",
+        "step8 认证设定"
+      ], //虚拟建造子类
+      PMnodeClass: [
+        "集成管理-工作台",
+        "时间管理-施工员",
+        "范围管理-施工员",
+        "采购管理-材料员",
+        "成本管理-预算员",
+        "质量管理-质量员",
+        "风险管理-质安员",
+        "人力资源-劳资员",
+        "沟通管理-资料员"
+      ] // PM节点子类
+    };
+  },
+  created() {},
+  mounted() {
+    this.$nextTick(() => {
+      /* eslint-disable */
+      console.log(layui);
+      //注意：导航 依赖 element 模块，否则无法进行功能性操作
+      layui.use("element", () => {
+        let element = layui.element;
+
+        //…
+      });
+    });
+  },
+  methods: {
+    /**
+     * 点击主类
+     */
+    toMainClass(index) {
+      this.$router.push({
+        path: [
+          "/nav/to/index",
+          // "/nav/to/wisdomSite",
+          "",
+          // "/nav/to/uploadModel",
+          "",
+          "/nav/to/threedView",
+          // "/nav/to/PMnode",
+          "",
+          "/nav/to/fiveDsimulation",
+          "/nav/to/intelligenceReports",
+          "/nav/to/configuration"
+        ][index]
+      });
+    },
+    /**
+     * 点击智慧工地子类
+     */
+    toWisdomSiteClass(index) {
+      this.$router.push({
+        path: [
+          "/nav/to/dataOverView",
+          "/nav/to/laborRealName",
+          "/nav/to/monitoring",
+          "/nav/to/environmentalMonitoring",
+          "/nav/to/towerCrane",
+          "/nav/to/elevator",
+        ][index]
+      });
+    },
+    /**
+     * 点击虚拟建造子类
+     */
+    toVirtualClass(index) {
+      this.$router.push({
+        path: [
+          "/nav/to/uploadModel",
+          "/nav/to/information",
+          "/nav/to/collaborativeSetting",
+          "/nav/to/schedulePlanning",
+          "/nav/to/listingImport",
+          "/nav/to/artifactsAssociated",
+          "/nav/to/qingDrab",
+          "/nav/to/SetAuthentication"
+        ][index]
+      });
+    },
+    /**
+     * 点击PM节点子类
+     */
+    toPMnodeClass(index) {
+      console.log(index);
+      this.$router.push({
+        path: [
+          "/nav/to/integration",
+          "/nav/to/time",
+          "/nav/to/scope",
+          "/nav/to/procurement",
+          "/nav/to/cost",
+          "/nav/to/quality",
+          "/nav/to/risk",
+          "/nav/to/human",
+          "/nav/to/communication",
+        ][index]
+      });
+    }
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-navigator-bar
+  width 100%
+  height 100%
+  overflow hidden
+  .head-support
+    height 88px
+</style>
+<style>
+.navigator-bar .van-tabbar-item {
+  font-size: 24px;
+}
+.navigator-bar .van-icon:before {
+  font-size: 40px;
+}
+.container-navigator-bar .van-tabbar {
+  height: 100px;
+  border-top: 1px solid #e5e5e5;
+}
+[class^="icon-"],
+[class*=" icon-"] {
+  font-size: 42px;
+}
+</style>
+<style>
+.el-header {
+  height: initial !important;
+}
+.el-aside {
+  width: initial !important;
+  height: 100%;
+  background-color: #383d48 !important;
+}
+.el-container {
+  height: 100%;
+}
+.el-main,
+.el-aside,
+.el-header,
+.el-footer {
+  background-color: initial;
+  color: initial;
+  text-align: initial;
+  line-height: initial;
+  padding: initial;
+}
+
+body > .el-container {
+  margin-bottom: 40px;
+}
+
+.el-container:nth-child(5) .el-aside,
+.el-container:nth-child(6) .el-aside {
+  line-height: 260px;
+}
+
+.el-container:nth-child(7) .el-aside {
+  line-height: 320px;
+}
+.container-navigator-bar .layui-nav-tree {
+  height: 100%;
+}
+.container-navigator-bar .layui-nav {
+  border-radius: initial;
+}
+.el-aside::-webkit-scrollbar {
+  display: none;
+}
+/*定义滚动条高宽及背景 高宽分别对应横竖滚动条的尺寸*/
+/* ::-webkit-scrollbar
+{
+    width: 10px;
+    height: 10px;
+    background-color: #F5F5F5;
+} */
+
+/*定义滚动条轨道 内阴影+圆角*/
+/* ::-webkit-scrollbar-track
+{
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+    border-radius: 10px;
+    background-color: #F5F5F5;
+} */
+
+/*定义滑块 内阴影+圆角*/
+/* ::-webkit-scrollbar-thumb
+{
+    border-radius: 10px;
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3);
+    background-color: #555;
+} */
+</style>

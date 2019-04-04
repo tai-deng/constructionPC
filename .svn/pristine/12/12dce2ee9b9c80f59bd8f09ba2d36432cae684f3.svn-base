@@ -1,0 +1,84 @@
+<!-- 时间管理times -->
+<template lang="pug" src="./index.pug"></template>
+<style lang="stylus" src="./index.styl" scoped></style>
+
+<script type="textecmascript-6">
+import Timeline from "@/common/timeline/index";
+import commonDialog from "@/common/common-dialog/index";
+
+export default {
+  components: {
+    Timeline,
+    commonDialog
+  },
+  created() {},
+  mounted() {},
+  data() {
+    return {
+      /**[当前模型] */
+      type: 1,
+      /**[所有模型] 可选项 */
+      typeOptions: [
+        { label: "AAA", value: 1 },
+        { label: "BBB", value: 2 },
+        { label: "CCC", value: 3 }
+      ],
+      /**[进度所有数据] */
+      porgressOptions: [
+        {
+          icoClassName: "icoClassName",
+          message: "error",
+          bottom: [
+            { text: "2019-01-05" },
+            { class: "container-time-line" },
+            { text: "完成进度：50%" }
+          ],
+          top: [{ text: "活动按期开始" }, { text: "2018-04-15" }],
+          tips: {}
+        },
+        {
+          icoClassName: "icoClassName",
+          message: "success",
+          bottom: [
+            { text: "2019-01-05" },
+            { class: "container-time-line" },
+            { text: "完成进度：50%" }
+          ],
+          top: [{ text: "活动按期开始" }, { text: "2018-04-15" }],
+          tips: {}
+        },
+        {
+          icoClassName: "el-icon-circle-plus",
+          message: "success",
+          top: [{ text: "活动按期开始" }, { text: "2018-04-15" }],
+          tips: {}
+        }
+      ],
+      dialogType: "add",
+      /**[表单] */
+      dialogForm: {}
+    };
+  },
+  computed: {},
+  methods: {
+    /**[查看详情] */
+    onAction({ item, index }) {
+      this.$refs.commonDialogRef.show();
+      if (!item.bottom) {
+        /**[新增] */
+        this.dialogType = "add";
+      } else {
+        /**[查看] */
+        this.dialogType = "look";
+      }
+    },
+    dialogOk() {},
+    dialogClose() {
+      this.$refs.commonDialogRef.hide();
+    },
+    handlePictureCardPreview() {},
+    handleRemove() {}
+  },
+  watch: {}
+};
+</script>

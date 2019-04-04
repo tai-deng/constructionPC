@@ -1,0 +1,296 @@
+<!-- 采购管理procurement -->
+<template>
+  <div class="container-procurement">
+    <div class="wrapper">
+      <el-row>
+        <el-col :span="22">材料入库</el-col>
+        <el-col :span="2">
+          <el-button>返回列表</el-button>
+        </el-col>
+      </el-row>
+      <div class="procurementForm">
+        <el-form ref="form" :model="form">
+          <el-form-item>
+            <el-radio-group v-model="form.resource">
+              <el-radio label="计划采购"></el-radio>
+              <el-radio label="临时采购"></el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item label="采购批次:">
+            <div class="originator">
+              <el-select v-model="form.people">
+                <el-option label="2019022001" value="2019022001"></el-option>
+                <el-option label="2019022001" value="2019022001"></el-option>
+              </el-select>
+            </div>
+          </el-form-item>
+          <el-form-item>
+            <el-table :data="tableData" style="width: 100%">
+              <el-table-column prop="num" label="序号" width="60"></el-table-column>
+              <el-table-column prop="name" label="物资名称"></el-table-column>
+              <el-table-column prop="model" label="规格型号"></el-table-column>
+              <el-table-column prop="building" label="楼栋"></el-table-column>
+              <el-table-column prop="demand" label="采购需求量"></el-table-column>
+              <el-table-column prop="time" label="需求时间"></el-table-column>
+              <el-table-column prop="storage" label="已入库"></el-table-column>
+              <el-table-column prop="warehousing" label="本次入库" width="80"></el-table-column>
+            </el-table>
+          </el-form-item>
+          <el-form-item label="原始凭证:">
+            <div class="upload">
+              <el-upload
+                action="https://jsonplaceholder.typicode.com/posts/"
+                list-type="picture-card"
+                :on-preview="handlePictureCardPreview2"
+                :on-remove="handleRemove2"
+                multiple
+                :limit="3"
+              >
+                <i class="el-icon-plus"></i>
+              </el-upload>
+            </div>
+            <el-dialog :visible.sync="dialogVisible2">
+              <img width="100%" :src="dialogImageUrl2" alt>
+            </el-dialog>
+            <span class="tip">(最多上传3张)</span>
+          </el-form-item>
+          <el-form-item label="入库时间">
+            <el-date-picker
+              type="date"
+              placeholder="选择日期"
+              v-model="form.date1"
+              style="width: 100%;"
+            ></el-date-picker>
+          </el-form-item>
+          <el-form-item>
+            <div class="btn">
+              <el-button @click="onSubmit">材料入库</el-button>
+            </div>
+          </el-form-item>
+        </el-form>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+export default {
+  data() {
+    return {
+      form: {
+        name: "",
+        region: "",
+        date1: "",
+        date2: "",
+        delivery: false,
+        type: [],
+        resource: "",
+        desc: ""
+      },
+      dialogImageUrl2: "", //原始凭证
+      dialogVisible2: false, //上传凭证图片列表
+      tableData: [
+        {
+          num: "1",
+          name: "混泥土",
+          model: "c20",
+          building: "A1栋",
+          demand: "100.00㎡",
+          time: "2019.01.01",
+          storage: "80㎡",
+          warehousing: "20㎡"
+        },
+        {
+          num: "2",
+          name: "混泥土",
+          model: "c20",
+          building: "A1栋",
+          demand: "100.00㎡",
+          time: "2019.01.01",
+          storage: "80㎡",
+          warehousing: "20㎡"
+        },
+        {
+          num: "3",
+          name: "混泥土",
+          model: "c20",
+          building: "A1栋",
+          demand: "100.00㎡",
+          time: "2019.01.01",
+          storage: "80㎡",
+          warehousing: "20㎡"
+        },
+        {
+          num: "4",
+          name: "混泥土",
+          model: "c20",
+          building: "A1栋",
+          demand: "100.00㎡",
+          time: "2019.01.01",
+          storage: "80㎡",
+          warehousing: "20㎡"
+        }
+      ]
+    };
+  },
+  methods: {
+    onSubmit() {
+      console.log("submit!");
+    },
+    //原始凭证
+    handleRemove2(file, fileList) {
+      //图标删除
+      console.log(file, fileList);
+    },
+    handlePictureCardPreview2(file) {
+      //点击文件列表中已上传的文件
+      this.dialogImageUrl2 = file.url;
+      this.dialogVisible2 = true;
+    }
+  }
+};
+</script>
+<style lang='stylus' rel='stylesheet/stylus'>
+.container-procurement {
+  width: 100%;
+  height: 100%;
+  background: #f0f2f5;
+}
+
+.container-procurement .procurementForm {
+  width: 960px;
+  margin: 0 auto;
+}
+
+.container-procurement .el-form-item {
+  width: 100% !important;
+  height: auto !important;
+}
+
+.container-procurement .el-col {
+  text-align: center;
+  padding: 16px 0 0 0;
+  color: #333;
+  font-size: 25px;
+  font-weight: blue;
+}
+
+.container-procurement .el-col .el-button--default {
+  background: #FDA143;
+  padding: 0;
+  width: 120px;
+  height: 40px;
+  line-height: 40px;
+  color: #fff;
+  border: none;
+}
+
+.container-procurement .avatar-uploader .el-upload {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.container-procurement .el-upload--picture-card {
+  background: #F8F8F8 !important;
+  border: 1px solid #435089 !important;
+}
+
+.container-procurement .avatar-uploader .el-upload:hover {
+  border-color: #409EFF;
+}
+
+.container-procurement .avatar-uploader-icon {
+  font-size: 28px;
+  color: #435089;
+  width: 132px;
+  height: 100px;
+  line-height: 132px;
+  text-align: center;
+}
+
+.container-procurement .el-upload--picture-card i {
+  color: #435089;
+}
+
+.container-procurement .avatar {
+  width: 132px;
+  height: 100px;
+  display: block;
+}
+
+.container-procurement .el-form-item__content .tip {
+  color: #999999;
+  font-size: 18px;
+  padding-left: 10px;
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+.container-procurement .upload {
+  display: inline-block;
+}
+
+.container-procurement .procurementForm .el-select .el-input__suffix {
+  width: 0.666667rem;
+  background: #435089;
+  border-radius: 0 0.066667rem 0.066667rem 0;
+  right: 0 !important;
+}
+
+.container-procurement .has-gutter tr th {
+  background: #435089;
+  color: #fff;
+  height: 40px;
+  padding: 0;
+  text-align: center;
+}
+
+.container-procurement .el-date-editor--date {
+  width: 260px !important;
+}
+
+.container-procurement .el-date-editor--date .el-input__prefix {
+  right: 5px !important;
+  color: #435089;
+  left: calc(100% - 30px) !important;
+}
+
+.container-procurement .btn {
+  text-align: center;
+}
+
+.container-procurement .btn .el-button--default {
+  background: #4775CA;
+  padding: 0;
+  width: 260px;
+  height: 40px;
+  line-height: 40px;
+  color: #fff;
+  font-size: 16px;
+  border: none;
+}
+
+.container-procurement .btn .el-button--default:hover {
+  background: #4775CA;
+}
+
+.container-procurement .el-table__row td {
+  color: #333;
+  text-align: center;
+}
+
+.container-procurement .el-table__row td:last-child .cell {
+  background: #D8DFEE;
+  width: 100px;
+  height: 36px;
+  color: #999;
+  line-height: 36px;
+}
+
+.container-procurement .el-table td {
+  border: none;
+}
+</style>

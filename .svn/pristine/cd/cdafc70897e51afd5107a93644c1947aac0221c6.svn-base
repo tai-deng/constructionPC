@@ -1,0 +1,413 @@
+<template>
+  <div class="organPeople">
+    <!-- 岗位配置 -->
+    <div class="organ_all_list">
+      <div class="collabora_title">Step3.2 岗位配置</div>
+      <div class="company_div">
+        <div class="company_div_title">
+          <p>*注：此处岗位配置数据为用户注册时自动生成</p>
+          <p class="company_div_title_left">如需编辑请到项目配置中修改</p>
+        </div>
+        <div class="company_box">
+          <ul class="firstUl">
+            <li
+              :class="index==peopleList.length-1?'firstList firstList_line':'firstList'"
+              v-for="(item, index) in peopleList"
+              :key="index"
+            >
+              <span class="box_span_height"></span>
+              <span :class="index==0?'firstSpan firstSpanColor':'firstSpan'">{{item.label}}</span>
+              <span class="box_span_line firstLine_line"></span>
+              <ul class="position_remove">
+                <li class="scondList" v-for="(item, index) in item.children" :key="index">
+                  <span class="box_span_line"></span>
+                  <span class="box_span_border">{{item.position}}</span>
+                  <span class="box_span_line"></span>
+                  <span class="box_span_border" @click="item.show=!item.show">{{item.people}}</span>
+                  <span class="box_span_line"></span>
+                  <span class="box_span_border">{{item.class}}</span>
+                  <div class="click_box_show" v-show="item.show">
+                    <p>电话：{{item.number}}</p>
+                    <p>邮箱：{{item.email}}</p>
+                    <p>微信：{{item.weixin}}</p>
+                  </div>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <!-- 项目组织框架图 -->
+    <div class="organ_all_img">
+      <div class="collabora_title">xxx项目组织架构图</div>
+      <div class="organ_all_img_body">
+        <vo-basic
+          :data="chartData"
+          :export-button="true"
+          exportButtonName="下载"
+          export-filename="testpic"
+          :pan="true"
+          :zoom="true"
+        ></vo-basic>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import { VoBasic } from "vue-orgchart";
+export default {
+  data() {
+    return {
+      //列表----所有的人员名单里面要添加 show:false ，并通过这个来控制通讯录的显示隐藏问题
+      peopleList: [
+        {
+          label: "领导",
+          id: 1,
+          children: [
+            {
+              people: "爱新觉罗媚",
+              position: "项目总经理",
+              class: "全部",
+              number: "18684770664",
+              email: "396232695@qq.com",
+              weixin: "396232695",
+              show: false
+            },
+            {
+              people: "小王",
+              position: "项目副经理",
+              class: "A1",
+              number: "18684770664",
+              email: "396232695@qq.com",
+              weixin: "396232695",
+              show: false
+            }
+          ]
+        },
+        {
+          label: "项目部",
+          id: 1,
+          children: [
+            {
+              people: "小李",
+              position: "项目总工",
+              class: "A2",
+              number: "18684770664",
+              email: "396232695@qq.com",
+              weixin: "396232695",
+              show: false
+            },
+            {
+              people: "小张",
+              position: "技术员",
+              class: "A3",
+              number: "18684770664",
+              email: "396232695@qq.com",
+              weixin: "396232695",
+              show: false
+            },
+            {
+              people: "小李",
+              position: "项目总工",
+              class: "A2",
+              number: "18684770664",
+              email: "396232695@qq.com",
+              weixin: "396232695",
+              show: false
+            },
+            {
+              people: "小张",
+              position: "技术员",
+              class: "A3",
+              number: "18684770664",
+              email: "396232695@qq.com",
+              weixin: "396232695",
+              show: false
+            }
+          ]
+        },
+        {
+          label: "项目部",
+          id: 1,
+          children: [
+            {
+              people: "小李",
+              position: "项目总工",
+              class: "A2",
+              number: "18684770664",
+              email: "396232695@qq.com",
+              weixin: "396232695",
+              show: false
+            },
+            {
+              people: "小张",
+              position: "技术员",
+              class: "A3",
+              number: "18684770664",
+              email: "396232695@qq.com",
+              weixin: "396232695",
+              show: false
+            },
+            {
+              people: "小张",
+              position: "技术员",
+              class: "A3",
+              number: "18684770664",
+              email: "396232695@qq.com",
+              weixin: "396232695",
+              show: false
+            }
+          ]
+        }
+      ]
+    };
+  },
+  components: { VoBasic },
+  created() {
+    console.log(localStorage.getItem("offsetWidth"), "width");
+    this.chartData = {
+      name: "领导",
+      children: [
+        {
+          name: "项目经理李白",
+          children: [
+            {
+              name: "监工",
+              children: [
+                { name: "项目总工刘德华" },
+                { name: "项目总工刘德华" },
+                { name: "项目总工刘德华" }
+              ]
+            }
+          ]
+        },
+        {
+          name: "项目经理李三三",
+          children: [
+            {
+              name: "项目",
+              children: [
+                { name: "项目总工刘德华" },
+                { name: "项目总工刘德华" },
+                { name: "项目总工刘德华" }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+  },
+  methods: {}
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.organPeople {
+  display: inline-block;
+  height: 100%;
+  width: 74%;
+  margin-left: 1%;
+  float: left;
+  box-sizing: border-box;
+
+  .organ_all_list {
+    width: 35%;
+    height: 100%;
+    box-sizing: border-box;
+    display: inline-block;
+    background-color: #ffffff;
+    overflow: hidden;
+    margin-right: 2%;
+    .collabora_title {
+      background: #435089;
+      height: 40px;
+      line-height: 40px;
+      padding: 0 20px;
+      font-size: 18px;
+      color: #fff;
+      font-weight: 400;
+    }
+
+    .company_div {
+      overflow: hidden;
+      width: 100%;
+      height: 90%;
+
+      .company_div_title {
+        color: #B2B2B2;
+        font-size: 18px;
+        padding-left: 20px;
+        padding-top: 20px;
+
+        .company_div_title_left {
+          padding-left: 40px;
+        }
+      }
+
+      .company_box {
+        padding: 20px;
+        font-size: 18px;
+        position: relative;
+
+        .company_box ul {
+          position: relative;
+          padding-left: 60px;
+          margin: 0;
+        }
+
+        .scondList:not(:first-child) {
+          border-left: 1px solid #E9E9E9;
+          position: relative;
+          top: -12px;
+          left: 0;
+        }
+
+        .firstList {
+          border-left: 1px solid #979797;
+          position: relative;
+          top: 50px;
+          left: 50px;
+        }
+
+        .firstList_line {
+          border-left: 0;
+        }
+
+        .firstSpan {
+          width: 100px;
+          height: 30px;
+          text-align: center;
+          line-height: 30px;
+          display: inline-block;
+          background-color: #FDA143;
+          position: relative;
+          color: #ffffff;
+          top: -35px;
+          left: -50px;
+        }
+
+        .firstSpanColor {
+          background-color: #4775CA;
+        }
+
+        .box_span_border {
+          border: 1px solid #E9E9E9;
+          display: inline-block;
+          width: 100px;
+          height: 30px;
+          text-align: center;
+          line-height: 30px;
+          margin-top: 20px;
+        }
+
+        .box_span_border:hover {
+          background-color: #F5F6FA;
+        }
+
+        .box_span_line {
+          width: 28px;
+          border-bottom: 1px solid #E9E9E9;
+          display: inline-block;
+          height: 30px;
+        }
+
+        .position_remove {
+          position: relative;
+          top: -91px;
+          left: 80px;
+        }
+
+        .box_span_height {
+          height: 100%;
+          width: 0;
+          display: inline-block;
+          border-left: 1px solid #333333;
+        }
+
+        .firstLine_line {
+          position: relative;
+          top: -40px;
+          left: -50px;
+        }
+
+        .click_box_show {
+          z-index: 200;
+          position: absolute;
+          margin-left: 80px;
+          font-size: 16px;
+          padding: 5px 10px;
+          background: rgba(0, 0, 0, 0.4);
+          color: #ffffff;
+          width: 240px;
+          height: 81px;
+          margin-top: 5px;
+        }
+      }
+    }
+  }
+
+  .organ_all_img {
+    width: 62%;
+    height: 100%;
+    box-sizing: border-box;
+    display: inline-block;
+    background-color: #ffffff;
+    overflow: hidden;
+    
+    .collabora_title {
+      background: #435089;
+      height: 40px;
+      line-height: 40px;
+      padding: 0 20px;
+      font-size: 18px;
+      color: #fff;
+      font-weight: 400;
+    }
+  }
+}
+</style>
+
+<style>
+.organ_all_img_body {
+  padding-top: 60px;
+  box-sizing: border-box;
+}
+#chart-container .oc-export-btn {
+  background-color: #fda143;
+  color: #fff;
+  width: 120px;
+  height: 40px;
+  padding: 11px 40px;
+  position: relative;
+  top: 20px;
+  left: 240px;
+  border: 0;
+}
+#chart-container .title {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #f6f6f6;
+  border-radius: 6px;
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+  line-height: 68px;
+  background-color: #fff;
+  color: #333;
+}
+#chart-container .node {
+  width: 174px;
+  height: 68px;
+}
+#chart-container .orgchart .node.focused,
+#chart-container .orgchart .node:hover {
+  background-color: rgba(71, 117, 202, 0.5);
+}
+#chart-container .orgchart > table > tr:first-child .title {
+  background-color: #4775ca;
+  color: #fff;
+}
+.organ_all_img_body #chart-container {
+  height: 560px;
+  padding-top: 50px;
+  box-sizing: border-box;
+}
+</style>

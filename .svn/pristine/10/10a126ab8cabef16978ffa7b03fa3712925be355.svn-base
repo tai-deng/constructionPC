@@ -1,0 +1,52 @@
+<!-- schedulePlanning进度规划 -->
+<template>
+ <div class='container-schedule-planning'>
+  <div class='wrapper'>
+      <plan
+      @chartUpDate="changeUpdate"
+      ></plan>
+  </div>
+      <ganttm class='gantt-main' :changeDate='changeDate'></ganttm>
+  <!-- <div class="gantt-container">
+  </div> -->
+ </div>
+</template>
+
+<script type='textecmascript-6'>
+import plan from './components/planHead'
+import ganttm from './modules/ganttMode'
+
+export default {
+  name:'schedulePlanning',
+  components:{
+    plan,ganttm
+  },
+  props: {
+    selectSchedule: {
+      type: Object,
+      default () {
+        return {}
+      }
+    },
+    ganttOrChartsData: Array
+  },
+
+  data() {
+    return {
+      data: 'schedulePlanning进度规划',
+      changeDate:null,
+    }
+  },
+  methods:{
+    changeUpdate(v){
+      this.changeDate = v;
+    },
+  }
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-schedule-planning
+  width 100%
+  height 100%
+</style>

@@ -1,0 +1,96 @@
+.container-human
+  padding 18px
+  width 100%
+  height 100%
+  box-sizing border-box
+  background-color rgba(245,246,251,1)
+
+  .content
+    position relative
+    width 100%
+
+    .pagination
+      margin 20px auto
+      text-align center
+
+    .table
+      padding-left 320px
+
+      >>>
+        thead tr, thead tr th
+          background #435089
+
+        thead th div
+          text-align center
+          color #fff
+        
+        tr td .cell
+          text-align center
+
+    .menu
+      position absolute
+      left 0
+      top 0
+      width 300px
+
+      .tit
+        position relative
+        background #435089
+        text-align center
+        color #fff
+        font-size 18px
+        line-height 40px
+        height 40px
+
+        span
+          position absolute
+          left 20px
+          top 50%
+          transform translateY(-50%)
+
+  .right-btns
+    position absolute
+    right 20px
+
+  .search-input
+    >>>
+      input
+        width 340px
+
+  .dialog
+    .info
+      .btns
+        text-align center
+      .two
+        margin-top 18px
+        margin-bottom 18px
+        border-top 1px solid #E1E2E5
+        border-bottom 1px solid #E1E2E5
+      .two, .three
+        ul
+          display flex
+          flex-wrap wrap
+
+          li
+            width 50%
+            height 40px
+            line-height 40px
+      
+      .one
+        position relative
+
+        img
+          position absolute
+
+        ul
+          padding-left 160px
+          display flex
+          flex-wrap wrap
+
+          li
+            width 50%
+            height 40px
+            line-height 40px
+
+            &.addres
+              width 100%

@@ -1,0 +1,25 @@
+<!-- dataDictionary -->
+<template>
+ <div class='container-data-dictionary'>
+ <div class='wrapper'>
+   {{data}}
+ </div>
+ </div>
+</template>
+
+<script type='textecmascript-6'>
+export default {
+ data() {
+   return {
+ data: '数据字典'
+   }
+ },
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-data-dictionary
+  width 100%
+  height 100%
+</style>

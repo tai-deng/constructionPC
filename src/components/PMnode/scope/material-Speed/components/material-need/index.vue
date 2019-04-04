@@ -1,0 +1,154 @@
+<!-- 物资需求-按清单 -->
+<template lang="html" src="./index.html"></template>
+<style lang="stylus" src="./index.styl" scoped></style>
+
+<script type='textecmascript-6'>
+import Timeline from "@/common/timeline/index";
+
+export default {
+  components: {
+    Timeline
+  },
+  data() {
+    return {
+      /**[采购审核] */
+      audit: [
+        {
+          bottom: [{ text: "发起" }],
+          icoClassName: "hideIco"
+        },
+        {
+          bottom: [{ text: "审核" }]
+        },
+        {
+          bottom: [{ text: "审批" }]
+        },
+        {
+          bottom: [{ text: "采购" }]
+        }
+      ],
+      /**[时间快捷选项] */
+      pickerOptions2: {
+        shortcuts: [
+          {
+            text: "最近一周",
+            onClick(picker) {
+              const end = new Date();
+              const start = new Date();
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+              picker.$emit("pick", [start, end]);
+            }
+          },
+          {
+            text: "最近一个月",
+            onClick(picker) {
+              const end = new Date();
+              const start = new Date();
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+              picker.$emit("pick", [start, end]);
+            }
+          },
+          {
+            text: "最近三个月",
+            onClick(picker) {
+              const end = new Date();
+              const start = new Date();
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+              picker.$emit("pick", [start, end]);
+            }
+          }
+        ]
+      },
+      /**[表单] */
+      form: {
+        type: "",
+        check: "",
+        purchase: "采购批次",
+        people: "1"
+      },
+      /**[表格数据]
+       *  @mergeTwoRow  {合并第二列}
+       */
+      tableData: [
+        {
+          task_name: "主体结构",
+          name: "物资名称",
+          type: "规格型号",
+          budget: "施工预算量",
+          yet_purchasing: "已采购量",
+          buy: 100,
+          isOk: false
+        },
+        {
+          task_name: "主体结构",
+          name: "物资名称",
+          type: "规格型号",
+          budget: "施工预算量",
+          yet_purchasing: "已采购量",
+          buy: 100,
+          isOk: false
+        },
+        {
+          task_name: "主体结构",
+          name: "物资名称",
+          type: "规格型号",
+          budget: "施工预算量",
+          yet_purchasing: "已采购量",
+          buy: 100,
+          isOk: false
+        },
+        {
+          mergeTwoRow: true,
+          task_name: "主体结构",
+          name: "物资名称",
+          type: "规格型号",
+          budget: "施工预算量",
+          yet_purchasing: "已采购量",
+          buy: 100,
+          isOk: false
+        },
+        {
+          mergeTwoRow: true,
+          task_name: "主体结构",
+          name: "物资名称",
+          type: "规格型号",
+          budget: "施工预算量",
+          yet_purchasing: "已采购量",
+          buy: 100,
+          isOk: false
+        },
+        {
+          mergeTwoRow: true,
+          task_name: "主体结构",
+          name: "物资名称",
+          type: "规格型号",
+          budget: "施工预算量",
+          yet_purchasing: "已采购量",
+          buy: 100,
+          isOk: false
+        }
+      ]
+    };
+  },
+  methods: {
+    /**关闭 物资需求 */
+    closeMaterial() {},
+    /**[表格合并方法] */
+    arraySpanMethod({ row, column, rowIndex, columnIndex }) {
+      if (columnIndex === 0 || (row.mergeTwoRow && columnIndex === 1)) {
+        if (rowIndex % 3 === 0) {
+          return [3, 1];
+        } else if (
+          rowIndex % 3 === 1 ||
+          rowIndex % 3 === 2 ||
+          rowIndex % 3 === 3
+        ) {
+          return [0, 0];
+        } else {
+          return [1, 1];
+        }
+      }
+    }
+  }
+};
+</script>

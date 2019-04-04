@@ -1,0 +1,181 @@
+<!-- schedulePlanning进度规划 -->
+<template>
+  <div class="container-schedule-planning">
+    <div class="wrapper">
+      <plan @chartUpDate="changeUpdate" @addJd="onAddJd" @task-delete="taskDelete"></plan>
+    </div>
+    <ganttm class="gantt-main" :changeDate="changeDate" :deleteItem="deleteItem"></ganttm>
+    <dialogView ref="dialogView" @addItem="addItem" :ruleForm="dialogAddJd"></dialogView>
+    <temporaryDialog
+      ref="temporaryDialog"
+      :selectItem="temporarySelectItem"
+      :scheduleMenuItems="scheduleMenuItems"
+      @listAddItem="listAddItem"
+      @saveGanttData="saveGanttData"
+      @addScheduleListItem="addScheduleListItem"
+    ></temporaryDialog>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import plan from "./components/planHead";
+import ganttm from "./modules/ganttMode";
+import dialogView from "./components/dialog/dialog";
+import temporaryDialog from "./components/dialog/temporaryDialog";
+
+export default {
+  name: "schedulePlanning",
+  components: {
+    plan,
+    ganttm,
+    dialogView,
+    temporaryDialog
+  },
+  props: {
+    selectSchedule: {
+      // 选择模块
+      type: Object,
+      default() {
+        return {};
+      }
+    },
+    ganttOrChartsData: Array,
+    dialogAddJd: {
+      // 弹窗添加进度
+      name: "",
+      date1: "",
+      region: "",
+      judge: "",
+      ScheduleID: null
+    }
+  },
+
+  data() {
+    return {
+      data: "schedulePlanning进度规划",
+      changeDate: null, // 日周月选项
+      temporarySelectItem: {},
+      scheduleMenuItems: [],
+      deleteItem: null
+    };
+  },
+  mounted() {
+    // require('./modules/test.js')
+    // let v= Raven.config('https://25a6d5e8c35148d195a1967d8374ffca@sentry.dhtmlx.ru/6').install()
+    // console.log('!!!',v)
+  },
+  methods: {
+    // 触发添加项目组件
+    onAddJd() {
+      // this.$refs.dialogView.showDialog = true;
+      this.$refs.temporaryDialog.temporaryDialog = true;
+    },
+    // 删除任务
+    taskDelete() {
+      this.deleteItem = true;
+    },
+    // 更改日周月
+    changeUpdate(v) {
+      this.changeDate = v;
+    },
+    // 添加项目进度
+    listAddItem(item) {
+      this.$message({
+        showClose: true,
+        message: "操作进度方案成功",
+        type: "success"
+      });
+      this.$refs.scheduleList.requestItems();
+    },
+    // 添加到图表
+    saveGanttData(data) {
+      this.ganttData = data;
+      this.requestData();
+    },
+    addScheduleListItem(data) {
+      this.$refs.scheduleList.addItem({
+        ScheduleName: data.ScheduleName,
+        ScheduleID: data.guid
+      });
+    },
+    // 添加进度--item
+    addItem(item) {
+      this.items.push(item);
+    },
+    //传1显示匹配规则 传3新建方案 2删除确认
+    //judgeConter 判断类型 1删除匹配 2删除进度
+    //judgeConter 传1新增  2 修改
+    showDialog(nub, judgeConter) {
+      if (nub == 1) {
+        if (judgeConter == 1) {
+          //新建
+          this.dialogAddPpgz.selectn2 = "";
+          this.dialogAddPpgz.selectn1 = "";
+          this.dialogAddPpgz.inputVal = "";
+          this.dialogAddPpgz.judge = 1;
+        } else if (judgeConter == 2) {
+          //修改
+          this.dialogAddPpgz.judge = 2;
+          if (this.thisItem.MatchType == 0) {
+            this.dialogAddPpgz.selectn2 = "任务名称";
+          } else if (this.thisItem.MatchType == 1) {
+            this.dialogAddPpgz.selectn2 = "任务附加字段";
+          }
+          if (this.thisItem.MatchValueField == 0) {
+            this.dialogAddPpgz.selectn1 = "构件名称、类别及族名称";
+          } else if (this.thisItem.MatchValueField == 1) {
+            this.dialogAddPpgz.selectn1 = "构件属性";
+            this.dialogAddPpgz.inputVal = this.thisItem.MatchValueField;
+          }
+        }
+        this.$refs.matchDialog.showDialog = true;
+      } else if (nub == 2) {
+        if (judgeConter == 1) {
+          this.dialogDelConfig.title = "删除匹配规则";
+          this.dialogDelConfig.conter = "确定删除匹配规则?";
+          this.dialogDelConfig.judge = 1;
+        } else {
+          this.dialogDelConfig.title = "删除进度方案";
+          this.dialogDelConfig.conter = "确定删除进度方案?";
+          this.dialogDelConfig.judge = 2;
+        }
+        this.$refs.delDialogMatch.showDialog = true;
+      } else if (nub == 3) {
+        if (judgeConter == 1) {
+          this.dialogAddJd.name = "";
+          this.dialogAddJd.date1 = [];
+          this.dialogAddJd.region = "";
+          this.dialogAddJd.judge = 1;
+        } else {
+          this.$emit("temporaryDialogUpdataShow", this.thisItem);
+          return false;
+          // console.log(this.thisItem);
+          // if (this.thisItem) {
+          //   this.dialogAddJd.name = this.thisItem.ScheduleName;
+          //   this.dialogAddJd.date1 = [
+          //     this.thisItem.ScheduleStartTime,
+          //     this.thisItem.ScheduleEndTime
+          //   ];
+          //   if (this.thisItem.ScheduleCycle == 7) {
+          //     this.dialogAddJd.region = "工作日(7天)";
+          //   } else if (this.thisItem.ScheduleCycle == 5) {
+          //     this.dialogAddJd.region = "工作日(5天)";
+          //   }
+          //   this.dialogAddJd.judge = 2;
+          //   this.dialogAddJd.ScheduleID = this.thisItem.ScheduleID;
+          // }
+        }
+        // this.$refs.dialogView.showDialog = true;
+        this.$emit("temporaryDialogShow");
+      }
+    }
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-schedule-planning {
+  background-color #f0f2f5;
+  padding 0 40px;
+  height: 100%;
+}
+</style>

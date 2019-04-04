@@ -1,0 +1,15 @@
+/**
+ * 同步
+ */
+import types from './mutation-types.js'
+console.log(types.GET_MODEL_BOX)
+export default{
+    /**
+     * 模型状态
+     * @param {*} state 
+     * @param {*} model 模型对象
+     */
+    [types.GET_MODEL_BOX](state,model){
+       state.modelBox = model
+    }
+}

@@ -1,0 +1,117 @@
+<template>
+  <div class="plan-container">
+    <div class="plan-left">
+      <div class="add-plan" :class="{'play-opt':point==1}" @click="addPlan(1)">新增计划方案</div>
+      <div class="lead-in" :class="{'play-opt':point==2}" @click="leadIn(2)">project导入</div>
+      <div class="del-sec" :class="{'play-opt':point==3}" @click="delSec(3)">删除选定</div>
+      <div class="tip">*注：您可以通过该平台自行生成进度方案，也可以通过导入project文件进行生成</div>
+    </div>
+    <div class="plan-right">
+      <div class="play-day" :class="{'day-opt':dayP==1}" @click="day(1)">日</div>
+      <div class="play-week" :class="{'day-opt':dayP==2}" @click="week(2)">周</div>
+      <div class="play-month" :class="{'day-opt':dayP==3}" @click="month(3)">月</div>
+    </div>
+  </div>
+</template>
+<script>
+export default {
+  name: "plan",
+  data() {
+    return {
+      point: 0,
+      dayP: 2
+    };
+  },
+  props: {},
+  computed: {},
+  methods: {
+    addPlan() {
+      // this.point = p;
+      console.log("添加");
+    },
+    leadIn() {
+      // this.point = p;
+      console.log("导入");
+    },
+    delSec() {
+      // this.point = p;
+      console.log("删除");
+    },
+    day(p) {
+      this.dayP = p;
+      this.$emit('chartUpDate', 1)
+    },
+    week(p) {
+      this.dayP = p;
+      this.$emit('chartUpDate', 2)
+    },
+    month(p) {
+      this.dayP = p;
+      this.$emit('chartUpDate', 3)
+    }
+  }
+};
+</script>
+<style>
+.plan-container {
+  background-color: #f0f2f5;
+  padding: 0 40px;
+  height: 100px;
+  font-size: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.plan-left,
+.plan-right {
+  display: flex;
+}
+.tip {
+  font-size: 12px;
+  color: #b2b2b2;
+  width: 400px;
+  height: 40px;
+  word-wrap: break-word;
+}
+.add-plan,
+.lead-in,
+.del-sec {
+  width: 160px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: white;
+  margin-right: 20px;
+}
+.plan-left .play-opt {
+  color: #333333;
+  background-color: #f1f1f1;
+}
+.add-plan {
+  background-color: #333333;
+}
+.lead-in {
+  background-color: #666666;
+}
+.del-sec {
+  background-color: #b2b2b2;
+}
+.play-day,
+.play-week,
+.play-month {
+  width: 80px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333333;
+  background-color: #b2b2b2;
+}
+.plan-right .day-opt {
+  color: white;
+  background-color: #333333;
+}
+</style>
+

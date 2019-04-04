@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="44px" height="44px" viewBox="0 0 44 44" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 52.2 (67145) - http://www.bohemiancoding.com/sketch -->
+    <title>分组 4</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <rect id="path-1" x="0" y="0" width="30" height="30" rx="4"></rect>
+        <filter x="-40.0%" y="-30.0%" width="180.0%" height="180.0%" filterUnits="objectBoundingBox" id="filter-2">
+            <feOffset dx="0" dy="3" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="3.5" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feComposite in="shadowBlurOuter1" in2="SourceAlpha" operator="out" result="shadowBlurOuter1"></feComposite>
+            <feColorMatrix values="0 0 0 0 0.899872449   0 0 0 0 0.899872449   0 0 0 0 0.899872449  0 0 0 1 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+    </defs>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="12-3-1选中查看认证信息" transform="translate(-1481.000000, -144.000000)">
+            <g id="分组-5" transform="translate(1375.000000, 128.000000)">
+                <g transform="translate(20.000000, 20.000000)" id="分组-6">
+                    <g>
+                        <g id="分组-4" transform="translate(93.000000, 0.000000)">
+                            <g id="矩形">
+                                <use fill="black" fill-opacity="1" filter="url(#filter-2)" xlink:href="#path-1"></use>
+                                <rect stroke="#435089" stroke-width="2" stroke-linejoin="square" fill="#FFFFFF" fill-rule="evenodd" x="1" y="1" width="28" height="28" rx="4"></rect>
+                            </g>
+                            <g id="加" transform="translate(8.250000, 8.250000)">
+                                <rect id="矩形" fill="#FFFFFF" opacity="0" x="0" y="0" width="13.5" height="13.5"></rect>
+                                <polygon id="路径" fill="#435089" points="5.90625 7.59375 1.6875 7.59375 1.6875 5.90625 5.90625 5.90625 5.90625 1.6875 7.59375 1.6875 7.59375 5.90625 11.8125 5.90625 11.8125 7.59375 7.59375 7.59375 7.59375 11.8125 5.90625 11.8125"></polygon>
+                            </g>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

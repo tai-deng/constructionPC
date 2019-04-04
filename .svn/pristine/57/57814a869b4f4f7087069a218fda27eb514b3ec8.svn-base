@@ -1,0 +1,398 @@
+<template>
+  <div class="plan-container">
+    <div class="plan-left">
+      <div class="add-plan flex-center top-add" :class="{'play-opt':point==1}" @click="addPlan(1)">
+        <img class="add-plan-icon flex-center" src="../../../../assets/imgs/gantt-add-a.png">
+        新增计划方案
+      </div>
+      <Label for="load_csv">
+        <div class="lead-in flex-center top-add">project导入</div>
+      </Label>
+      <input
+        type="file"
+        id="load_csv"
+        name="file"
+        style="display:none"
+        @change="inputCSV"
+        ref="upfile"
+      >
+
+      <div class="del-sec flex-center top-add" :class="{'del-sec_opt':1}" @click="delSec(3)">删除选定</div>
+      <!-- <div class="tip">*注：您可以通过该平台自行生成进度方案，也可以通过导入project文件进行生成</div> -->
+    </div>
+    <div class="plan-right">
+      <div class="play-day flex-center" :class="{'day-opt':dayP==1}" @click="day(1)">日</div>
+      <div class="play-week flex-center" :class="{'day-opt':dayP==2}" @click="week(2)">周</div>
+      <div class="play-month flex-center" :class="{'day-opt':dayP==3}" @click="month(3)">月</div>
+    </div>
+  </div>
+</template>
+<script>
+// vuex
+import { mapMutations } from "vuex";
+
+export default {
+  name: "plan",
+  data() {
+    return {
+      point: 0, // 左侧选中CS效果
+      dayP: 2 // 日周月选中cs效果
+    };
+  },
+  props: {},
+  computed: {},
+  methods: {
+    addPlan() {
+      // this.point = p;
+      this.$emit("addJd");
+      console.log("添加");
+    },
+    // 导入
+    inputCSV(event) {
+      let CSVFile = event.target.files;
+      if (
+        CSVFile[0].name.indexOf("MPP") >= 0 ||
+        CSVFile[0].name.indexOf("mpp") >= 0
+      ) {
+        let formData = new FormData();
+        console.log(CSVFile);
+        formData.append("file", CSVFile[0]);
+        for (var value of formData.values()) {
+          console.log(value);
+        }
+
+        var csvData = {};
+        csvData.ProjectID = "bacde0b7-7744-4e30-96b3-0840b439a118";
+        var scheduleTasks = [
+          {
+            color: "",
+            TaskStartTime: "2018-11-20 0:00:00",
+            TaskID: "67189533-e64d-9be7-642c-908481e45bbc",
+            TaskEndTime: "2018-11-30 0:00:00",
+            TaskName: "主体结构_2F",
+            TaskPlanStartTime: "2018-11-20 0:00:00",
+            TaskPlanEndTime: "2018-11-30 0:00:00",
+            Category: "主体结构",
+            ExternalProperty: "zt",
+            TaskOrder: "2",
+            ScheduleID: "f7145567-f47c-4f3d-b4f8-c1eaf4b11da8",
+            Color: ""
+          },
+          {
+            color: "",
+            TaskStartTime: "2018-11-30 0:00:00",
+            TaskID: "d183c61b-14a3-52bc-b3c8-35f902626bfe",
+            TaskEndTime: "2018-12-10 0:00:00",
+            TaskName: "主体结构_3F",
+            TaskPlanStartTime: "2018-11-30 0:00:00",
+            TaskPlanEndTime: "2018-12-10 0:00:00",
+            Category: "主体结构",
+            ExternalProperty: "zt",
+            TaskOrder: "3",
+            ScheduleID: "f7145567-f47c-4f3d-b4f8-c1eaf4b11da8",
+            Color: ""
+          },
+          {
+            color: "#FBFF00",
+            TaskStartTime: "2019-01-19 0:00:00",
+            TaskID: "23365698-1d00-be7d-13bd-6c1a06fdd2ba",
+            TaskEndTime: "2019-01-29 0:00:00",
+            TaskName: "弱电系统_2F",
+            TaskPlanStartTime: "2019-01-19 0:00:00",
+            TaskPlanEndTime: "2019-01-29 0:00:00",
+            Category: "弱电系统",
+            ExternalProperty: "rd",
+            TaskOrder: "2",
+            ScheduleID: "f7145567-f47c-4f3d-b4f8-c1eaf4b11da8",
+            Color: "#FBFF00"
+          },
+          {
+            color: "#FBFF00",
+            TaskStartTime: "2019-01-29 0:00:00",
+            TaskID: "a75ee8a2-7440-d14c-a4d0-9b184d744159",
+            TaskEndTime: "2019-02-08 0:00:00",
+            TaskName: "弱电系统_3F",
+            TaskPlanStartTime: "2019-01-29 0:00:00",
+            TaskPlanEndTime: "2019-02-08 0:00:00",
+            Category: "弱电系统",
+            ExternalProperty: "rd",
+            TaskOrder: "3",
+            ScheduleID: "f7145567-f47c-4f3d-b4f8-c1eaf4b11da8",
+            Color: "#FBFF00"
+          },
+          {
+            color: "#FF00C8",
+            TaskStartTime: "2019-01-09 0:00:00",
+            TaskID: "fcb0f8ce-a0b1-1386-cd68-44a9bc315172",
+            TaskEndTime: "2019-01-19 0:00:00",
+            TaskName: "强电系统_2F",
+            TaskPlanStartTime: "2019-01-09 0:00:00",
+            TaskPlanEndTime: "2019-01-19 0:00:00",
+            Category: "强电系统",
+            ExternalProperty: "qd",
+            TaskOrder: "2",
+            ScheduleID: "f7145567-f47c-4f3d-b4f8-c1eaf4b11da8",
+            Color: "#FF00C8"
+          },
+          {
+            color: "#FF00C8",
+            TaskStartTime: "2019-01-19 0:00:00",
+            TaskID: "22a95f26-0ea4-a792-c39b-5ed74b5bc906",
+            TaskEndTime: "2019-01-29 0:00:00",
+            TaskName: "强电系统_3F",
+            TaskPlanStartTime: "2019-01-19 0:00:00",
+            TaskPlanEndTime: "2019-01-29 0:00:00",
+            Category: "强电系统",
+            ExternalProperty: "qd",
+            TaskOrder: "3",
+            ScheduleID: "f7145567-f47c-4f3d-b4f8-c1eaf4b11da8",
+            Color: "#FF00C8"
+          },
+          {
+            color: "#9900FF",
+            TaskStartTime: "2018-12-30 0:00:00",
+            TaskID: "c392460b-45fa-2c37-d477-bd99be5de90b",
+            TaskEndTime: "2019-01-09 0:00:00",
+            TaskName: "暖通系统_2F",
+            TaskPlanStartTime: "2018-12-30 0:00:00",
+            TaskPlanEndTime: "2019-01-09 0:00:00",
+            Category: "暖通系统",
+            ExternalProperty: "nt",
+            TaskOrder: "2",
+            ScheduleID: "f7145567-f47c-4f3d-b4f8-c1eaf4b11da8",
+            Color: "#9900FF"
+          },
+          {
+            color: "#9900FF",
+            TaskStartTime: "2019-01-09 0:00:00",
+            TaskID: "814f6c76-fae5-3b52-ea3f-e4c665487f83",
+            TaskEndTime: "2019-01-19 0:00:00",
+            TaskName: "暖通系统_3F",
+            TaskPlanStartTime: "2019-01-09 0:00:00",
+            TaskPlanEndTime: "2019-01-19 0:00:00",
+            Category: "暖通系统",
+            ExternalProperty: "nt",
+            TaskOrder: "3",
+            ScheduleID: "f7145567-f47c-4f3d-b4f8-c1eaf4b11da8",
+            Color: "#9900FF"
+          },
+          {
+            color: "#00FFFF",
+            TaskStartTime: "2018-12-20 0:00:00",
+            TaskID: "e7036916-686d-4598-441f-2f5346684580",
+            TaskEndTime: "2018-12-30 0:00:00",
+            TaskName: "砌体墙_2F",
+            TaskPlanStartTime: "2018-12-20 0:00:00",
+            TaskPlanEndTime: "2018-12-30 0:00:00",
+            Category: "砌体墙",
+            ExternalProperty: "qt",
+            TaskOrder: "2",
+            ScheduleID: "f7145567-f47c-4f3d-b4f8-c1eaf4b11da8",
+            Color: "#00FFFF"
+          },
+          {
+            color: "#00FFFF",
+            TaskStartTime: "2018-12-30 0:00:00",
+            TaskID: "38daf3bb-9531-640b-0601-7c580496b392",
+            TaskEndTime: "2019-01-09 0:00:00",
+            TaskName: "砌体墙_3F",
+            TaskPlanStartTime: "2018-12-30 0:00:00",
+            TaskPlanEndTime: "2019-01-09 0:00:00",
+            Category: "砌体墙",
+            ExternalProperty: "qt",
+            TaskOrder: "3",
+            ScheduleID: "f7145567-f47c-4f3d-b4f8-c1eaf4b11da8",
+            Color: "#00FFFF"
+          },
+          {
+            color: "#04FF00",
+            TaskStartTime: "2018-12-10 0:00:00",
+            TaskID: "e0899a92-8043-9049-fd6e-b4883625393a",
+            TaskEndTime: "2018-12-20 0:00:00",
+            TaskName: "外幕墙_2F",
+            TaskPlanStartTime: "2018-12-10 0:00:00",
+            TaskPlanEndTime: "2018-12-20 0:00:00",
+            Category: "外幕墙",
+            ExternalProperty: "wmq",
+            TaskOrder: "2",
+            ScheduleID: "f7145567-f47c-4f3d-b4f8-c1eaf4b11da8",
+            Color: "#04FF00"
+          },
+          {
+            color: "#04FF00",
+            TaskStartTime: "2018-12-20 0:00:00",
+            TaskID: "381c2ff6-4122-fc4f-c3cc-2106478422a8",
+            TaskEndTime: "2018-12-30 0:00:00",
+            TaskName: "外幕墙_3F",
+            TaskPlanStartTime: "2018-12-20 0:00:00",
+            TaskPlanEndTime: "2018-12-30 0:00:00",
+            Category: "外幕墙",
+            ExternalProperty: "wmq",
+            TaskOrder: "3",
+            ScheduleID: "f7145567-f47c-4f3d-b4f8-c1eaf4b11da8",
+            Color: "#04FF00"
+          }
+        ];
+
+        // var scheduleTasks = { "color": "", "TaskStartTime": "2018-11-12 0:00:00", "TaskID": "d79cecdc-d04a-9e0f-52fb-5d0c9fa05956",
+        //  "TaskEndTime": "2018-11-22 0:00:00", "TaskName": "主体结构_-1F", "TaskPlanStartTime": "2018-11-12 0:00:00",
+        //  "TaskPlanEndTime": "2018-11-22 0:00:00", "Category": "主体结构", "ExternalProperty": "zt", "TaskOrder": "-1",
+        //  "ScheduleID": "d801539b-f0e5-4e23-b1a6-d86905ea8086", "Color": ""}
+        csvData.ScheduleTasks = JSON.stringify(scheduleTasks);
+        console.log(csvData);
+
+        let loading = this.$loading({
+          //loading
+          lock: true,
+          text: "Loading",
+          spinner: "el-icon-loading",
+          background: "rgba(0, 0, 0, 0.5)"
+        });
+        loading.close();
+        // this.$axios
+        //   .post(`http://120.77.34.67:9916/api/Home/Upload4DFiles`, formData)
+        //   .then(res => {
+        //     // loading.close(); this.selectScheduleID
+
+        //     let list = res.data.Detiel;
+        //     list.forEach(i => {
+        //       i.ScheduleID = this.selectScheduleID;
+        //     });
+        //     console.log(list);
+        //     let formData1 = new FormData();
+        //     formData1.append("ProjectID", list[0].ProjectID);
+        //     formData1.append("ScheduleTasks", JSON.stringify(list));
+        //     this.$axios
+        //       .post(
+        //         `${window.urlConfig}/api/Prj/BatchAddScheduleTask`,
+        //         formData1
+        //       )
+        //       .then(res => {
+        //         this.$message.success("上传成功");
+        //         loading.close();
+        //         // this.requestData(this.selectItem);
+        //         // this.$refs.scheduleList.requestItems();
+        //         this.$refs.ganttView.Repaint();
+        //       });
+
+        //     loading.close();
+
+        //     // this.$message("上传成功");
+        //     // this.requestData(this.selectItem);
+        //   })
+        //   .catch(res => {
+        //     loading.close();
+        //     console.log("" + res);
+        //     this.$message.error("上传失败");
+        //   });
+      } else {
+        console.log("请上传CSV文件");
+        this.$message.error("请上传CSV文件");
+      }
+    },
+    // 删除
+    delSec() {
+      this.gantState({
+        deleteTaskItem: true
+      });
+    },
+    day(p) {
+      this.dayP = p;
+      this.$emit("chartUpDate", 1);
+    },
+    week(p) {
+      this.dayP = p;
+      this.$emit("chartUpDate", 2);
+    },
+    month(p) {
+      this.dayP = p;
+      this.$emit("chartUpDate", 3);
+    },
+    ...mapMutations({
+      gantState: "GET_GANTT_STATE"
+    })
+  }
+};
+</script>
+<style>
+.plan-container {
+  height: 100px;
+  font-size: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  /* padding: 0 40px; */
+  background-color: #f0f2f5;
+}
+.plan-left,
+.plan-right {
+  display: flex;
+}
+.tip {
+  font-size: 12px;
+  color: #b2b2b2;
+  width: 400px;
+  height: 40px;
+  word-wrap: break-word;
+}
+.add-plan {
+  width: 184px;
+  height: 40px;
+  background: rgba(71, 117, 202, 1);
+  box-shadow: 0px 2px 4px 0px rgba(161, 192, 250, 1);
+}
+.add-plan-icon {
+  width: 32px;
+  height: 32px;
+  display: block;
+  margin-right: 10px;
+}
+.lead-in {
+  width: 120px;
+  height: 40px;
+  background: rgba(69, 128, 255, 1);
+}
+.del-sec {
+  width: 120px;
+  height: 40px;
+  background: rgba(221, 221, 221, 1);
+}
+.del-sec_opt {
+  background: rgba(253, 161, 67, 1);
+  box-shadow: 0px 2px 4px 0px rgba(176, 148, 119, 0.5);
+}
+.top-add {
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+  padding: 0 10px;
+  margin-right: 20px;
+}
+.plan-left .play-opt {
+  color: #333333;
+  background-color: #f1f1f1;
+}
+.play-day,
+.play-week,
+.play-month {
+  width: 68px;
+  height: 40px;
+  background: rgba(229, 229, 229, 1);
+  font-size: 16px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(102, 102, 102, 1);
+}
+.plan-right .day-opt {
+  color: white;
+  background:rgba(71,117,202,1);
+}
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>
+

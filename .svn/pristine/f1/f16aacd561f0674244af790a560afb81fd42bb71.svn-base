@@ -1,0 +1,49 @@
+<!-- listingImport清单导入 -->
+<template>
+  <div class="container-listing-import">
+    <div class="wrapper">
+      <!-- 入口 -->
+      <import-index @jump='jumpPages' v-show="isShowIndex"></import-index>
+      <!-- 施工图预算导入页面 -->
+      <import-construction v-if="isShowImportConstruction"></import-construction>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>  
+// 子组件
+import importIndex from './components/import_index'
+import importConstruction from './components/import_construction'
+export default {
+  data() {
+    return {
+      isShowIndex: true,//是否显示入口页面
+      isShowImportConstruction:false,//是否显示施工预算图导入页面
+    };
+  },
+   components:{
+     importIndex, 
+     importConstruction
+   },
+   methods:{
+     /**
+      * 选择入口
+      */
+     jumpPages(id){
+       console.log(id)
+       this.isShowIndex = false
+       switch(id){
+         case 0:
+         this.isShowImportConstruction = true
+         break
+       }
+     }
+   }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-listing-import
+  width 100%
+  height 100%
+  background-color #F5F6FA
+</style>

@@ -1,0 +1,90 @@
+.container-time
+  .top
+    .type
+      el-select(v-model="type")
+        el-option(
+          v-for="item in typeOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        )
+    .left
+      div.model
+        .model-container
+          .model-container(ref="modelContainer")
+      span.title 实际进度
+    .right
+      div.model
+      span.title 计划进度
+  .progress
+    .left
+      p 整体进度：70%
+      p 滞后8天
+      el-button 查看详情
+      .tips-left
+        span
+    .right-wrapper
+      el-carousel(arrow="always" :autoplay="false" height="180px")
+        el-carousel-item(:index="0")
+          .right
+            .after-title
+              p 计划进度
+              .line
+              p 实际进度
+            el-timeline(:reverse="true")
+              div(class="timeline")
+                ul
+                  li(v-for="item,index in porgressOptions" :class="item.message" :key="index")
+                    div.timeline-top(@click="onEditProgress(item,index)")
+                      p {{item.title}}
+                      p {{item.start_time}}
+                    div.ico-wrapper
+                      span.ico(@click="onEditProgress(item,index)")
+                      span.line
+                    div.timeline-content(v-if="!item.isAdd")
+                    p(v-if="!item.isAdd") {{item.end_time}}
+                    p.container-time-line(v-if="!item.isAdd")
+                    p(v-if="!item.isAdd") {{`完成：${item.progress}`}}
+                    .add-line(v-if="item.isAdd")
+                    .add-line-ico(v-if="item.isAdd" @click="onEditProgress(item,index)") +
+  .progress-detail(v-show="isProgressDetail" :style="progressDetailStyle" @click.stop)
+    .tit
+      span.el-icon-close(@click="toggleDetail()")
+    el-form(:data="dialogForm" label-width="110px" :disabled="dialogType === 'look'")
+      el-form-item(label="认证时间")
+        el-date-picker(
+          v-model="dialogForm.time"
+          type="date"
+          placeholder="选择日期"
+        )
+      el-form-item(label="上传人")
+        el-input(v-model="dialogForm.name" :disabled='true')
+      el-form-item(label="完成百分比")
+        el-input(v-model="dialogForm.progress")
+      el-form-item.flex(label="认证凭证")
+        el-upload(
+          :class="{ 'hide-ico': imgList1.length }"
+          :limit="1"
+          action="https://jsonplaceholder.typicode.com/posts/"
+          list-type="picture-card"
+          :on-preview="handlePictureCardPreview"
+          :on-remove="handleRemove"
+          :file-list="imgList1"
+        )
+          i(class="el-icon-plus")
+        el-upload(
+          :class="{ 'hide-ico': imgList2.length }"
+          :limit="1"
+          :multiple="false"
+          action="https://jsonplaceholder.typicode.com/posts/"
+          list-type="picture-card"
+          :on-preview="handlePictureCardPreview"
+          :on-remove="handleRemove"
+          :file-list="imgList2"
+        )
+          i(class="el-icon-plus")
+      el-form-item.btns
+        el-button(@click="toggleDetail") 取消
+        el-button(@click="submit") 确认
+
+

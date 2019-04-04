@@ -1,0 +1,41 @@
+<!-- 时间管理times -->
+<template lang="pug" src="./index.pug"></template>
+<style lang="stylus" src="./index.styl" scoped></style>
+
+<script type="textecmascript-6">
+export default {
+  components: {},
+  created() {},
+  mounted() {},
+  data() {
+    return {
+      /**[当前模型] */
+      type: 1,
+      /**[所有模型] 可选项 */
+      typeOptions: [
+        { label: "AAA", value: 1 },
+        { label: "BBB", value: 2 },
+        { label: "CCC", value: 3 }
+      ],
+      /**[进度所有数据] */
+      porgressOptions: [
+        {
+          content: "活动按期开始",
+          timestamp: "2018-04-15"
+        },
+        {
+          content: "通过审核",
+          timestamp: "2018-04-13"
+        },
+        {
+          content: "创建成功",
+          timestamp: "2018-04-11"
+        }
+      ]
+    };
+  },
+  computed: {},
+  methods: {},
+  watch: {}
+};
+</script>

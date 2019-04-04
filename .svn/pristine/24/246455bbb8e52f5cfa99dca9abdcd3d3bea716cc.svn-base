@@ -1,0 +1,25 @@
+<!-- 功能配置configuration -->
+<template>
+ <div class='container-configuration'>
+ <div class='wrapper'>
+   {{data}}
+ </div>
+ </div>
+</template>
+
+<script type='textecmascript-6'>
+export default {
+ data() {
+   return {
+ data: '功能配置configuration'
+   }
+ },
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-configuration
+  width 100%
+  height 100%
+</style>
