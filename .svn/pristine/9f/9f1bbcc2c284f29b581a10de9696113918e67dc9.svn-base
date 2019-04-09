@@ -91,7 +91,7 @@
                   :key="i"
                 >
                   <div
-                    v-if="col.ProcedureName=='基础工程'&&col.status"
+                    v-if="item.name=='基础工程'"
                     class="setting-tab-body-item-input flex-row flex-1 isClick"
                   >
                     <el-select v-model="col.Timelimit" multiple placeholder="请选择">
@@ -118,13 +118,11 @@
                   </div>
                 </div>
                 <div class="tab-col-warp flex-row w108">
-                  <div class="setting-tab-body-item-rm flex-row" v-if="item.name=='基础工程'">
-                    移除
-                    </div>
+                  <div class="setting-tab-body-item-rm flex-row" v-if="item.name=='基础工程'">移除</div>
                   <div
                     class="setting-tab-body-item-rm flex-row"
-                    @click="onOneDelItem(index,item.ProcedureId)"
                     v-else
+                    @click="onOneDelItem(index,item.ProjectID)"
                   >移除</div>
                 </div>
               </div>
@@ -140,32 +138,21 @@
               <div class="stepOne-title-describe flex-row">关联工序</div>
               <div class="stepOne-title-handle flex-row">操作</div>
             </div>
-            <div class="stepOne-item flex-row" v-for="(item,index) in fromData.four" :key="item.NodeName">
+            <div class="stepOne-item flex-row" v-for="(item,index) in fromData.four" :key="index">
               <div class="stepOne-title-describe">
-                <el-input v-model="item.NodeName" placeholder="节点名称" :disabled="step==5"></el-input>
+                <el-input v-model="item.NodeName" placeholder="描述文字" :disabled="step==5"></el-input>
               </div>
               <div class="stepOne-title-describe">
                 <el-select v-model="item.FrontNode" placeholder="请选择" :disabled="step==4">
-                  <el-option 
-                    v-for="va in afterPull" 
-                    :key="va.text" 
-                    :label="va.text" 
-                    :value="va.text"
-                  >
-                  </el-option>
+                  <el-option v-for="v in afterPull" :key="v.code" :label="v.text" :value="v.id"></el-option>
                 </el-select>
               </div>
               <div class="stepOne-title-describe">
-                <el-input v-model="item.IntervalTime" type='number' placeholder="技术间隔时间" :disabled="step==5"></el-input>
+                <el-input v-model="item.IntervalTime" placeholder="描述文字" :disabled="step==5"></el-input>
               </div>
               <div class="stepOne-title-describe">
                 <el-select v-model="item.ProcedureId" placeholder="请选择" :disabled="step==5">
-                  <el-option 
-                  v-for="(va,i) in relevancePull" 
-                  :key="i" 
-                  :label="va.ProcedureName" 
-                  :value="va.ProcedureId"
-                  ></el-option>
+                  <el-option v-for="v in relevancePull" :key="v.code" :label="v.text" :value="v.id"></el-option>
                 </el-select>
               </div>
               <div class="stepOne-title-handle flex-row">
@@ -201,19 +188,19 @@ import {
   set_date_list,
   del_date_list,
   get_standard_list,
-  pullb_standard_list ,
+  pulla_standard_list,
+  pullb_standard_list,
   set_standard_list,
   del_standard_list,
   getpre_standard_list
 } from "../../../../../api/api.js";
 import one from "./step/one.js";
-import {sum} from '../../base/util.js'
 
 export default {
+  // mixins:[one],
   props: { isShow: {type:Boolean,default:false} },
   data() {
     return {
-      arr:[],
       step: 1,
       foundation: [], // 基础工程下拉
       afterPull: [], // 前置下拉
@@ -258,7 +245,6 @@ export default {
     },
     // 下一步
     onNextStep() {
-      console.log(this.step)
       if (this.step < 5) {
         this.step = this.step + 1;
       }
@@ -266,7 +252,7 @@ export default {
     },
     // 设置标题
     onTitle() {
-      let c= this.step;
+      let c = this.step;
       if (c == 1) {
         this.getLIstOne();
         this.$emit("onSetTile", "楼层类型定义");
@@ -290,11 +276,12 @@ export default {
       let fdFour = this.fromData.four;
       if (step == 1) {
         let flag = true;
-        fdOne.forEach(element => {
-          if (!element.Name || !element.Describe) {
+        for (let i = 0; i < fdOne.length; i++) {
+          if (!fdOne[i].Name || !fdOne[i].Describe) {
             flag = false;
+            break;
           }
-        });
+        }
         if (flag) {
           // 提交设置
           this.setLIstOne(fdOne);
@@ -308,16 +295,16 @@ export default {
       } else if (step == 2) {
         let v = fdTwo;
         let flag = true;
-        fdTwo.forEach(element => {
+        for (let i = 0; i < fdTwo.length; i++) {
           if (
-            !element.ProcedureName ||
-            !element.Describe ||
-            !element.ModelMatching
+            !fdTwo[i].ProcedureName ||
+            !fdTwo[i].Describe ||
+            !fdTwo[i].ModelMatching
           ) {
             flag = false;
+            break;
           }
-        });
-
+        }
         if (flag) {
           this.setLIstTwo(fdTwo);
         } else {
@@ -327,21 +314,41 @@ export default {
             center: "true"
           });
         }
+        console.log(v, this.fromData.three);
       } else if (step == 3) {
         let flag = true;
-        this.fromData.three.body.forEach(element => {
-          element.data.forEach(item => {
+        let d = [];
+        for (let i = 0; i < fdThree.body.length; i++) {
+          let item = fdThree.body[i].data;
+          if (!flag) {
+            break;
+          }
+          for (let j = 0; j < item.length; j++) {
             if (
-              !item.ProcedureId &&
-              !item.ProjectID &&
-              !String(item.Timelimit)
+              !item[j].ProcedureId &&
+              !item[j].ProjectID &&
+              !item[j].Timelimit
             ) {
+              if(typeof item[j].Timelimit == "object" && item[j].Timelimit.length==0){
+                flag = false
+                break;
+              }
               flag = false;
+              break;
+            } else {
+              if (typeof item[j].Timelimit == "object" && item[j].Timelimit.length>0) {
+                console.log(item[j].Timelimit)
+                item[j].Timelimit = this.sum(item[j].Timelimit);
+                d.push(item[j]);
+              }else{
+                d.push(item[j]);
+              }
             }
-          });
-        });
+          }
+        }
         if (flag) {
-          this.setLIstThree();
+          console.log(d);
+          this.setLIstThree(d);
         } else {
           this.$message({
             message: "请填写完整内容",
@@ -352,12 +359,13 @@ export default {
       } else if (step == 4) {
         let flag = true;
         let d = [];
-        fdFour.forEach(element => {
-          if (!element.NodeName && !element.IntervalTime&&!element.ProcedureId) {
+        for (let i = 0; i < fdFour.length; i++) {
+          if (!fdFour[i].NodeName && !fdFour[i].IntervalTime) {
+            //&& !fdFour[i].ProcedureId
             flag = false;
+            break;
           }
-        });
-
+        }
         if (flag) {
           console.log(fdFour)
           this.setLIstFour(fdFour);
@@ -371,15 +379,16 @@ export default {
       } else if (step == 5) {
         let flag = true;
         let d = [];
-        fdFour.forEach(element => {
+        for (let i = 0; i < fdFour.length; i++) {
           if (
-            !element.NodeName &&
-            !element.IntervalTime&& !element.ProcedureId
-            // && !fdFour[i].FrontNode
+            !fdFour[i].NodeName &&
+            !fdFour[i].IntervalTime
+            //&& !fdFour[i].ProcedureId && !fdFour[i].FrontNode
           ) {
             flag = false;
+            break;
           }
-        });
+        }
         if (flag) {
           this.setLIstFour(fdFour);
         } else {
@@ -411,7 +420,6 @@ export default {
         this.fromData.one.length = 0;
         if (res) {
           this.fromData.one = res;
-          console.log("楼层类型",this.fromData.one);
           return res;
         } else {
           this.addLIstOne();
@@ -449,7 +457,6 @@ export default {
           this.fromData.two.length = 0;
         if (res) {
           this.fromData.two = res;
-          console.log("工序类型",this.fromData.two);
           return res;
         } else {
           this.addLIstTwo();
@@ -471,8 +478,9 @@ export default {
     },
     // 修改--工序---2
     setLIstTwo(par) {
-      this.getLIstOne();
       this.ajax(set_process_list, [par], res => {
+        this.getLIstOne();
+        this.getLIstTwo();
         this.onNextStep();
         console.log("修改");
       });
@@ -495,131 +503,154 @@ export default {
     },
     // 获取--时间---3
     getLIstThree() {
-      this.ajax(get_process_list, [{}], res => {
-        this.fromData.two.length = 0;
-        this.fromData.two = res;
+      let fdOne = this.fromData.one;
+      let fdTwo = this.fromData.two;
+      this.fromData.three.body.length = 0;
+      this.fromData.three.head.length = 0;
 
-        this.getPullThree();
-        this.fromData.three.body.length = 0;
-        this.fromData.three.head.length = 0;
-
-        this.fromData.one.forEach((el, index) => {
-          this.fromData.three.head.push(el);
-        });
-        this.fromData.two.forEach((el, i) => {
-            let item = new Object({ name: "", ProcedureId: "", data: [] });
-            item.name = el.ProcedureName;
-            item.ProcedureId = el.ProcedureId;
-            this.fromData.one.forEach((element, index) => {
-              if (el.ProcedureName == "基础工程") {
-                item.data.push({
-                  ProjectID: element.ProjectID,
-                  ProcedureId: el.ProcedureId,
-                  TimeId: "",
-                  Timelimit: [],
-                  ProcedureName:el.ProcedureName,
-                  status:true,
-                });
-              } else {
-                item.data.push({
-                  ProjectID: element.ProjectID,
-                  ProcedureId: el.ProcedureId,
-                  TimeId: "",
-                  Timelimit: "",
-                  ProcedureName:el.ProcedureName,
-                  status:false,
-                });
-              }
-            this.fromData.three.body.push(item);
+      this.ajax(
+        get_date_list,
+        [{}],
+        res => {
+          fdOne.forEach((el, index) => {
+            this.fromData.three.head.push(el);
           });
-        })
-
-        this.ajax(
-          get_date_list,
-          [{}],
-          res => {
-            if (res && res.length > 0) {
-              this.fromData.three.body.forEach((element, i) => {
-                element.data.forEach(el => {
+            debugger
+          fdTwo.forEach((el, i) => {
+            let item = new Object({ name: "", ProjectID: "", data: [] });
+            item.name = el.ProcedureName;
+            item.ProjectID = el.ProcedureId;
+            fdOne.forEach((element, index) => {
+              if (res && res.length > i) {
                 res.forEach(ele => {
                   if (
-                    el.ProjectID == ele.ProjectID &&
+                    element.ProjectID == ele.ProjectID &&
                     el.ProcedureId == ele.ProcedureId
                   ) {
                     if (el.ProcedureName == "基础工程") {
-                        el.TimeId= ele.TimeId,
-                        el.Timelimit= [ele.Timelimit]
+                      item.data.push({
+                        ProjectID: ele.ProjectID,
+                        ProcedureId: ele.ProcedureId,
+                        TimeId: ele.TimeId,
+                        Timelimit: [ele.Timelimit]
+                      });
                     } else {
-                        el.TimeId= ele.TimeId,
-                        el.Timelimit= ele.Timelimit
+                      item.data.push({
+                        ProjectID: ele.ProjectID,
+                        ProcedureId: ele.ProcedureId,
+                        TimeId: ele.TimeId,
+                        Timelimit: ele.Timelimit
+                      });
                     }
                   }
                 });
-                });
+              } else {
+                console.log(element.ProjectID,el.ProcedureId)
+                if (el.ProcedureName == "基础工程") {
+                  item.data.push({
+                    ProjectID: element.ProjectID,
+                    ProcedureId: el.ProcedureId,
+                    TimeId: "",
+                    Timelimit: []
+                  });
+                } else {
+                  item.data.push({
+                    ProjectID: element.ProjectID,
+                    ProcedureId: el.ProcedureId,
+                    TimeId: "",
+                    Timelimit: ""
+                  });
+                }
+              }
+            });
+            console.log(el, item.data);
 
-              });
-            }
-          }
-        );
-      });
+            this.fromData.three.body.push(item);
+            this.getPullThree();
+          });
+        },
+        res => {
+          fdOne.forEach((el, index) => {
+            this.fromData.three.head.push(el);
+          });
+          fdTwo.forEach((el, i) => {
+            let item = new Object({ name: "", ProjectID: "", data: [] });
+            item.name = el.ProcedureName;
+            item.ProjectID = el.ProcedureId;
+
+            fdOne.forEach((element, index) => {
+                if (el.ProcedureName == "基础工程") {
+                  item.data.push({
+                    ProjectID: element.ProjectID,
+                    ProcedureId: el.ProcedureId,
+                    TimeId: "",
+                    Timelimit: []
+                  });
+                } else {
+                  item.data.push({
+                    ProjectID: element.ProjectID,
+                    ProcedureId: el.ProcedureId,
+                    TimeId: "",
+                    Timelimit: ""
+                  });
+                }
+            });
+
+            console.log(el, item.data);
+
+            this.fromData.three.body.push(item);
+            this.getPullThree();
+          });
+        }
+      );
     },
     // 修改--时间---3
-    setLIstThree() {
-      let par = [];
-        this.fromData.three.body.forEach(element => {
-          element.data.forEach(item => {
-            if (typeof item.Timelimit == "object") {
-              item.Timelimit = sum(item.Timelimit);
-              item.status = false;
-            }
-            par.push(item);
-          })
-        })
+    setLIstThree(par) {
       this.ajax(set_date_list, [par], res => {
-        this.onNextStep();
+        // this.onNextStep();
         console.log("修改");
       });
     },
     // 删除--时间---3
     delLIstThree(i, ProcedureId) {
+      // if (!ProcedureId) {
+      //   this.fromData.three.body.splice(i, 1);
+      // } else {
       this.ajax(del_date_list, [{ ProcedureId }], res => {
         this.fromData.three.body.splice(i, 1);
         console.log("删除");
       });
+      // }
     },
 
     // 前置下拉--标准工序---4
     pullaLIstFour() {
       this.ajax(pullb_standard_list, [], res => {
         this.afterPull = res;
-        console.log("前置节点下拉",this.afterPull);
+      });
+    },
+    // 关联下拉--标准工序---4
+    pullbLIstFour() {
+      this.ajax(pulla_standard_list, [], res => {
+        this.relevancePull = res;
       });
     },
     // 获取--标准工序---4
     getLIstFour() {
-      this.fromData.four.length = 0;
-      this.fromData.two.forEach(element => {
-        this.relevancePull.push(element);
-      });
       this.ajax(
         get_standard_list,
         [{}],
         res => {
           if (res) {
-            res.forEach(element => {
-              this.relevancePull.forEach(ele => {
-                if(element.ProcedureId== ele.ProcedureId){
-                  element.ProcedureId= ele.ProcedureName
-                }
-              });
-            });
             this.fromData.four = res;
           } else {
             this.addLIstFour();
+            this.pullbLIstFour();
           }
         },
         res => {
           this.addLIstFour();
+          this.pullbLIstFour();
         }
       );
     },
@@ -636,14 +667,19 @@ export default {
     },
     // 修改--标准工序---4
     setLIstFour(par) {
+      console.log(par)
       this.ajax(set_standard_list, [par], res => {
+        if (this.step == 4) {
+          this.pullaLIstFour();
+          this.onNextStep();
+        }
         if (this.step == 5) {
           this.$emit("onClose", false);
           this.step = 1;
-          this.foundation = [];
-          this.afterPull = [];
-          this.relevancePull = [];
-          this.fromData = {
+          foundation = [];
+          afterPull = [];
+          relevancePull = [];
+          fromData = {
             one: [],
             two: [],
             three: { head: [], body: [] },
@@ -651,42 +687,57 @@ export default {
           };
           this.$emit("onSetTile", "新增进度方案");
         }
-        if (this.step == 4) {
-          this.pullaLIstFour();
-          this.onNextStep();
-        }
         console.log("修改");
-      },res=>{
-          this.$message({
-            message: "提交失败",
-            type: "error",
-            center: "true"
-          });
       });
     },
     // 删除--标准工序---4
     delLIstFour(i) {
       let StanProcedureId = this.fromData.four[i].StanProcedureId;
       if (!StanProcedureId) {
-        this.fromData.four.splice(i, 1);
+        this.fromData.three.splice(i, 1);
       } else {
         this.ajax(del_standard_list, [{ StanProcedureId }], res => {
-          this.fromData.four.splice(i, 1);
+          this.fromData.three.splice(i, 1);
           console.log("删除");
         });
       }
     },
+    // 前置节点下拉--标准工序---4
+    preLIstFour(i) {
+      this.ajax(getpre_standard_list, [{}], res => {
+        this.fromData.three.splice(i, 1);
+        console.log("前置节点下拉");
+      });
+    },
     // 接口
     ajax(ajaxFn, param, handle, reserve) {
-      ajaxFn(...param).then(res => {
-        if (res.StatusCode == 200) {
-          handle(res.Detiel);
-        } else {
-          if (typeof reserve == "function") {
-            reserve();
+
+      // this.Request(
+        ajaxFn(...param).then(res => {
+          if (res.StatusCode == 200) {
+            handle(res.Detiel);
+          } else {
+            if (typeof reserve == "function") {
+              reserve();
+            }
+            // this.$message({
+            //   type: "error",
+            //   message: res.Message,
+            //   center: "true"
+            // });
           }
-        }
-      })
+        })
+      // );
+    },
+    sum(arrs) {
+      let len = arrs.length;
+      // if (len == 0) {
+      //   return 0;
+      // } else if (len == 1) {
+      //   return Number(arrs[0]);
+      // } else {
+      //   return Number(arrs[0]) + this.sum(arrs.slice(1));
+      // }
     }
   },
   watch: {
@@ -697,8 +748,7 @@ export default {
       console.log(v, o);
     },
     step(v, o) {
-      // console.log(v, o);
-      // this.onTitle(v);
+      console.log(v, o);
     }
   }
 };

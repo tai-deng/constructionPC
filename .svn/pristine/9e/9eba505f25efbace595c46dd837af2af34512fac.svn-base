@@ -265,9 +265,6 @@ export default {
   text-align: center;
   padding: 10px 0;
 }
-.container-risk .el-pager li{
-  text-indent: initial;
-}
 </style>
 
 

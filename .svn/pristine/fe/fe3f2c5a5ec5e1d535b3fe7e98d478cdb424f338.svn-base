@@ -12,7 +12,7 @@
                     :validate-on-rule-change="false"
             )
                 el-form-item
-                    el-select(v-model="filterForm.house1" placeholder="楼栋" @focus="getBuildingData" @change="onSelectedBuilding($event, filterForm.house1)")
+                    el-select(v-model="filterForm.house1" placeholder="楼栋" @focus="getBuildingData")
                         el-option(
                         v-for="item in house1Options"
                             :key="item.value"
@@ -20,7 +20,7 @@
                                 :value="item.value"
                         )
                 el-form-item
-                    el-select(v-model="filterForm.house2" placeholder="专业" @focus="getSpecialtybyBuildingData" @change="onSelectedMajor($event, filterForm.house2)")
+                    el-select(v-model="filterForm.house2" placeholder="专业" @focus="getSpecialtybyBuildingData")
                         el-option(
                         v-for="item in house2Options"
                             :key="item.value"
@@ -28,7 +28,7 @@
                                 :value="item.value"
                         )
                 el-form-item
-                    el-select(v-model="filterForm.house3" placeholder="楼层" @focus="getFloorbyBuildingData" @change="onSelectedFloor($event, filterForm.house3)")
+                    el-select(v-model="filterForm.house3" placeholder="楼层" @focus="getFloorbyBuildingData")
                         el-option(
                         v-for="item in house3Options"
                             :key="item.value"
@@ -36,7 +36,7 @@
                                 :value="item.value"
                         )
                 el-form-item
-                    el-select(v-model="filterForm.house4" placeholder="构建类别" @focus="getElementTypebyBuildingData" @change="onSelectedConstructionCategory($event, filterForm.house4)")
+                    el-select(v-model="filterForm.house4" placeholder="构建类别" @focus="getElementTypebyBuildingData")
                         el-option(
                         v-for="item in house4Options"
                             :key="item.value"
@@ -44,12 +44,12 @@
                                 :value="item.value"
                         )
                 el-form-item(class="ser-bg")
-                    el-input(v-model="filterForm.custom" placeholder="楼栋、专业、楼层、资源" v-debounce="searchTxt")  //@input="searchTxt"
+                    el-input(v-model="filterForm.custom" placeholder="楼栋、专业、楼层、资源")
                         i(slot="prefix" class="el-input__icon el-icon-search")
         el-row
             el-col(:span="12" style="padding-right: 10px;width: 49%;")
                 div(class="grid-content bg-purple new-quality-detail tableBox")
-                    div(class="titleBg notice") {{filterForm.house1 == "" ? '所有' : filterForm.house1}}栋进度计划
+                    div(class="titleBg notice") A1栋进度计划
                     .table
                         el-table(:data="statisticDatas" :row-class-name="rowClassNameHandler" stripe @row-click="openDetail")
                             el-table-column(label="序号")

@@ -10,11 +10,7 @@ export default {
   components: {},
   created() {
     this.initQCSchedulePlanData();
-    this.initModel();
-    // this.$watch('textinput', this.$util.debounce((newQuery) => {
-    //             // newQuery为输入的值
-    //             console.log("延时=", newQuery)
-    //         }, 3000))
+    // this.initModel();
   },
   mounted() {
     // let self = this
@@ -42,7 +38,6 @@ export default {
         house4: "",
         custom: ""
       },
-      textinput: "",
       /**[筛选表单规则] */
       filterRules: {},
       /**[进行中] */
@@ -121,6 +116,14 @@ export default {
      */
     initQCSchedulePlanData(){
       this.load() //调用加载中蒙层
+      // let params = new URLSearchParams();
+      // params.append("ProjectID", localStorage.getItem('projectid'));
+      // params.append("Builing", this.filterForm.house1);
+      // params.append("Specialty", this.filterForm.house2);
+      // params.append("Floor", this.filterForm.house3);
+      // params.append("CategoryName", this.filterForm.house4);
+      // params.append("QueryInfo", this.filterForm.custom);
+      
       let params = {
         ProjectID: localStorage.getItem('projectid'),
         Builing: this.filterForm.house1,
@@ -267,57 +270,6 @@ export default {
         }
       });
     },
-    /**
-     * 楼栋的值发生变化时触发
-     */
-    onSelectedBuilding(event, item){
-      this.filterForm.house1 = item;
-      this.initQCSchedulePlanData();
-    },
-    /**
-     * 专业的值发生变化时触发
-     */
-    onSelectedMajor(event, item){
-      this.filterForm.house2 = item;
-      this.initQCSchedulePlanData();
-    },
-    /**
-     * 楼层的值发生变化时触发
-     */
-    onSelectedFloor(event, item){
-      this.filterForm.house3 = item;
-      this.initQCSchedulePlanData();
-    },
-    /**
-     * 楼层的值发生变化时触发
-     */
-    onSelectedConstructionCategory(event, item){
-      this.filterForm.house4 = item;
-      this.initQCSchedulePlanData();
-    },
-    /**
-     * 搜索输入框的值发生变化时触发
-     */
-    searchTxt(){
-      // console.log(this.filterForm.custom)
-      this.initQCSchedulePlanData();
-      // this.filterForm.custom = v;
-      // this.$util.debounce((v) => {
-      //   // newQuery为输入的值
-      //   console.log("延时：", v)
-      // }, 500)
-    },
-    // debounce (fn, delay) {
-    //   var timer = null
-    //   return function () {
-    //     var context = this
-    //     var args = arguments
-    //     clearTimeout(timer)
-    //     timer = setTimeout(function () {
-    //       fn.apply(context, args)
-    //       }, delay)
-    //   }
-    // },
     /**[采购列表按钮] */
     onPurchaseBtn() {
       this.activeTab = !this.activeTab;
@@ -343,7 +295,7 @@ export default {
           // console.log(res)
           this.modelBox({
             isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
-            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            isLoadModel: false, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
             top: res.top, //距离顶部距离‘px'
             left: res.left, //距离左边距离‘px'
             width: res.width, //模型宽‘px'
@@ -545,47 +497,12 @@ export default {
     }
   },
   watch: {
-    // filterForm: {
-    //   handler(val, oldVal){
-    //       // console.log("watch楼栋: "+val.house1, oldVal.house1);
-    //       this.$util.debounce((val) => {
-    //             // newQuery为输入的值
-    //             console.log("延时=", val)
-    //         }, 200)
-    //   },
-    //   deep:true
-    // }
-
-    // textinput: function (val, oldVal) {
-    //   console.log('new: %s, old: %s', val, oldVal)
-    //   this.$util.debounce(function(val) {
-    //       // newQuery为输入的值
-    //       console.log("延时=", val)
-    //   }, 600)
-    // }
+    
   },
   filters:{
     filterDate(v){
       if (!v) return ''
       return v.substring(0, v.indexOf("T"))
-    }
-  },
-  directives: {
-    /**
-     * 节流指令
-     */
-    debounce: {
-      inserted: function (el, binding) {
-        let timer
-        el.addEventListener('keyup', () => {
-          if (timer) {
-            clearTimeout(timer)
-          }
-          timer = setTimeout(() => {
-            binding.value()
-          }, 500)
-        })
-      }
     }
   }
 };

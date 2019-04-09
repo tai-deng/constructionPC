@@ -55,12 +55,12 @@
           <el-row>
             <el-col :span="24">
               <el-form ref="questionForm" :model="form" label-width="100px" :rules="rules">
-                <el-form-item label="主题" prop="theme">
+                <el-form-item label="主题:" prop="theme">
                   <div class="originator">
                     <el-input v-model="form.theme"></el-input>
                   </div>
                 </el-form-item>
-                <el-form-item label="问题类型" prop="qt">
+                <el-form-item label="问题类型:" prop="qt">
                   <div class="originator question">
                     <el-select v-model="form.qt" placeholder="问题类型" @focus="getQuestionType">
                       <el-option
@@ -72,13 +72,7 @@
                     </el-select>
                   </div>
                 </el-form-item>
-                <el-form-item label="风险类型" prop="category">
-                  <el-radio-group v-model="form.category">
-                    <el-radio label="1">质量</el-radio>
-                    <el-radio label="2">安全</el-radio>
-                  </el-radio-group>
-                </el-form-item>
-                <el-form-item label="发起人">
+                <el-form-item label="发起人:">
                   <div class="originator">
                     <el-input v-model="form.initiator" :disabled="true"></el-input>
                   </div>
@@ -93,10 +87,10 @@
                     ></el-date-picker>
                   </div>
                 </el-form-item>
-                <el-form-item label="问题描述" prop="describe">
+                <el-form-item label="问题描述:" prop="describe">
                   <el-input type="textarea" v-model="form.describe" placeholder="请输入问题描述"></el-input>
                 </el-form-item>
-                <el-form-item label="现场照片">
+                <el-form-item label="现场照片:">
                   <el-upload
                     action
                     list-type="picture-card"
@@ -114,10 +108,7 @@
                     </li>
                   </ul>-->
                 </el-form-item>
-                <!-- <el-form-item label="模型视点">
-                  <div class="viewpoint" v-for="item in upload_base64_img" :key="item.index" v-show="fileext.length != 0">
-                    <img class="modePic" :src="item.TokenUrL+item.URL" alt=""> -->
-                <el-form-item label="视点上传">
+                <el-form-item label="视点上传:">
                   <div
                     class="viewpoint"
                     v-for="item in upload_base64_img"
@@ -137,7 +128,7 @@
                     </el-select>
                   </div>
                 </el-form-item>-->
-                <el-form-item label="接收人" prop="person">
+                <el-form-item label="接收人:" prop="person">
                   <el-select v-model="form.person" multiple placeholder="接收人" @focus="getReceiver">
                     <el-option
                       v-for="item in receiver"
@@ -147,7 +138,7 @@
                     ></el-option>
                   </el-select>
                 </el-form-item>
-                <el-form-item label="整改截止时间" prop="completionTime">
+                <el-form-item label="整改截止时间:" prop="completionTime">
                   <div class="originator">
                     <el-date-picker
                       type="date"
@@ -204,20 +195,16 @@ export default {
         //form表单
         theme: "",
         qt: "",
-        initiator: "",  //发起人
-        person: [],  //接收人
-        startTime: "",  //发起时间
-        describe: "",  //问题描述
-        completionTime: "",  //整改截止时间
-        category: ""  //风险类型
+        initiator: "",
+        person: [],
+        startTime: "",
+        describe: "",
+        completionTime: ""
       },
       loading: false,
       rules: {
         theme: [{ required: true, message: "请输入主题", trigger: "blur" }],
         qt: [{ required: true, message: "请选择问题类型", trigger: "blur" }],
-        category: [
-          { required: true, message: '请选择风险类型', trigger: 'blur' }
-        ],
         startTime: [
           { required: true, message: "请选择发起时间", trigger: "blur" }
         ],
@@ -350,20 +337,24 @@ export default {
         if (valid) {
           this.loading = true;
           let params = {
-            CurUserID: Number(localStorage.getItem('userId')),  //当前用户ID
-            ProjectID: localStorage.getItem('projectid'),  //项目ID
-            Subject: this.form.theme,  //主题
-            Category: this.form.category,  //风险类别 1：质量 2：安全
-            ProblemType: this.form.qt,  //问题类型
-            Initiator: Number(localStorage.getItem('userId')),  //发起人ID
-            InitiateTime: require('moment')(this.form.startTime).format('YYYY-MM-DD'),  //发起时间
-            Problem: this.form.describe,  //问题描述
-            DeadLine: require('moment')(this.form.completionTime).format('YYYY-MM-DD'),  //整改截止时间
-            listViewpoints: this.viewPointList,  //模型视点
-            PhotoList: this.photoList,  //上传问题照片
-            ReceiverList: this.form.person  //接收人
-          }
-          // console.log("风险-发布问题：", params);
+            CurUserID: Number(localStorage.getItem("userId")), //当前用户ID
+            ProjectID: localStorage.getItem("projectid"), //项目ID
+            Subject: this.form.theme, //主题
+            Category: "1", //类别 1：质量 2：安全
+            ProblemType: this.form.qt, //问题类型
+            Initiator: Number(localStorage.getItem("userId")), //发起人ID
+            InitiateTime: require("moment")(this.form.startTime).format(
+              "YYYY-MM-DD"
+            ), //发起时间
+            Problem: this.form.describe, //问题描述
+            DeadLine: require("moment")(this.form.completionTime).format(
+              "YYYY-MM-DD"
+            ), //整改截止时间
+            listViewpoints: this.viewPointList, //模型视点
+            PhotoList: this.photoList, //上传问题照片
+            ReceiverList: this.form.person //接收人
+          };
+          console.log("风险-发布问题：", params);
           this.Request(PublishRisk(params)).then(data => {
             console.log("风险-", data);
             if (data.StatusCode === 200) {
