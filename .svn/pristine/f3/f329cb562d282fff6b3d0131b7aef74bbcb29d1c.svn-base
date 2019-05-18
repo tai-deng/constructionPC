@@ -1,0 +1,816 @@
+<!-- communication沟通管理 -->
+<template>
+  <div class="container-communication1">
+    <div class="leftBox">
+      <div class="box-card">
+        <div class="title">
+          <i class="el-icon-menu icon"></i>
+        </div>
+          <!-- 模型box -->
+        <div class="model-container">
+          <div ref="modelContainer" class="model-container"></div>
+        </div>
+      </div>
+    </div>
+    <div class="rightBox">
+      <div class="box-card">
+        <!-- 详情 -->
+        <div class="detail" v-show="alteration">
+          <div class="titleBg notice">
+            详情
+            <i class="el-icon-close" @click="close()"></i>
+          </div>
+          <el-row>
+            <el-col :span="24">
+              <el-form ref="form" :model="form" label-width="80px">
+                <el-form-item label="主题:" >
+                  <div class="info">{{form.Subject}}</div>
+                </el-form-item>
+                <el-form-item label="类型:">
+                  <div class="info">{{form.ComType}}</div>
+                </el-form-item>
+                <el-form-item label="问题描述:">
+                  <div class="info">{{form.Description}}</div>
+                </el-form-item>
+                <el-form-item label="视点:">
+                  <div class="imgWrap">
+                    <img v-if="listViewpoints.length === 0" src="../../../assets/imgs/img.png" alt>
+                    <template v-else>
+                    <img v-for="(item, index) in listViewpoints" :key="index" :src="item.Snapshot" alt>
+                    </template>
+                  </div>
+                </el-form-item>
+                <el-form-item label="凭证:">
+                  <div class="imgWrap">
+                    <img v-if="PhotoList.length === 0" src="../../../assets/imgs/img.png" alt>
+                    <template v-else>
+                      <img v-for="(item, index) in PhotoList" :key="index" :src="item" alt>
+                    </template>
+                  </div>
+                </el-form-item>
+                <el-form-item label="构件关联:">
+                   <span class="relevance" v-if="isRelation" @click="getRelationFunc" >
+                    <img src="../../../assets/imgs/allRelation.png" >
+                  </span>
+                   <span class="relevance" v-else  @click="getRelationFunc">
+                    <img src="../../../assets/imgs/unRelation.png">
+                  </span>
+                </el-form-item>
+                <el-form-item label="状态:"></el-form-item>
+                <div class="item">
+                  <el-form-item>
+                    <el-steps align-center :active="active">
+                      <el-step :class="{inter: index === active}" v-for="(item, index) in listFlow" :key="index" :title="item.OrgName" :description="item.DeptName"></el-step>
+                      <!-- <el-step title="设计单位" description="工程部"></el-step>
+                      <el-step title="建设单位" description="工程部"></el-step>
+                      <el-step title="施工单位" description="工程部"></el-step> -->
+                    </el-steps>
+                  </el-form-item>
+                </div>
+                <div v-if="allListAuthPhoto.length" class="item">
+                  <el-form-item >
+                    <ul class="uploadImg authentication">
+                      <li v-for="(item, index) in allListAuthPhoto" :key="index" class="imgWrap">
+                        <img :src="item" alt>
+                        <span v-if="item">认证照片</span>
+                      </li>
+                      <!-- <li class="imgWrap">
+                        <img src="../../../assets/imgs/img3.jpg" alt>
+                        <span>认证照片</span>
+                      </li>
+                      <li class="imgWrap">
+                        <img src="../../../assets/imgs/img6.png" alt>
+                        <span>认证照片</span>
+                      </li> -->
+                      <li v-show="isMe&&WorkStatus === statusList[0].value&&routeFlag" class="imgWrap">
+                        <div class="upload">
+                          <el-upload
+                            action
+                            list-type="picture-card"
+                            :on-preview="handlePictureCardPreview"
+                            :on-remove="handleRemove1"
+                            multiple
+                            :limit="3"
+                            :on-change="uploadPicture"
+                            :disabled="false"
+                          >
+                            <i class="el-icon-plus"></i>
+                          </el-upload>
+                          <span>认证照片</span>
+                        </div>
+                        <el-dialog :visible.sync="dialogVisible1">
+                          <img width="100%" :src="dialogImageUrl1" alt>
+                        </el-dialog>
+                      </li>
+                    </ul>
+                  </el-form-item>
+                </div>
+                <el-form-item v-if="isMe">
+                  <div v-show="WorkStatus === statusList[0].value&&routeFlag" class="btn">
+                    <el-button type="warning" @click="onSubmit1(2)">{{statusList[0].text[0]}}</el-button>
+                    <el-button type="primary" @click="onSubmit1(3)">{{statusList[0].text[1]}}</el-button>
+                  </div>
+                  <div v-show="WorkStatus === statusList[1].value&&routeFlag" class="btn">
+                    <el-button type="primary" @click="onAudit">{{statusList[1].text[0]}}</el-button>
+                  </div>
+                </el-form-item>
+              </el-form>
+            </el-col>
+          </el-row>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import { mapMutations } from "vuex";
+import { 
+  GetDetail,  //获取沟通详情
+  GetComTypeList,  //获取沟通类型列表
+  GetDefaultModelId,  //获取默认模型
+  UploadImages,  //上传照片
+  GetAllElementID, // 获取所有构件ID
+  DoWork, // 沟通管理流程提交
+  GetLoginUserInfo, //用户信息
+} from '@/api/api.js'
+export default {
+  data() {
+    return {
+      active: 0,  //流程在哪一步
+      isMe: true,  //判断是否是本人
+      WorkStatus: 3 ,  // 0 待接收， 3 进行中 4 完成
+      WorkFlowId: '',
+      projectId: localStorage.getItem('projectid'),  //项目Id
+      userID: localStorage.getItem('userId'), //用户ID
+      userData: {},
+      userInfo: {},
+      defaultModelID: 0, //模型ID
+      data: "",
+      form: {},
+      alteration: true, //详情弹框
+      dialogImageUrl1: "", //认证照片
+      dialogVisible1: false,//认证照片列表
+      communicateId: null,  // 沟通项ID
+      statusList: [
+        {value: 0, text: ['拒收','接收']},
+        {value: 3, text: ['认证']},
+        {value: 4, text: []}
+      ],   //状态列表状态 0： 待接收 1： 处理中 2： 已处理
+      PhotoList: [], //图片详情
+      listFlow: [], //工作流
+      listViewpoints: [],  // 视点数据
+      view_point: sessionStorage.getItem('e'), //视点路径
+      fileext: '',  //图片格式
+      stateStr: [], //视点快照图路径
+      Snapshot: [],  //小图片数据视点图片详情
+      allListAuthPhoto: [], //认证照片地址
+      photoList: [], //上传认证照片
+      isRelation: true, //是否关联构建
+      routeFlag: parseInt(sessionStorage.getItem('routeFlag')),   //路由选择， true 为从集成管理跳转过来
+      isAccept: false, //拒接 为false  接收为true
+      par: {},
+      dialogImageUrl2: "", //上传凭证
+      dialogVisible2: false, //上传凭证图片列表
+      flagColor: false  //是否闪烁
+    };
+  },
+  watch: {
+    // 添加认证照片地址
+    listFlow(value){
+      console.log(value)
+      this.allListAuthPhoto = []
+      if(value.length){
+        value.forEach(item =>{
+          if(item.listAuthPhoto){
+            this.allListAuthPhoto.push(item.listAuthPhoto)
+          }
+        })
+      }
+      console.log(this.allListAuthPhoto)
+    },
+    form:{
+      handler(val){
+        this.getRelation()
+      }
+    }
+  },
+  created(){
+    this.LoginUserInfo(this.userID)  //获取用户信息 
+    this.getCommunicatItem() // 获取沟通具体项
+    this.GetCommunicationDetail() // 沟通详情列表
+    this.getModelId()  //获取模型ID
+    // this.createViewPoint()  //模型视点
+
+  },
+  methods: {
+    close() {
+      //关闭详情
+      this.$router.go(-1);
+    },
+      // 接受/拒收
+    onSubmit1(Status) {
+      this.load();
+      DoWork({
+        ID: this.form.ID,
+        WorkFlowId: this.WorkFlowId,
+        photoList: this.photoList,
+        Status
+      }).then(res => {
+        this.$toast.clear();
+        if (res.StatusCode == 200) {
+          this.$message({
+            type: "success",
+            message: "处理成功！",
+            center: "true"
+          });
+          this.close();
+        }
+      });
+    },
+    // 审核/认证
+    onAudit() {
+      this.load();
+      let val = Object.assign(this.par, {
+        listAuthPhoto: this.photoList,
+        Status: 4
+      });
+      DoWork(val).then(res => {
+        this.$toast.clear();
+        if (res.StatusCode == 200) {
+          this.$emit("close");
+          this.$message({
+            type: "success",
+            message: "处理成功！",
+            center: "true"
+          });
+          this.close();
+        }
+      });
+    },
+    // 认证照片
+    handleRemove1(file, fileList) {
+      //图标删除
+      this.photoList = fileList;
+      console.log(file, fileList);
+    },
+    handlePictureCardPreview(file) {
+      //点击文件列表中已上传的文件
+      this.dialogImageUrl2 = file.url;
+      this.dialogVisible2 = true;
+    },
+    async uploadPicture(res,file) {
+        let prams = [{
+        key: 'files', value: res.raw
+      }]
+      // file.forEach(i=>{
+      //   prams.push({ key: 'files', value: i.raw })
+      // })
+      //上传图片
+      let upload_images = await this.Request(UploadImages(prams))
+      console.log(upload_images)
+      if(upload_images.StatusCode == 200){
+        if(upload_images.Detiel.length){
+        // this.photoList = []  //  原来 是 = upload_images.Detiel
+        this.photoList.push({    //   原来是  this.credentialsList.push()
+          Id: upload_images.Detiel[0].Id, //上传后的文件名
+          Url: upload_images.Detiel[0].URL,
+          smallPhotoURL: upload_images.Detiel[0].smallPhotoURL, //如果存在小图则返回小图地址
+          Type: upload_images.Detiel[0].Type, //文件类型
+          TokenUrL: upload_images.Detiel[0].TokenUrL, //域名地址
+        })
+
+        }else{
+          this.$message({
+            type: "error",
+            message: upload_images.message ? upload_images.message : "图片上传失败",
+            center: "true"
+          });
+        }
+      }else{
+        this.$message({type:'error',message:upload_images.message?upload_images.message:'后台异常',center:'true'})
+      }
+    },
+    //获取沟通具体项
+    getCommunicatItem(){
+      this.communicateId = this.$route.query.id
+      this.status = this.$route.query.status
+      console.log(this.communicateId)
+      console.log(this.status)
+    },
+    //创建视点
+    createViewPoint(elID,AllIDs) {
+      console.log('33333')
+      this.$util.getDomLocation(this, "modelContainer").then(res => {
+        this.modelBox({
+          isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示 false:隐藏模型
+          isLoadModel: true, //是否加载模型 true：加载模型，如果已经加载，不会重新加载， false:卸载模型
+          top: res.top, //距离顶部距离‘px'
+          left: res.left, //距离左边距离‘px'
+          width: res.width, //模型宽‘px'
+          height: res.height, //模型高 ‘px'
+          zIndex: 100, //模型层级
+          background: "",
+          ElementIDs: AllIDs, // 所有要显示的构件数组，包括半隐藏构件
+          highLightElementIDs: elID, // 高亮显示的构件
+          functionNumber: [32] // 需要模型调用的函数编号数组
+        });
+      });
+      setTimeout(()=>{
+        this.currentState()
+      },1000)
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    }),
+
+     //获取当前模型的浏览状态，用于保存后恢复模型状态
+    currentState() {
+      this.$util.getDomLocation(this, "modelContainer").then(res => {
+        this.modelBox({
+          isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示 false:隐藏模型
+          isLoadModel: true, //是否加载模型 true：加载模型，如果已经加载，不会重新加载， false:卸载模型
+          top: res.top, //距离顶部距离‘px'
+          left: res.left, //距离左边距离‘px'
+          width: res.width, //模型宽‘px'
+          height: res.height, //模型高 ‘px'
+          zIndex: 100, //模型层级
+          background: "",
+          ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+          highLightElementIDs: [], // 高亮显示的构件
+          functionNumber: [36] // 需要模型调用的函数编号数组
+        });
+      });
+    },
+    // 获取模型所有构建ID
+    async getAllModelId(){
+      // 需要调用构建api GetMenuList
+      console.log('9999')
+      console.log(localStorage.getItem('projectid'))
+      let res = await this.Request(GetAllElementID({projectid:localStorage.getItem('projectid')}))
+      console.log(res)
+      return res
+      // console.log(this.getDataByVuex)
+    },
+    /**
+     * api
+     */
+    //模型ID
+    async getModelId() {
+      //获取默认模型ID
+      let defaultModelId = await this.Request(GetDefaultModelId({projectId: this.projectId}))
+      if(defaultModelId.StatusCode == 200){
+        this.defaultModelID = defaultModelId.Result
+      }else{
+        this.$message({type:'error',message:defaultModelId.message?defaultModelId.message:'后台异常',center:'true'})
+      }
+    },
+    //获取沟通管理详情
+    async GetCommunicationDetail(){
+      let id = this.communicateId
+      if(id){
+        let Com_Detail = await this.Request(GetDetail({communicateId: id}))
+        console.log(Com_Detail)
+        if(Com_Detail.StatusCode === 200){
+           this.active = 0;
+          this.WorkStatus = Com_Detail.Detiel[0].Communicate.WorkStatus;
+          Com_Detail.Detiel[0].listFlow.forEach((el, index)=>{
+            if (this.active == 0 && el.ID == Com_Detail.Detiel[0].Communicate.CurrentStepIndex) {
+              this.active = index + 1;
+              // this.Person = el.Person;
+              this.WorkFlowId = el.ID;
+              if (this.userID == el.Person) {
+                this.isMe = true;
+              } else {
+                this.isMe = false;
+              }
+              this.par = {
+                Priority: el.Priority,
+                OrgId: el.OrgId,
+                DepId: el.DepId,
+                Person: el.Person,
+                ID: el.ID
+              };
+            }
+          })
+          //  this.data = res.Result;
+          this.form = Com_Detail.Detiel[0].Communicate
+          console.log(this.form)
+          this.PhotoList = Com_Detail.Detiel[0].PhotoList
+          this.listFlow = Com_Detail.Detiel[0].listFlow
+          this.listViewpoints = Com_Detail.Detiel[0].listViewpoints
+          let stateStrlist = Com_Detail.Detiel[0].listViewpoints
+          this.stateStr =[]
+          this.Snapshot = []
+          stateStrlist.forEach(item=>{
+            this.stateStr.push(item.State)
+            this.Snapshot.push(item.Snapshot)
+          })     
+        }else{
+          this.$message({
+            type: 'error',
+            message: Com_Detail.Message,
+            center: 'true'
+          })
+        }
+      }
+
+    },
+      // 获取用户信息
+    async LoginUserInfo(id){
+      let res = await this.Request(GetLoginUserInfo({curUserId: id}))
+      if(res.StatusCode === 200){
+        console.log(res)
+        this.userData.department = res.Detiel[0].loginUserInfo.cDepName
+        this.userData.name = res.Detiel[0].loginUserInfo.cName
+        this.userData.companyName = res.Detiel[0].loginUserInfo.OrgName
+        this.userInfo = res.Detiel[0].loginUserInfo
+      }
+    },
+
+    //点击模型关联
+    getRelationFunc(){
+      this.isRelation = !this.isRelation
+      this.getRelation()
+    },
+// 模型关联
+    async getRelation(){
+
+      if(this.isRelation ){
+        console.log(this.form)
+        console.log(this.form.ElementIDS)
+        let modelIdList = this.form.ElementIDS? this.form.ElementIDS.split(','):[]
+        console.log(modelIdList)
+        if(modelIdList.length){
+          let allIDS = []
+          //获取所有构件ID
+         let res = await this.getAllModelId()
+            console.log(res)
+            if(res.StatusCode === 200){
+            allIDS = res.Detiel
+            } else {
+              this.$messaga({
+                type: 'error',
+                message: res.Message,
+                center: 'true'
+              })
+            }
+          console.log(allIDS)
+          this.createViewPoint(modelIdList, allIDS)
+        }else {
+          this.$message('没有关联构件')
+        }
+      }else {
+        this.$toast('已取消构建关联')
+      }
+    }
+
+  }
+};
+</script>
+<style lang='stylus' rel='stylesheet/stylus'>
+.container-communication1 {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.container-communication1 .el-form-item {
+  width: 100%;
+  height: auto !important;
+}
+
+.container-communication1 .avatar-uploader .el-upload {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.container-communication1 .el-upload--picture-card {
+  background: #F8F8F8 !important;
+}
+
+.container-communication1 .avatar-uploader .el-upload:hover {
+  border-color: #409EFF;
+}
+
+.container-communication1 .avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 145px;
+  height: auto;
+  text-align: center;
+}
+
+.container-communication1 .avatar {
+  width: 145px;
+  height: auto;
+  display: block;
+}
+
+.container-communication1 .el-form-item__content .tip {
+  color: #999999;
+  font-size: 18px;
+  padding-left: 10px;
+  display: inline-block;
+  vertical-align: bottom;
+}
+..el-form-item{margin-bottom:15px !important;}
+.container-communication1 .item .el-form-item__content {
+  margin-left: 0 !important;
+}
+
+.container-communication1 .upload {
+  display: inline-block;
+  text-align: center;
+}
+
+.container-communication1 .authentication {
+  width: 100%;
+  display: flex;
+}
+
+.container-communication1 .el-step__title.is-process {
+  font-weight: normal;
+}
+
+.container-communication1 .imgWrap {
+  // width: 25%;
+  float: left;
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.container-communication1 .imgWrap img, .el-upload--picture-card {
+  margin-left: 10px;
+  width: 130px;
+  height: 100px;
+  line-height: 100px;
+}
+
+.container-communication1 .workflowBox {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  float: left;
+  margin: -20px 0 0 -80px;
+}
+
+.container-communication1 .info {
+  color: #333;
+  font-size: 18px;
+  text-align: left;
+}
+
+.container-communication1 .workflowBox .workflow1 {
+  width: 156px;
+  margin-right: 10px;
+}
+
+.container-communication1 .workflowBox .add {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #435089;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container-communication1 .workflowBox .add i {
+  color: #435089;
+  font-size: 18px;
+}
+
+.container-communication1 .el-select .el-input__suffix {
+  width: 0.666667rem;
+  background: #435089;
+  border-radius: 0 0.066667rem 0.066667rem 0;
+  right: 0 !important;
+}
+
+.container-communication1 .el-select input {
+  background: #fff !important;
+}
+
+.container-communication1 .el-step.is-horizontal .el-step__line {
+  top: 0.25rem;
+  background: #979797;
+  height: 1px;
+}
+
+.container-communication1 .relevance {
+  width: 64px;
+  height: 40px;
+  border: 1px solid #E5E5E5;
+  background: #F8F8F8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container-communication1 .btn {
+  padding: 10px 25% 0px 5%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container-communication1 .el-step__icon.is-text {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #E5E5E5;
+  background: #ddd;
+}
+
+.container-communication1 .el-step__line-inner {
+  border-width: 0 !important;
+}
+
+.container-communication1 .el-step__main div {
+  color: #333 !important;
+}
+
+.container-communication1 .el-button {
+  width: 100px;
+  color: #fff;
+}
+
+.container-communication1 .el-button--default {
+  background: #999999;
+}
+
+.container-communication1 .el-button--default:focus, .container-communication1 .el-button--default:hover {
+  background: #999999;
+  color: #fff;
+}
+
+.container-communication1 .el-button--primary {
+  background: #4775CA;
+}
+
+.container-communication1 .el-button--primary:focus, .el-button--primary:hover {
+  background: #4775CA;
+  color: #fff;
+}
+
+// 图标颜色
+.container-communication1 .icon {
+  color: #ffa147;
+}
+
+.container-communication1 .titleBg {
+  background: #44508a;
+}
+
+.container-communication1 .detail {
+  margin-bottom: 26px;
+}
+
+.container-communication1 .el-row .el-col-24 {
+  font-size: 22px;
+  color: #28292b;
+}
+
+.container-communication1 .detail .el-row .el-col-24 {
+  margin: 20px 0px 0px 0px;
+}
+
+.container-communication1 .notice {
+  color: #fff;
+  font-size: 20px;
+  height: 40px;
+  line-height: 40px;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.container-communication1 .notice i {
+  font-size: 20px;
+  position: absolute;
+  right: 15px;
+  line-height: 40px;
+  cursor: pointer;
+}
+
+.container-communication1 .el-step__icon-inner {
+  color: #fff;
+  font-size: 20px;
+}
+
+.container-communication1 .el-step__head {
+  border-color: #979797 !important;
+}
+
+.container-communication1 .el-step.is-center .el-step__line {
+  left: 70%;
+  right: -30%;
+}
+
+.container-communication1 .el-step__head.is-finish .is-text {
+  background: #4775CA;
+}
+.container-communication1 .inter .el-step__icon.is-text{
+  // background: #4775CA!important;
+  animation-name: change-color;
+  animation-duration: 1s
+  animation-iteration-count: infinite;
+  animation-fill-mode: forwards;
+  animation-play-state: running;
+}
+//设置闪烁动画
+@keyframes change-color {
+  from {
+    background-color: #fff;
+  }
+  to {
+    background-color: #ffa147;
+  }
+}
+.container-communication1 .el-step__head.is-finish .el-step__icon-inner {
+  color: #fff !important;
+}
+
+.container-communication1 .el-form {
+  padding: 0 0px;
+}
+
+.container-communication1 .el-input {
+}
+
+.container-communication1 .el-input input, .container-communication1 .el-textarea .el-textarea__inner {
+  background: #F8F8F8;
+  color: #666;
+  font-size: 16px;
+}
+
+.container-communication1 .el-input--prefix .el-input__inner {
+  padding-left: 15px !important;
+  padding-right: 15px !important;
+}
+
+.container-communication1 .el-textarea .el-textarea__inner {
+  min-height: 120px !important;
+}
+
+.container-communication1 .el-select .el-input__inner {
+  color: #333;
+}
+
+.container-communication1 .el-form-item__label {
+  color: #333333;
+  font-size: 18px;
+  width:130px !important;
+}
+.el-form-item{margin-bottom:15px;}
+.container-communication1 .leftBox, .container-communication1 .rightBox {
+  width: 50%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  background: #f5f6fa;
+}
+
+.container-communication1 .leftBox {
+  left: 0;
+}
+.container-communication1{
+  // margin:10px;
+}
+.container-communication1 .rightBox {
+  right: 0;
+}
+
+.container-communication1 .leftBox .box-card {
+  width: calc(100% - 30px);
+  height: calc(100% - 42px);
+  margin: 20px 10px 20px 20px;
+}
+
+.container-communication1 .rightBox .box-card {
+  width: calc(100% - 30px);
+  height: calc(100% - 42px);
+  padding: 0px;
+  background: #f5f6fa;
+  border: none;
+  box-shadow: none;
+  background: #fff;
+  overflow: auto;
+}
+//模型样式
+.model-container {
+  width: 98%;
+  height: 90%;
+  padding: 0 !important;
+  z-index:90;
+  margin-top: 50px;
+}
+</style>
+
+
+

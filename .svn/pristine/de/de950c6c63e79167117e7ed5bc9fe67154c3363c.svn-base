@@ -1,0 +1,167 @@
+.container-scope
+  padding 18px
+  width 100%
+  height 100%
+  box-sizing border-box
+  background-color rgba(245,246,251,1)
+  display flex
+  justify-content space-between
+
+  .house-model
+    margin-right 20px
+    width 820px
+    height 100%
+    background-color #fff
+
+  .button-wrapper
+    display flex
+    justify-content space-between
+
+  .filter-wrapper
+    width 820px
+
+    .el-tabs__header
+      border-bottom none
+
+  .filter
+    margin-top 18px
+
+
+      .el-select .el-input__inner
+        border 1px solid #ecedf1
+        border-radius 5px
+        overflow hidden
+
+      .el-input__suffix
+        width 50px
+        background #44508a
+        border-radius 0 5px 5px 0
+
+      .el-input--suffix
+        overflow hidden
+
+      .el-select .el-input .el-select__caret
+        color #fff
+
+  .table
+    .title
+
+        th
+          background #44508a
+        th .cell
+          color #fff
+        .el-table__body-wrapper
+          display none
+
+    .content
+
+        .el-collapse-item__content
+          padding-bottom 0
+          
+        .el-table td
+          border-style dashed
+
+        .el-table tr:last-child td
+          border none
+
+        .el-table::before
+          display none
+
+        .el-collapse-item, .el-collapse-item .el-collapse-item__header
+          text-indent 18px
+          background #F5F6FB
+
+      tbody tr:last-child td
+        border-bottom none
+  .text-right
+    text-align right
+  .text-center
+    text-align center
+.new-box-card
+  padding-left: 20px
+  padding-right:20px
+.new-box-card .new-list-item
+    margin: 20px 0 0
+    font-size 20px
+    color #333
+.new-box-card .el-card__body
+      padding: 0
+.new-box-card .border-bottom
+  padding: 20px 0
+  border-bottom 1px solid #eee
+.new-box-card .el-card__header
+  padding: 0
+
+.container-box-list .el-input__suffix
+    width: 0.666667rem
+    background: #44508a
+    right 0
+    border-radius: 0 5px 5px 0
+.container-box-list .el-select .el-input .el-select__caret
+  color: #fff
+.container-box-list .el-button--primary
+  background: #44508a
+  border-color: #44508a
+
+.container-box-list .el-pagination.is-background .el-pager li
+  background: #fff
+.container-box-list  .el-pagination.is-background .el-pager li:not(.disabled).active
+  background: #44508a
+.container-box-list .el-pagination
+  margin-top: 20px
+
+.new-scope .el-button--primary
+  background: #4775CA
+  border-color: #4775CA
+.new-scope  .el-button
+  padding: 0
+  width 120px
+  height: 40px
+  line-height 40px
+  text-align center
+  font-family SourceHanSansCN-Medium
+  font-size: 18px
+.new-scope .el-button--warning
+  width:120px;
+  height:40px;
+  background:rgba(253,161,67,1);
+  box-shadow:0px 1px 7px 0px rgba(176,148,119,0.75);
+  border-radius:4px;
+  font-size:16px;
+  font-family:SourceHanSansCN-Medium;
+  font-weight:500;
+  color:rgba(255,255,255,1);
+  line-height:30px;
+
+.new-scope .el-form--inline .el-form-item__content
+  width:160px;
+  height:40px;
+  background:rgba(255,255,255,1);
+  box-shadow:0px 1px 7px 0px rgba(216,223,238,0.75);
+  border-radius:4px;
+  font-size:18px;
+  font-family:SourceHanSansCN-Normal;
+  font-weight:400;
+
+.new-scope .el-select .el-input__inner::placeholder
+  color:rgba(51,51,51,1);
+.new-scope .ser-bg .el-form-item__content
+  width:340px;
+  height:40px;
+  background:rgba(255,255,255,1);
+  box-shadow:0px 1px 7px 0px rgba(216,223,238,0.75);
+  border-radius:20px;
+
+.new-scope .ser-bg .el-form-item__content .el-input__inner
+  border-radius:20px;
+
+.new-scope .el-pagination.is-background .el-pager li:not(.disabled).active
+  background:rgba(71,117,202,1)
+.new-scope .el-pagination.is-background .el-pager li
+  width:40px;
+  height:30px;
+  background:rgba(255,255,255,1);
+  border:1px solid rgba(229,229,229,1);
+  border-radius:4px;
+.new-scope .el-pagination
+  margin-top: 70px

@@ -1,0 +1,44 @@
+
+// vuex
+//接口
+import { infaces, infaces2, infaces3 } from "../modules/interfaces.js";
+import {
+  GetEngingTypeList,
+  GetEngingConfigByTypeId,
+  GetProvinceList,
+  GetCityList,
+  GetCountryList,
+  SubModelEngingConfig,
+  GetDefaultModelId
+} from "@/api/api.js";
+export default{
+    methods: {
+        /**
+         * 获取默认模型ID
+         * 根据是否有默认模型ID判断建筑单体与栋号是否可以编辑
+         */
+        async getDefaultModelId(ProjectID){
+            let defaultModelId = await infaces3(this, GetDefaultModelId, {ProjectID});
+            this.isHasDefaultModelId = defaultModelId.Result?true:false
+            console.log("有默认模型ID",defaultModelId);
+        },
+        /**
+         * 获取信息配置数据
+         * @param {*} ProjectID 
+         */
+        getEngingConfigByTypeId(ProjectID){
+            infaces(this, GetEngingConfigByTypeId, { ProjectID}).then(res=>{
+                this.dataArr = res
+                let data = res[0]
+                this.formData.TotalArea = data.TotalArea;
+                this.formData.BuildMon = data.BuildMon;
+                this.tableData = data.StoriedBuildlList;
+               if(data.City){
+                  this.getMap(true, this.dataArr[0].City);
+                } else {
+                  this.getMap(false, "");
+                }
+              })
+        }
+    }
+}

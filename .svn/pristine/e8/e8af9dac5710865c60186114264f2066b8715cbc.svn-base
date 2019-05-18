@@ -1,0 +1,74 @@
+<!-- 物资需求-按进度计划 -->
+
+<el-form :model="form" label-width="100px">
+  <el-form-item label-width="40px" class="radio-color">
+    <el-radio-group v-model="form.check" text-color="#FDA143" fill="#FDA143">
+      <el-radio label="0">审核</el-radio>
+      <el-radio label="1">无需审核</el-radio>
+    </el-radio-group>
+  </el-form-item>
+  <div class="flex">
+    <!-- <el-form-item label="采购批次">
+      <el-input v-model="form.purchase" :disabled="true"></el-input>
+    </el-form-item> -->
+    <el-form-item label="选择楼栋">
+      <div class="originator">
+        <el-select v-model="filterForm.buildname" class="select-david">
+          <el-option v-for="item in BuildNameList" :key="item.id" :label="item.text" :value="item.text"></el-option>
+        </el-select>
+      </div>
+    </el-form-item>
+  </div>
+  <div class="flex">
+    <el-form-item label="时间" class="time">
+      <div class="flex">
+        <el-date-picker
+          v-model="filterForm.starttime"
+          type="date"
+          placeholder="开始时间">
+        </el-date-picker>
+        <span class="line">~</span>
+        <el-date-picker
+          v-model="filterForm.endtime"
+          type="date"
+          placeholder="结束时间">
+        </el-date-picker>
+      </div>
+    </el-form-item>
+    <el-form-item label-width="54px">
+      <el-button icon="el-icon-refresh" type="text" @click="onSyncMode">模型同步</el-button>
+    </el-form-item>
+  </div>
+  <el-form-item label-width="40px">
+    <div class="teble-wrapper">
+      <el-table :data="listItems" border :span-method="arraySpanMethod">
+        <el-table-column align="center" label="任务名称" prop="TaskName"></el-table-column>
+        <el-table-column align="center" label="物资名称" prop="ResourceName"></el-table-column>
+        <el-table-column align="center" label="规格型号" prop="Spec"></el-table-column>
+
+        <el-table-column align="center" label="施工预算量" prop="AdjustBOQ"></el-table-column>
+        <el-table-column align="center" label="已采购量" prop="PurchaseNum"></el-table-column>
+
+        <el-table-column align="center" label="本次采购量">
+          <template slot-scope="scope">
+            <el-input class="table-input" :placeholder="listItems[scope.$index].Unit" v-model="listItems[scope.$index].ThisPurchaseNum"></el-input>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="选择" width="50px">
+          <template slot-scope="scope">
+            <el-checkbox class="table-checkbox" size="medium" v-model="listItems[scope.$index].isSel"></el-checkbox>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-pagination :total="totalNum" @current-change="curChange" :page-size="paging.rows" :current-page.sync='paging.page' background layout="prev, pager, next" class="text-center"></el-pagination>
+    </div>
+  </el-form-item>
+  <el-form-item label="需求时间" class="time">
+      <el-date-picker
+      v-model="form.DemandTime"
+      type="date"
+      placeholder="需求时间">
+    </el-date-picker>
+  </el-form-item>
+  <Timeline v-model="listFlow" @getFlowList="getFlowList" :isAudit="form.check"/>
+</el-form>

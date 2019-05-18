@@ -1,0 +1,79 @@
+/**
+ * 同步
+ */
+import types from './mutation-types.js'
+export default{
+  /**
+   * 设置模型所有数据列表
+   * @param {*} state 
+   * @param {模型所有构件列表} ElementIDs 
+   */
+    [types.GET_ELEMENT_IDS](state,ElementIDs){
+        state.ElementIDs = ElementIDs
+    },
+    /**
+     * 模型状态
+     * @param {*} state 
+     * @param {*} model 模型对象
+     */
+    [types.GET_MODEL_BOX](state,model){
+       state.modelBox = model
+    },
+    // gantt 状态
+    [types.GET_GANTT_STATE](state,model){
+        state.ganttState = model
+    },
+    /**
+     * 模型是否加载完成
+     * @param {*} state 
+     * @param {true：加载完成} isViewAdded 
+     */
+    [types.IS_VIEW_ADDED](state,isViewAdded){
+       state.isViewAdded = isViewAdded
+    },
+    /**
+     * // 清单导入页面 跳转到哪个页面 0 --plan1 , 2 --plan2 ,  3-- plan3
+     * @param {*} state 
+     * @param {*} num 
+     */
+    [types.GET_TO_PAGE_NUM](state,num){
+      state.toPageNum = num
+    },
+    //模型实例
+    [types.VIEWER_3D](state,view){
+      state.viewer3d = view
+    },
+    [types.SELECT_ALLID](state,view){
+      state.selAllID = view
+    },
+    [types.GET_OPTION_OBJ](state, obj){
+      let arr = state.optionsObjList
+      if(arr.length){
+        if(state.optionsObjList.indexOf(obj)=== -1){
+          state.optionsObjList.push(obj)
+        }
+      }else {
+        state.optionsObjList.push(obj)
+      }
+    },
+    /**
+     * @name 设置用户登陆成功后的信息
+     * @msg userLoginInfo包括：access_token、curModelID、curProjectID（项目ID）、curUserId、expires_in、listMenuRole（栏目列表和操作权限）、listRole（角色）、token_type
+     * @param {Object} userLoginInfo 用户信息
+     */
+    [types.SET_USERLOGIN_INFO](state,userLoginInfo){
+      state.userLoginInfo = userLoginInfo
+   },
+   /**
+     * @name 获取当前登陆用户的菜单栏和权限状态
+     */
+    [types.GET_MENU_OAUTH](state,menuAndOAuth){
+      state.menuAndOAuth = menuAndOAuth
+   },
+   /**
+     * @name 菜单权限类型
+     */
+    [types.GET_MENU_TYPE](state,menuType){
+      state.menuType = menuType
+   }
+}

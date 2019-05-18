@@ -1,0 +1,408 @@
+<template>
+  <div class="gantt-sumContainer">
+    <div class="plan-container">
+      <el-form :model="fiveList" ref="formData">
+        <div class="plan-left">
+          <div class="mode-type">
+            <el-select v-model="fiveList.modelName" @change="selOp" placeholder="请选择模型">
+              <el-option
+                v-for="(item,index) in modeList"
+                :key="index"
+                :label="item.text"
+                :value="item.text"
+              ></el-option>
+            </el-select>
+          </div>
+
+          <div class="date">
+            <el-date-picker
+              v-model="fiveList.date"
+              value-format="yyyy-MM-dd"
+              format="yyyy-MM-dd"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+            ></el-date-picker>
+          </div>
+
+          <div class="plan-play">
+            <div class="plan-play-l" @click="pause">
+              <img src="../../../assets/icons/gantt-pause.png" class="el-icon-error pause">
+            </div>
+            <div class="plan-play-r" @click="play">
+              <img src="../../../assets/icons/gantt-play.png" class="el-icon-success play">
+            </div>
+          </div>
+        </div>
+      </el-form>
+      <div class="plan-right">
+        <div class="road-week flex-row" :class="{'day-opt':dayP==1}" @click="roadWeek(1)">
+          <i class="el-icon-upload2"></i>
+          施工组织计划导出
+        </div>
+        <div class="show-mode flex-row" :class="{'day-opt':dayP==1}" @click="showMode(2)">显示模型</div>
+      </div>
+    </div>
+    <div ref="gantt" class="gantt"></div>
+  </div>
+</template>
+<script>
+import "dhtmlx-gantt";
+import "dhtmlx-gantt/codebase/locale/locale_cn.js";
+import config from "./config.js";
+// import "../../virtualConstruction/schedulePlanning/base/educe.js";
+import { mapMutations } from "vuex";
+import { getBuil, getFiveList } from "./fiveGantt.js";
+
+export default {
+  name: "plan",
+  created() {
+    getBuil(this);
+    this.fiveList.modelName = this.$route.params.modelName;
+  },
+  data() {
+    return {
+      date_to_str: "",
+      point: 0,
+      dayP: 3,
+
+      // tasks: {},
+      fiveList: {
+        modelName: null, // 模型选择
+        date: [] // 时间
+      },
+      modeList: []
+    };
+  },
+  methods: {
+    $_initGanttEvents: function(tasks) {
+      if (gantt.$_eventsInitialized) return;
+      let _this = this;
+
+      gantt.attachEvent("onTaskSelected", id => {
+        let task = gantt.getTask(id);
+        // this.addMarker(task.start_date);
+
+        console.log(task.start_date);
+        // gantt.config.autosize = "xy";
+        // gantt.render();
+        this.$emit("task-selected", task);
+      });
+
+      gantt.attachEvent("onAfterTaskAdd", (id, task) => {
+        this.$emit("task-updated", id, "inserted", task);
+        task.progress = task.progress || 0;
+        if (gantt.getSelectedId() == id) {
+          this.$emit("task-selected", task);
+        }
+      });
+
+      gantt.attachEvent("onAfterTaskUpdate", (id, task) => {
+        this.$emit("task-updated", id, "updated", task);
+      });
+
+      gantt.attachEvent("onAfterTaskDelete", id => {
+        this.$emit("task-updated", id, "deleted");
+        if (!gantt.getSelectedId()) {
+          this.$emit("task-selected", null);
+        }
+      });
+
+      gantt.attachEvent("onAfterLinkAdd", (id, link) => {
+        this.$emit("link-updated", id, "inserted", link);
+      });
+
+      gantt.attachEvent("onAfterLinkUpdate", (id, link) => {
+        this.$emit("link-updated", id, "updated", link);
+      });
+
+      gantt.attachEvent("onAfterLinkDelete", (id, link) => {
+        this.$emit("link-updated", id, "deleted");
+      });
+
+      config.init();
+      // 初始化gantt 节点
+      gantt.init(this.$refs.gantt);
+      // 解析任务数据
+      gantt.parse(tasks);
+
+      this.date_to_str = gantt.date.date_to_str(gantt.config.task_date);
+
+      gantt.$_eventsInitialized = true;
+    },
+
+    // 导出施工图-- 有问题
+    onEduce() {
+      if (!this.timer) {
+        console.log("导出施工图");
+        gantt.exportToPNG();
+        this.timer = setInterval(() => {
+          this.gantState({ educe: false });
+          clearInterval(this.timer);
+        }, 5000);
+      }
+    },
+
+    // add mark
+    addMarker(date) {
+      var _this = this;
+      this.markerDate = gantt.addMarker({
+        start_date: new Date(date),
+        css: "today",
+        title: _this.date_to_str(new Date(date))
+      });
+      gantt.render();
+      //对接模型api
+      // if (window.BIMe) {
+      //   window.BIMe.control.BIMeHide.hideElementByElementId(
+      //     window.BIMe.modelData.BIMeElementData.getAllElementIds()
+      //   ); //隐藏所有构件
+      // }
+      console.log(window.BIMe);
+    },
+
+    userLabelById(id) {
+      for (var i = 0; i < this.tasks.length; i++) {
+        if (this.tasks[i].data.id == id) {
+          return this.tasks[i].data.text;
+        }
+      }
+      return "";
+    },
+
+    // 施工计划导出
+    educe() {
+      return this.$store.getters.getGanttState.educe;
+    },
+
+    // 获取模型数据
+    getModeDate() {
+      getFiveList(this, tasks => {
+        console.time();
+        gantt.clearAll();
+        gantt.parse(tasks);
+        gantt.render();
+        gantt.setSizes();
+        // this.upProcedureWp();
+        console.timeEnd();
+      });
+    },
+
+    // 选择模块
+    selOp(p) {
+      let v = this.modeList[Number(p)];
+      this.gantState({ selModel: v });
+    },
+
+    // 暂停播放
+    pause() {
+      this.gantState({ pause: true });
+    },
+
+    // 播放
+    play() {
+      this.gantState({ play: true });
+    },
+
+    // 施工计划导出
+    roadWeek() {
+      this.gantState({ educe: true });
+    },
+
+    // 显示模型
+    showMode() {
+      let showMode = !this.$store.getters.getGanttState.showMode;
+      this.gantState({ showMode });
+    },
+
+    ...mapMutations({
+      gantState: "GET_GANTT_STATE"
+    })
+  },
+  watch: {
+    fiveList: {
+      handler(val, oldval) {
+        this.getModeDate();
+      },
+      deep: true
+    }
+  },
+  mounted() {
+    getFiveList(this, tasks => {
+      // 分发所有事件
+      this.$_initGanttEvents(tasks);
+    });
+  }
+};
+</script>
+<style scope >
+.gantt-sumContainer {
+  height: 100%;
+  width: 100%;
+}
+.plan-container {
+  height: 100px;
+  font-size: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.plan-left,
+.plan-right {
+  display: flex;
+}
+.plan-play-l,
+.plan-play-r {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.plan-play-l {
+  border-right: 1px dashed rgba(229, 229, 229, 1);
+}
+.plan-left .el-input--suffix,
+.plan-left .el-date-editor {
+  width: 343px !important;
+  height: 40px !important;
+  margin-right: 20px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.plan-left .el-date-editor i:nth-child(1) {
+  display: none;
+}
+.plan-left .el-date-editor .el-range__close-icon::before {
+  content: "\E608";
+}
+.plan-play {
+  width: 100px;
+  height: 40px;
+  color: #000000;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  border-radius: 6px;
+}
+.plan-play img {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+.road-week {
+  width: 200px;
+  height: 40px;
+  background: rgba(71, 117, 202, 1);
+  box-shadow: 0px 2px 4px 0px rgba(161, 192, 250, 1);
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+  margin-right: 20px;
+}
+.show-mode {
+  font-size: 16px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+
+  width: 120px;
+  height: 40px;
+  background: rgba(253, 161, 67, 1);
+  box-shadow: 0px 2px 4px 0px rgba(176, 148, 119, 0.5);
+  border-radius: 4px;
+}
+.flex-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+/* 下拉框变色---没有变色 */
+.plan-left .el-input__suffix {
+  background: rgba(67, 80, 137, 1);
+  border-radius: 0px 4px 4px 0px;
+  right: 0;
+  width: 40px !important;
+}
+.plan-left .el-icon-arrow-up:before {
+  content: "\e60c";
+  color: rgba(255, 255, 255, 1);
+}
+
+/* 加载gantt 样式 */
+@import "~dhtmlx-gantt/codebase/dhtmlxgantt.css";
+/* 右边标题背景/颜色 */
+.day_scale {
+  background-color: #6c7bbc;
+  color: rgba(168, 183, 250, 1);
+}
+.day_scale > .gantt_scale_cell {
+  border: none !important;
+}
+.gantt {
+  height: calc(100% - 110px);
+}
+.week_scale {
+  background-color: #666666;
+}
+
+.month_scale {
+  background-color: #6c7bbc;
+  color: rgba(255, 255, 255, 1);
+}
+.month_scale > .gantt_scale_line {
+  border: none !important;
+}
+
+.grid_header_class {
+  color: red;
+  background-color: #f1f1f1;
+}
+.gantt_task .gantt_task_scale .gantt_scale_cell {
+  font-size: 18px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+}
+/* 左边标题背景/颜色 */
+.gantt_grid_scale {
+  background-color: rgba(67, 80, 137, 1);
+}
+.gantt_grid_scale .gantt_grid_head_cell {
+  font-size: 18px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+}
+/* 灯箱按钮 */
+.gantt_btn_set div {
+  display: flex;
+  align-items: center;
+  justify-items: center;
+  margin: 0;
+}
+.gantt_delete_btn,
+.gantt_cancel_btn,
+.gantt_save_btn {
+  padding-right: 8px;
+}
+.gantt_section_time {
+  line-height: 2em;
+}
+.gantt_duration {
+  line-height: 2em;
+}
+.gantt_section_time .gantt_time_selects select,
+.gantt_section_time .gantt_duration {
+  height: 2em !important;
+}
+.gantt-today {
+  height: 300px;
+  width: 1px;
+  background: red;
+}
+</style>
+

@@ -1,0 +1,664 @@
+<!-- 5D模拟 -->
+<template>
+  <div class="gantt-sumContainer">
+    <div class="plan-container">
+      <el-form :model="fiveList" ref="formData">
+        <div class="plan-left">
+          <div class="mode-type">
+            <el-select v-model="fiveList.modelName" @change="selOp" placeholder="请选择模型">
+              <el-option
+                v-for="(item,index) in modeList"
+                :key="index"
+                :label="item.text"
+                :value="item.text"
+              ></el-option>
+            </el-select>
+          </div>
+
+          <div class="date">
+            <el-date-picker
+              v-model="fiveList.date"
+              value-format="yyyy-MM-dd"
+              format="yyyy-MM-dd"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+            ></el-date-picker>
+          </div>
+
+          <div class="plan-play">
+            <div class="plan-play-l" @click="pause">
+              <img src="../../../assets/icons/gantt-pause.png" class="el-icon-error pause">
+            </div>
+            <div class="plan-play-r" @click="play">
+              <img src="../../../assets/icons/gantt-play.png" class="el-icon-success play">
+            </div>
+          </div>
+        </div>
+      </el-form>
+      <div class="plan-right">
+        <div class="road-week flex-row" :class="{'day-opt':dayP==1}" @click="roadWeek(1)">
+          <i class="el-icon-upload2"></i>
+          施工组织计划导出
+        </div>
+        <div class="show-mode flex-row" :class="{'day-opt':dayP==1}" @click="showMode(2)">显示模型</div>
+      </div>
+    </div>
+    <div class="plan-content">
+      <div
+        ref="gantt"
+        :class="['gantt',{'ganttWidthBig':!isShowMode},{'ganttWidthLow':isShowMode}]"
+      ></div>
+
+      <div class="right-container" v-show="isShowMode">
+        <ul class="gantt-infos">
+          <li class="gantt-infos-i">{{selectedTask.date}}</li>
+          <li class="gantt-infos-i">{{selectedTask.structure}}</li>
+          <li class="gantt-infos-i">{{selectedTask.stup}}</li>
+        </ul>
+        <div class="gantt-infos-img">
+          <div ref="modelContainer" style="width:100%;height:100%;"></div>
+        </div>
+        <div class="gantt-infos-tip flex-row">施工进度模拟</div>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import "dhtmlx-gantt";
+import "dhtmlx-gantt/codebase/locale/locale_cn.js";
+import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_marker.js";
+import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_multiselect.js";
+import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_smart_rendering";
+import "./ganttExport.js";
+
+import config from "./config.js";
+// import "../../virtualConstruction/schedulePlanning/base/educe.js";
+import { mapMutations } from "vuex";
+import { getBuil, getFiveList } from "./fiveGantt.js";
+
+export default {
+  name: "plan",
+  created() {
+    getBuil(this);
+    if (this.$route.params.modelName) {
+      this.fiveList.modelName = this.$route.params.modelName;
+    }
+  },
+  data() {
+    return {
+      // 选择模型数据--模拟数据
+      selectedTask: {
+        date: "2018 - 10 - 10",
+        structure: "主体结构 10% C20混凝土 100.00m³",
+        stup: "机电安装 10% C30混凝土 100.00m³"
+      },
+      markerDate: null, // mark
+      timer: null,
+      i: 0, // 索引
+      clickSum: 0, // 模型加载
+      isShowMode: false,
+      date_to_str: "",
+      point: 0,
+      dayP: 3,
+
+      tasks: null,
+      fiveList: {
+        modelName: null, // 模型选择
+        date: [] // 时间
+      },
+      modeList: []
+    };
+  },
+  methods: {
+    $_initGanttEvents: function() {
+      if (gantt.$_eventsInitialized) return;
+      let _this = this;
+
+      gantt.attachEvent("onTaskSelected", id => {
+        let task = gantt.getTask(id);
+        // this.addMarker(task.start_date);
+
+        console.log(task.start_date);
+        // gantt.config.autosize = "xy";
+        // gantt.render();
+        this.$emit("task-selected", task);
+      });
+
+      gantt.attachEvent("onAfterTaskAdd", (id, task) => {
+        this.$emit("task-updated", id, "inserted", task);
+        task.progress = task.progress || 0;
+        if (gantt.getSelectedId() == id) {
+          this.$emit("task-selected", task);
+        }
+      });
+
+      gantt.attachEvent("onAfterTaskUpdate", (id, task) => {
+        this.$emit("task-updated", id, "updated", task);
+      });
+
+      gantt.attachEvent("onAfterTaskDelete", id => {
+        this.$emit("task-updated", id, "deleted");
+        if (!gantt.getSelectedId()) {
+          this.$emit("task-selected", null);
+        }
+      });
+
+      gantt.attachEvent("onAfterLinkAdd", (id, link) => {
+        this.$emit("link-updated", id, "inserted", link);
+      });
+
+      gantt.attachEvent("onAfterLinkUpdate", (id, link) => {
+        this.$emit("link-updated", id, "updated", link);
+      });
+
+      gantt.attachEvent("onAfterLinkDelete", (id, link) => {
+        this.$emit("link-updated", id, "deleted");
+      });
+
+      // 滚动图表区域以使指定日期可见
+      // gantt.showDate(new Date())
+
+      // 将甘特图容器滚动到指定位置 X/Y
+      // gantt.scrollTo(30, 80)
+
+      // 返回滚动位置
+      // var sPos = gantt.getScrollState(); // {x:58,y:180}
+      // var posX = sPos.x;
+      // var posY = sPos.y;
+
+      // 甘特图滚动到特定点时触发
+      // gantt.attachEvent("onGanttScroll", function(left, top) {
+      // any custom logic here
+      // });
+
+      gantt.$_eventsInitialized = true;
+    },
+
+    // 导出施工图-- 有问题
+    onEduce() {
+      if (!this.timer) {
+        console.log("导出施工图");
+        gantt.exportToPNG();
+        this.timer = setInterval(() => {
+          this.gantState({ educe: false });
+          clearInterval(this.timer);
+        }, 5000);
+      }
+    },
+
+    // add mark
+    addMarker(date) {
+      var _this = this;
+      this.markerDate = gantt.addMarker({
+        start_date: new Date(date),
+        css: "today",
+        title: _this.date_to_str(new Date(date))
+      });
+      gantt.render();
+    },
+
+    // remove mark
+    delMaker() {
+      gantt.deleteMarker(this.markerDate);
+      gantt.render();
+      this.i = 0;
+      if (this.timer) {
+        clearTimeout(this.timer);
+      }
+    },
+
+    userLabelById(id) {
+      for (var i = 0; i < this.tasks.length; i++) {
+        if (this.tasks[i].data.id == id) {
+          return this.tasks[i].data.text;
+        }
+      }
+      return "";
+    },
+
+    // 施工计划导出
+    educe() {
+      return this.$store.getters.getGanttState.educe;
+    },
+
+    // 获取模型数据
+    getModeDate() {
+      getFiveList(this, tasks => {
+        this.tasks = tasks;
+        // 分发所有事件
+        this.$_initGanttEvents();
+        config.init();
+        // 初始化gantt 节点
+        gantt.init(this.$refs.gantt);
+        // 解析任务数据
+        gantt.parse(tasks);
+
+        this.date_to_str = gantt.date.date_to_str(gantt.config.task_date);
+      });
+    },
+
+    // 选择模块
+    selOp(p) {
+      let v = this.modeList[Number(p)];
+      this.gantState({ selModel: v });
+    },
+
+    // 暂停播放
+    pause() {
+      this.delMaker();
+    },
+    // 结束播放
+    delMaker() {
+      gantt.deleteMarker(this.markerDate);
+      gantt.render();
+      this.i = 0;
+      if (this.timer) {
+        clearTimeout(this.timer);
+      }
+    },
+
+    // 播放
+    play() {
+      let task = this.tasks.data;
+      let _this = this;
+      if (task.length == 0) return;
+      this.addMarker(task[0].start_date);
+
+      this.timer = setTimeout(() => {
+        let dayDate = gantt.getMarker(_this.markerDate);
+        dayDate.start_date = new Date(task[_this.i]);
+        dayDate.title = _this.date_to_str(dayDate.start_date);
+        gantt.updateMarker(_this.markerDate);
+
+        _this.i += 1;
+        if (_this.i != timeDateArr.length) {
+          _this.runMarker(timeDateArr);
+        } else {
+          _this.i = 0;
+          gantt.deleteMarker(_this.markerDate);
+          // _this.$emit("hiddenStopBtn", true);
+          // _this.$emit("resetMockDataArr");
+        }
+
+        let d = gantt.posFromDate(element.start_date);
+        gantt.scrollTo(d, 0);
+        console.log(d);
+      }, 1000);
+
+      //接受date数组
+      let number = this.$props.timerNumber * 1000;
+      this.timer = setTimeout(() => {
+        let arr = [];
+
+        this.tasks.data.forEach(t => {
+          if (
+            new Date(t.start_date).getTime() ==
+            new Date(timeDateArr[_this.i]).getTime()
+          ) {
+            if (window.BIMe) {
+              let a = t.ElementIDS.split(",");
+              let b = [];
+              a.forEach(element => {
+                b.push(window.ModelID + "^" + element);
+              });
+              window.BIMe.control.BIMeUtility.setElementColor(b, 0, 255, 0, 1);
+            }
+            gantt.showTask(t.id);
+          }
+          if (window.BIMe) {
+            if (
+              new Date(t.end_date).getTime() ==
+              new Date(timeDateArr[_this.i]).getTime()
+            ) {
+              let a = t.ElementIDS.split(",");
+              let b = [];
+              a.forEach(element => {
+                b.push(window.ModelID + "^" + element);
+              });
+              window.BIMe.control.BIMeUtility.resetElementColor(b);
+              window.BIMe.control.BIMeHide.removeHideElementByElementId(b);
+            }
+          }
+          //判断maker是否在区间
+          if (
+            this.isDateBetween(timeDateArr[this.i], t.start_date, t.end_date)
+          ) {
+            arr.push(t.text);
+          }
+        });
+        _this.$emit("upDataMockDetail", {
+          date: timeDateArr[this.i],
+          taskName: arr
+        });
+        _this.i += 1;
+        if (_this.i != timeDateArr.length) {
+          _this.runMarker(timeDateArr);
+        } else {
+          _this.i = 0;
+          gantt.deleteMarker(_this.markerDate);
+          _this.$emit("hiddenStopBtn", true);
+          _this.$emit("resetMockDataArr");
+        }
+      }, number / timeDateArr.length);
+    },
+
+    // 施工计划导出
+    roadWeek() {
+      this.gantState({ educe: true });
+    },
+
+    // 显示模型
+    showMode() {
+      this.isShowMode = !this.isShowMode;
+
+      if (this.isShowMode) {
+        this.repaint(1);
+      } else {
+        this.repaint();
+      }
+
+      if (this.clickSum == 0) {
+        this._initData();
+      } else {
+        if (this.isShowMode) {
+          this.modelBox({
+            isShowModel: true,
+            isLoadModel: true,
+            zIndex: 100,
+            background: "",
+            ElementIDs: [],
+            highLightElementIDs: [],
+            functionNumber: [34]
+          });
+        } else {
+          this.modelBox({
+            isShowModel: false,
+            isLoadModel: true,
+            zIndex: 100,
+            background: "",
+            ElementIDs: [],
+            highLightElementIDs: [],
+            functionNumber: [34]
+          });
+        }
+      }
+      this.clickSum++;
+    },
+    // 重绘
+    repaint(layout) {
+      config.init(layout);
+      gantt.init(this.$refs.gantt);
+      gantt.clearAll();
+      gantt.parse(this.tasks);
+      gantt.render();
+      gantt.setSizes();
+    },
+    _initData() {
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示 false:隐藏模型
+            isLoadModel: true, //是否加载模型 true：加载模型，如果已经加载，不会重新加载， false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [34] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    ...mapMutations({
+      gantState: "GET_GANTT_STATE",
+      modelBox: "GET_MODEL_BOX"
+    })
+  },
+  watch: {
+    fiveList: {
+      handler(val, oldval) {
+        console.log(val, oldval);
+        this.getModeDate();
+      },
+      deep: true
+    }
+  },
+  mounted() {
+    this.getModeDate();
+  },
+  beforeDestroy() {
+    gantt.clearAll();
+    this.clickSum = 0;
+  }
+};
+</script>
+<style scope >
+/* 滚动条的宽度 */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background-color: transparent;
+}
+
+/* 滚动条的滑块 */
+
+::-webkit-scrollbar-thumb {
+  background-color: #a1a3a9;
+  border-radius: 6px;
+}
+
+.plan-content {
+  /* height: calc(100% - 110px); */
+  height: 100%;
+  display: flex;
+}
+.right-container {
+  height: 100%;
+  width: 824px;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+  font-size: 18px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(51, 51, 51, 1);
+  display: flex;
+  flex-direction: column;
+}
+.gantt-infos-i {
+  padding: 10px 0 0 20px;
+}
+.gantt-infos {
+  list-style-type: none;
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.gantt-infos-img {
+  flex: 1;
+  width: 100%;
+}
+.gantt-infos-tip {
+  margin: 10px;
+}
+
+.gantt-sumContainer {
+  height: 100%;
+  width: 100%;
+}
+.plan-container {
+  height: 100px;
+  font-size: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.plan-left,
+.plan-right {
+  display: flex;
+}
+.plan-play-l,
+.plan-play-r {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.plan-play-l {
+  border-right: 1px dashed rgba(229, 229, 229, 1);
+}
+.plan-left .el-input--suffix,
+.plan-left .el-date-editor {
+  width: 343px !important;
+  height: 40px !important;
+  margin-right: 20px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.plan-left .el-date-editor i:nth-child(1) {
+  display: none;
+}
+.plan-left .el-date-editor .el-range__close-icon::before {
+  content: "\E608";
+}
+.plan-play {
+  width: 100px;
+  height: 40px;
+  color: #000000;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  border-radius: 6px;
+}
+.plan-play img {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+.road-week {
+  width: 200px;
+  height: 40px;
+  background: rgba(71, 117, 202, 1);
+  box-shadow: 0px 2px 4px 0px rgba(161, 192, 250, 1);
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+  margin-right: 20px;
+}
+.show-mode {
+  font-size: 16px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+
+  width: 120px;
+  height: 40px;
+  background: rgba(253, 161, 67, 1);
+  box-shadow: 0px 2px 4px 0px rgba(176, 148, 119, 0.5);
+  border-radius: 4px;
+}
+.flex-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+/* 下拉框变色---没有变色 */
+.plan-left .el-input__suffix {
+  background: rgba(67, 80, 137, 1);
+  border-radius: 0px 4px 4px 0px;
+  right: 0;
+  width: 40px !important;
+}
+.plan-left .el-icon-arrow-up:before {
+  content: "\e60c";
+  color: rgba(255, 255, 255, 1);
+}
+
+/* 加载gantt 样式 */
+@import "~dhtmlx-gantt/codebase/dhtmlxgantt.css";
+/* 右边标题背景/颜色 */
+.day_scale {
+  background-color: #6c7bbc;
+  color: rgba(168, 183, 250, 1);
+}
+.day_scale > .gantt_scale_cell {
+  /* border: none !important; */
+}
+.gantt {
+  height: 100%;
+}
+.ganttWidthBig {
+  flex: 1;
+}
+.ganttWidthLow {
+  width: calc(100% - 824px);
+}
+.week_scale {
+  background-color: #666666;
+}
+
+.month_scale {
+  background-color: #6c7bbc;
+  color: rgba(255, 255, 255, 1);
+}
+.month_scale > .gantt_scale_line {
+  border: none !important;
+}
+
+.grid_header_class {
+  color: red;
+  background-color: #f1f1f1;
+}
+.gantt_task .gantt_task_scale .gantt_scale_cell {
+  font-size: 18px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+}
+/* 左边标题背景/颜色 */
+.gantt_grid_scale {
+  background-color: rgba(67, 80, 137, 1);
+}
+.gantt_grid_scale .gantt_grid_head_cell {
+  font-size: 18px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+}
+/* 灯箱按钮 */
+.gantt_btn_set div {
+  display: flex;
+  align-items: center;
+  justify-items: center;
+  margin: 0;
+}
+.gantt_delete_btn,
+.gantt_cancel_btn,
+.gantt_save_btn {
+  padding-right: 8px;
+}
+.gantt_section_time {
+  line-height: 2em;
+}
+.gantt_duration {
+  line-height: 2em;
+}
+.gantt_section_time .gantt_time_selects select,
+.gantt_section_time .gantt_duration {
+  height: 2em !important;
+}
+.gantt-today {
+  height: 300px;
+  width: 1px;
+  background: red;
+}
+</style>
+

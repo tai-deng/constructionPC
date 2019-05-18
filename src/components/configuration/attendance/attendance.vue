@@ -1,0 +1,138 @@
+<!-- attendance -->
+<template>
+  <div class="container-attendance">
+    <div>
+      <el-button class='add-btn' @click='openDialog(0)'>新增班次</el-button>
+    </div>
+    <div class=table-box>
+      <el-table
+              :data="tableData"
+              stripe
+              style="width: 100%">
+        <el-table-column
+                prop="index"
+                align='center'
+                width='105'
+                label="序号" />
+        <el-table-column
+                prop="Name"
+                label="班次名称"
+                width='220'
+                align='center' />
+        <el-table-column
+                label="班次时间"
+                width='350'
+                align='center' >
+          <template slot-scope="scope">
+            {{scope.row.WorkStartTime + ' - ' + scope.row.WorkEndTime}}
+          </template>
+        </el-table-column>
+        <el-table-column
+                prop="PersonName"
+                label="执行人"
+                align='center' />
+        <el-table-column
+                label="操作"
+                width='427'
+                align='center'>
+          <template slot-scope="scope">
+            <div class='operation-btn'>
+              <span @click='openDialog(1, scope.row)'>编辑执行人</span>
+              <span @click='openDialog(2, scope.row)'>修改班次时间</span>
+              <span @click='del(scope.row)'>删除班次</span>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+    <Dialog :dialogVisible='dialogVisible' :dialogType='dialogType' @closeDialog='closeDialog' @addSuccess='init' ref='attenDanceDialog'/>
+  </div>
+</template>
+
+<script>
+import { QueryClockSetList, DelWorkTimeSet } from '@/api/api'
+import Dialog from './components/dialog'
+export default {
+  data() {
+    return {
+      tableData: [],
+      dialogVisible: false,
+      dialogType: 0
+    }
+  },
+  created() {
+    this.init()
+  },
+  components: {
+    Dialog
+  },
+  methods: {
+    async init () {
+      let res = await QueryClockSetList({ProjectID: localStorage.getItem('projectid')})
+      this.dialogVisible = false
+      if (res.StatusCode === 200) {
+        res.Detiel.forEach((v, i) => v.index = i + 1)
+        this.tableData = res.Detiel
+      }
+    },
+    openDialog (i, item) {
+      this.dialogType = i
+      if (i) {
+        this.$refs.attenDanceDialog.transmit(i, item)
+      }
+      this.dialogVisible = true
+    },
+    closeDialog () {
+      this.dialogVisible = false
+    },
+    del (n) {
+      this.$confirm("是否确定删除?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+        center: true
+      }).then(async () => {
+        let res = await DelWorkTimeSet({SetID: n.ID, ProjectID: localStorage.getItem('projectid')})
+        if (res.StatusCode === 200) {
+          this.$message.success('删除成功!');
+          this.init()
+        }
+      })
+    }
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+*
+  box-sizing border-box
+.container-attendance
+  height 100%
+  padding 20px
+  background rgba(245,246,250,1)
+  .add-btn
+    background #4580FF
+    color white
+    font-size 16px
+  .table-box
+    margin-top 20px
+    .operation-btn
+      font-size:18px;
+      font-weight:500;
+      color:rgba(69,128,255,1);
+      display flex
+      justify-content space-around
+      >span
+        cursor pointer
+    .el-table::before
+      height 0
+    .el-table /deep/
+      th.is-leaf
+        background #435089
+        font-weight 500
+        color white
+      th.is-leaf, td
+        font-size 18px
+        border-bottom 0
+      tr.el-table__row--striped td
+        background:rgba(244,246,255,1);
+</style>

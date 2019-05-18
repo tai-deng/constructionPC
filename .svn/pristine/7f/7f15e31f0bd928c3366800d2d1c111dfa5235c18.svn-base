@@ -1,0 +1,1204 @@
+<template>
+  <div class="container-procurement container-procurement-list">
+    <div class="leftBox" v-show="isShow">
+      <div class="box-card">
+        <div class="title">
+          <!-- <div class="tree_img">
+            <img src="../../../assets/imgs/order_tree.png" alt>
+          </div>-->
+          <div class="tex-one">{{rowData.BuildName}} {{rowData.ResourceName}}</div>
+          <div class="tex-two">施工预算量：{{rowData.AdjustBOQ}}</div>
+          <div
+            class="tex-two"
+          >入库：{{rowData.putList[0]["InSumNum"]}}出库：{{rowData.outList[0]["OutSumNum"]}}退还：{{rowData.backList[0]["BackSumNum"]}}</div>
+        </div>
+        <button :class="['button']" @click.prevent="onClose">
+          <i :class="['el-icon-caret-left']"></i>
+        </button>
+        <!-- 模型box -->
+        <div class="model-container">
+          <div ref="modelContainer" class="model-container"></div>
+        </div>
+      </div>
+    </div>
+    <el-form :inline="true" :model="formInline" class="demo-form-inline" style="text-align: right;">
+      <el-form-item class="bgeee ps">
+        <el-button type="warning" class @click="onMaterial">采购计划</el-button>
+      </el-form-item>
+      <el-form-item>
+        <el-select v-model="formInline.BuildName" placeholder="楼栋" v-loading="buildLoading">
+          <el-option
+            v-for="item in BuildNameList"
+            :key="item.id"
+            :label="item.text"
+            :value="item.text"
+          ></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-select v-model="formInline.Specialty" placeholder="专业" v-loading="specLoading">
+          <el-option
+            v-for="item in SpecialtyList"
+            :key="item.id"
+            :label="item.text"
+            :value="item.text"
+          ></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-select v-model="formInline.Floor" placeholder="楼层" v-loading="floorLoading">
+          <el-option
+            v-for="item in FloorbyList"
+            :key="item.id"
+            :label="item.text"
+            :value="item.text"
+          ></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-select v-model="formInline.CatagoryName" placeholder="物资名称" v-loading="resorceLoading">
+          <el-option
+            v-for="item in ResorceNameList"
+            :key="item.id"
+            :label="item.text"
+            :value="item.text"
+          ></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item class="ser-bg">
+        <el-input
+          placeholder="楼栋、专业、楼层、物资"
+          prefix-icon="el-icon-search"
+          v-model="formInline.Name"
+          validate-event
+        ></el-input>
+      </el-form-item>
+      <el-form-item class="bgeee">
+        <el-button type="warning" class @click="onSubmit">导出</el-button>
+      </el-form-item>
+    </el-form>
+
+    <el-table
+      :data="tableData"
+      :span-method="objectSpanMethod"
+      border
+      style="width: 100%"
+      v-loading="listLoading"
+    >
+      <el-table-column prop="num" label="序号" width="80"></el-table-column>
+      <el-table-column prop="ResourceName" label="物资名称"></el-table-column>
+      <el-table-column prop="Spec" label="规格型号"></el-table-column>
+      <el-table-column prop="BuildName" label="楼栋"></el-table-column>
+      <el-table-column prop="Floor" label="楼层"></el-table-column>
+      <el-table-column prop="AdjustBOQ" label="施工预算量"></el-table-column>
+      <el-table-column label="入库" align="right">
+        <template slot="header" slot-scope="scope">
+          <div class="box">
+            <span class="tableBox" @click="put(scope.row)">
+              <i class="el-icon-circle-plus-outline"></i>
+            </span>
+            <span class="tableBox">入库</span>
+          </div>
+        </template>
+        <el-table-column label="入库时间">
+          <template slot-scope="scope">
+            <div
+              class="in-date"
+              v-for="(item,index) in tableData[scope.$index].putList"
+              :key="index"
+            >{{item.InDate}}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="入库量">
+          <template slot-scope="scope">
+            <div
+              class="in-num"
+              v-for="(item,index) in tableData[scope.$index].putList"
+              :key="index"
+            >{{item.CurrentInNum}}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="总量">
+          <template slot-scope="scope">
+            <div
+              class="in-sum"
+              v-for="(item,index) in tableData[scope.$index].putList"
+              :key="index"
+            >{{item.InSumNum}}</div>
+          </template>
+        </el-table-column>
+      </el-table-column>
+
+      <el-table-column label="出库">
+        <template slot="header" slot-scope="scope">
+          <div class="box">
+            <span class="tableBox" @click="out(scope.row)">
+              <i class="el-icon-circle-plus-outline"></i>
+            </span>
+            <span class="tableBox">出库</span>
+          </div>
+        </template>
+        <el-table-column label="出库时间">
+          <template slot-scope="scope">
+            <div
+              class="in-date"
+              v-for="(item,index) in tableData[scope.$index].outList"
+              :key="index"
+            >{{item.OutDate}}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="出库量">
+          <template slot-scope="scope">
+            <div
+              class="in-num"
+              v-for="(item,index) in tableData[scope.$index].outList"
+              :key="index"
+            >{{item.ThisOutNum}}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="总量">
+          <template slot-scope="scope">
+            <div
+              class="in-sum"
+              v-for="(item,index) in tableData[scope.$index].outList"
+              :key="index"
+            >{{item.OutSumNum}}</div>
+          </template>
+        </el-table-column>
+      </el-table-column>
+      <el-table-column label="退还">
+        <template slot="header" slot-scope="scope">
+          <div class="box">
+            <span class="tableBox" @click="back(scope.row)">
+              <i class="el-icon-circle-plus-outline"></i>
+            </span>
+            <span class="tableBox">退还</span>
+          </div>
+        </template>
+        <el-table-column label="退还时间">
+          <template slot-scope="scope">
+            <div
+              class="in-date"
+              v-for="(item,index) in tableData[scope.$index].backList"
+              :key="index"
+            >{{item.BackDate}}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="退还量">
+          <template slot-scope="scope">
+            <div
+              class="in-num"
+              v-for="(item,index) in tableData[scope.$index].backList"
+              :key="index"
+            >{{item.ThisBackNum}}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="总量">
+          <template slot-scope="scope">
+            <div
+              class="in-sum"
+              v-for="(item,index) in tableData[scope.$index].backList"
+              :key="index"
+            >{{item.BackSumNum}}</div>
+          </template>
+        </el-table-column>
+      </el-table-column>
+      <el-table-column prop="StoreNum" label="库存" width="112">
+        <template slot="header">
+          <div class="line0" style="margin-bottom:10px">
+            <el-tooltip class="item" effect="dark" placement="bottom">
+              <div slot="content">
+                计算规则：
+                <br>库存 = 入库 － 出库 ＋ 退还
+              </div>
+              <span>
+                库存
+                <i class="el-icon-question"></i>
+              </span>
+            </el-tooltip>
+          </div>
+          <div class="line0">入库－出库＋退还</div>
+        </template>
+      </el-table-column>
+      <el-table-column prop="OverNum" label="节超" width="112">
+        <template slot="header">
+          <div class="line0" style="margin-bottom:10px">
+            <el-tooltip class="item" effect="dark" placement="bottom">
+              <div slot="content">
+                计算规则：
+                <br>1、该项资源在工序施工过程中时：
+                <br>节超 = 出库 - 退还 - 预算 * 进度百分比
+                <br>2、当该项资源所在工序完成后：
+                <br>节超 = 出库 - 退还 * 预算
+              </div>
+              <span>
+                节超
+                <i class="el-icon-question"></i>
+              </span>
+            </el-tooltip>
+          </div>
+          <div class="line0">出库－退还－预算</div>
+        </template>
+      </el-table-column>
+      <el-table-column label="定位">
+        <template slot-scope="scope">
+          <i class="el-icon-location" @click="onLocation(scope.row)"></i>
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-pagination
+      v-show="tableData.length== paging.rows"
+      class="pagination"
+      background
+      layout="prev, pager, next"
+      :total="total"
+      :page-size="paging.rows"
+      prev-text="上一页"
+      next-text="下一页"
+      @current-change="onCurrentChange"
+      @prev-click="onPrev"
+      @next-click="onNext"
+      :current-page.sync="paging.page"
+    ></el-pagination>
+  </div>
+</template>
+<script type='textecmascript-6'>
+import {
+  GetBuilding,
+  GetSpecialtybyBuilding,
+  GetFloorbyBuilding,
+  GetResourceBySpInfo,
+  QueryPurchaseSumList,
+  ExportPurchaseSumList
+} from "../../../api/api.js";
+import { mapMutations } from "vuex";
+import {
+  dataResetBSF,
+  getBuildList,
+  getSpecialtyList,
+  getFloorList,
+  getResourceList,
+  isPower
+} from "./util/util.js";
+import { onHandle } from "../scope/util/util.js";
+
+export default {
+  data() {
+    return {
+      listLoading: false,
+      buildLoading: false,
+      specLoading: false,
+      floorLoading: false,
+      resorceLoading: false,
+      rowData: {
+        putList: [{ InSumNum: "" }],
+        outList: [{ OutSumNum: "" }],
+        backList: [{ BackSumNum: "" }]
+      },
+      isShow: false,
+      paging: { page: 1, rows: 12 },
+      projectid: localStorage.getItem("projectid"),
+      BuildNameList: [], // 楼栋下拉
+      SpecialtyList: [], // 专业下拉
+      FloorbyList: [], // 楼层下拉
+      ResorceNameList: [], // 物资类别下拉
+      formInline: {
+        ProjectID: localStorage.getItem("projectid"),
+        BuildName: "", // 楼栋
+        Specialty: "", // 专业
+        Floor: "", // 楼层
+        CatagoryName: "", // 物资类别
+        Name: "" // 查询内容
+      },
+      tableData: [],
+      total: 0,
+      currentRowIndex: 0,
+      flag: true,
+      tabColumn: [
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 0,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 1,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 2,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 3,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 4,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 5,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 6,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 7,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 8,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 9,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 10,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 11,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 12,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 13,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 14,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 15,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 16,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 17,
+          sumIndex: 0
+        },
+        {
+          sort: [
+            { value: "", rowspan: 3, colspan: 1 },
+            { value: "", rowspan: 2, colspan: 1 },
+            { value: "", rowspan: 1, colspan: 1 }
+          ],
+          column: 1,
+          row: 18,
+          sumIndex: 0
+        }
+      ],
+      listArr: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //临时数据 18个
+      strList: [
+        "num",
+        "ResourceName",
+        "Spec",
+        "BuildName",
+        "Floor",
+        "AdjustBOQ",
+        "InDate",
+        "CurrentInNum",
+        "InSumNum",
+        "OutDate",
+        "ThisOutNum",
+        "OutSumNum",
+        "BackDate",
+        "ThisBackNum",
+        "BackSumNum",
+        "StoreNum",
+        "OverNum",
+        ""
+      ],
+      arrTest: {}
+    };
+  },
+  created() {
+    // 楼栋下拉
+    getBuildList(this, GetBuilding);
+    // 获取采购汇总列表
+    this.getCollectList();
+    this.modelBox({
+      isShowModel: false, //是否显示模型 true:显示模型，如果模型已加载，则显示 false:隐藏模型
+      isLoadModel: true, //是否加载模型 true：加载模型，如果已经加载，不会重新加载， false:卸载模型
+      background: "",
+      ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+      highLightElementIDs: [], // 高亮显示的构件
+      functionNumber: [34] // 需要模型调用的函数编号数组
+    });
+  },
+  watch: {
+    // 物资名称
+    "formInline.CatagoryName": {
+      handler(val, oldval) {
+        if (val != "") {
+          dataResetBSF(this, "CatagoryName");
+          this.getCollectList();
+        }
+      }
+    },
+    // 楼层
+    "formInline.Floor": {
+      handler(val, oldval) {
+        if (val != "") {
+          dataResetBSF(this, "Floor");
+          getResourceList(this, GetResourceBySpInfo);
+          this.getCollectList();
+        }
+      }
+    },
+    // 专业
+    "formInline.Specialty": {
+      handler(val, oldval) {
+        if (val != "") {
+          dataResetBSF(this, "Specialty");
+          getFloorList(this, GetFloorbyBuilding);
+          this.getCollectList();
+        }
+      }
+    },
+    // 楼栋
+    "formInline.BuildName": {
+      handler(val, oldval) {
+        if (val != "") {
+          dataResetBSF(this, "BuildName");
+          getSpecialtyList(this, GetSpecialtybyBuilding);
+          this.getCollectList();
+        }
+      }
+    }
+  },
+  methods: {
+    // 物资需求
+    onMaterial() {
+      if (!isPower(this)) return;
+      this.$router.push({ path: "scopeList" });
+    },
+    // 获取采购汇总列表
+    getCollectList() {
+      // this.load();
+      this.listLoading = true;
+      QueryPurchaseSumList(Object.assign(this.formInline, this.paging)).then(
+        res => {
+          // this.$toast.clear();
+          this.listLoading = false;
+          if (res.StatusCode == 200) {
+            let data = [];
+            this.total = Number(res.Count);
+            res.Detiel.forEach((el, i) => {
+              let isHave = data.some(v => {
+                return v.RowNum == el.RowNum;
+              });
+              if (isHave) {
+                data.forEach((ele, ind) => {
+                  if (ele.RowNum == el.RowNum) {
+                    this.pushItem(data, ind, el);
+                  }
+                });
+              } else {
+                this.pushData(data, el);
+              }
+              this.tabMerge(el, i);
+            });
+            this.tableData = data.map((item, i) => {
+              return Object.assign(item, { num: i + 1 });
+            });
+            console.log(
+              "this.tableDatathis.tableDatathis.tableData",
+              this.tableData
+            );
+          }
+        },
+        () => {
+          this.listLoading = false;
+        }
+      );
+    },
+
+    pushData(data, el) {
+      data.push({
+        RowNum: el.RowNum ? el.RowNum : "/",
+        ResourceName: el.ResourceName ? el.ResourceName : "/",
+        Spec: el.Spec ? el.Spec : "/",
+        BuildName: el.BuildName ? el.BuildName : "/",
+        Floor: el.Floor ? el.Floor : "/",
+        AdjustBOQ: el.AdjustBOQ ? el.AdjustBOQ : "/",
+        putList: [
+          {
+            InDate: el.InDate
+              ? require("moment")(el.InDate).format("YYYY/MM/DD")
+              : "/",
+            CurrentInNum: el.CurrentInNum ? el.CurrentInNum : "/",
+            InSumNum: el.InSumNum ? el.InSumNum : "/"
+          }
+        ],
+        outList: [
+          {
+            OutDate: el.OutDate
+              ? require("moment")(el.OutDate).format("YYYY/MM/DD")
+              : "/",
+            ThisOutNum: el.ThisOutNum ? el.ThisOutNum : "/",
+            OutSumNum: el.OutSumNum ? el.OutSumNum : "/"
+          }
+        ],
+        backList: [
+          {
+            BackDate: el.BackDate
+              ? require("moment")(el.BackDate).format("YYYY/MM/DD")
+              : "/",
+            ThisBackNum: el.ThisBackNum ? el.ThisBackNum : "/",
+            BackSumNum: el.BackSumNum ? el.BackSumNum : "/"
+          }
+        ],
+        StoreNum: el.StoreNum ? el.StoreNum : "/",
+        OverNum: el.OverNum ? el.OverNum : "/"
+      });
+    },
+    pushItem(data, ind, el) {
+      data[ind].putList.push({
+        InDate: el.InDate
+          ? require("moment")(el.InDate).format("YYYY/MM/DD")
+          : "/",
+        CurrentInNum: el.CurrentInNum ? el.CurrentInNum : "/",
+        InSumNum: el.InSumNum ? el.InSumNum : "/"
+      });
+      data[ind].outList.push({
+        OutDate: el.OutDate
+          ? require("moment")(el.OutDate).format("YYYY/MM/DD")
+          : "/",
+        ThisOutNum: el.ThisOutNum ? el.ThisOutNum : "/",
+        OutSumNum: el.OutSumNum ? el.OutSumNum : "/"
+      });
+      data[ind].backList.push({
+        BackDate: el.BackDate
+          ? require("moment")(el.BackDate).format("YYYY/MM/DD")
+          : "/",
+        ThisBackNum: el.ThisBackNum ? el.ThisBackNum : "/",
+        BackSumNum: el.BackSumNum ? el.BackSumNum : "/"
+      });
+    },
+    // 选中页
+    onCurrentChange(p) {
+      this.paging.page = p;
+      this.getCollectList();
+    },
+    // 上一页
+    onPrev(p) {
+      console.log(p);
+    },
+    // 下一页
+    onNext(p) {
+      console.log(p);
+    },
+    // 材料入库
+    put() {
+      if (!isPower(this)) return;
+      this.$router.push({
+        path: "putStorage"
+      });
+    },
+    // 材料出库
+    out() {
+      if (!isPower(this)) return;
+      this.$router.push({
+        path: "outStorage"
+      });
+    },
+    // 退还
+    back() {
+      if (!isPower(this)) return;
+      this.$router.push({
+        path: "returnStorage"
+      });
+    },
+    // 导出
+    async onSubmit() {
+      if (!isPower(this)) return;
+      let par = this.formInline;
+      // if(par.BuildName==''){
+      //   this.$message({
+      //     type: "warning",
+      //     message: "楼栋不能为空",
+      //     center: "true"
+      //   })
+      //   return
+      // }
+      // if(par.Specialty==''){
+      //   this.$message({
+      //     type: "warning",
+      //     message: "专业不能为空",
+      //     center: "true"
+      //   })
+      //   return
+      // }
+      // if(par.Floor==''){
+      //   this.$message({
+      //     type: "warning",
+      //     message: "楼层不能为空",
+      //     center: "true"
+      //   })
+      //   return
+      // }
+      // if(par.CatagoryName==''){
+      //   this.$message({
+      //     type: "warning",
+      //     message: "物资类别不能为空",
+      //     center: "true"
+      //   })
+      //   return
+      // }
+      let res = await ExportPurchaseSumList(par);
+      if (res.StatusCode == 200 && res.Result != "") {
+        window.open(res.Result);
+      } else {
+        this.$message({
+          type: "error",
+          message: res.message ? res.message : "后台异常",
+          center: "true"
+        });
+      }
+    },
+    // 差额
+    onView(p) {
+      console.log(p);
+    },
+    // 定位
+    onLocation(p) {
+      this.isShow = true;
+      this.rowData = Object.assign(p, { Type: 1 });
+      // if (this.$store.getters.getIsViewAdded) {
+      this._initData();
+      onHandle(this, p, "cg");
+      // this.modelBox({
+      //   isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+      //   isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+      //   zIndex: 100, //模型层级
+      //   background: "",
+      //   ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+      //   highLightElementIDs: [], // 高亮显示的构件
+      //   functionNumber: [34] // 需要模型调用的函数编号数组
+      // });
+      // }
+    },
+    onClose() {
+      this.isShow = false;
+      this.modelBox({
+        isShowModel: false, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+        isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+        zIndex: 100, //模型层级
+        background: "",
+        ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+        highLightElementIDs: [], // 高亮显示的构件
+        functionNumber: [34] // 需要模型调用的函数编号数组
+      });
+    },
+    // 排序
+    tabMerge(item, index) {
+      return;
+      let tabColumn = [
+        {
+          sort: [{ value: "", rowspan: "", colspan: "" }],
+          column: 1,
+          row: 0
+        }
+      ];
+
+      let rNameIndex = null;
+      let rName = this.tabColumn.ResourceName.some((res, ind) => {
+        rNameIndex = ind;
+        return res.value == item.ResourceName;
+      });
+      if (rName) {
+        // this.tabColumn.ResourceName[rNameIndex].rowspan=
+      }
+      console.log(item);
+    },
+
+    objectSpanMethod({ row, column, rowIndex, columnIndex }) {
+      return;
+      // listArr:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],//临时数据 18个
+      // strList:["num","ResourceName","Spec","BuildName","Floor","AdjustBOQ","InDate","CurrentInNum","InSumNum","OutDate","ThisOutNum","OutSumNum","BackDate","ThisBackNum","BackSumNum","StoreNum","OverNum",""],
+      console.log({ row, column, rowIndex, columnIndex });
+      // console.count()
+
+      let max = 5; //共6行
+      // if(rowIndex!=0){ //除了第一行，第一行无法与上一行对比
+      if (rowIndex < max) {
+        if ([0, 17].indexOf(columnIndex) == -1) {
+          //第一列序号和第十八列定位不对比
+          let x = ""; //在this.tableData下一行的第columnIndex行的值
+          let y = ""; //在row的第columnIndex行的值~~
+
+          if ([6, 7, 8].indexOf(columnIndex) != -1) {
+            x = this.tableData[rowIndex + 1].putList[0][
+              this.strList[columnIndex]
+            ]; //入库数组
+            y = row.putList[0][this.strList[columnIndex]];
+          } else if ([9, 10, 11].indexOf(columnIndex) != -1) {
+            x = this.tableData[rowIndex + 1].outList[0][
+              this.strList[columnIndex]
+            ]; //出库数组
+            y = row.outList[0][this.strList[columnIndex]];
+          } else if ([12, 13, 14].indexOf(columnIndex) != -1) {
+            x = this.tableData[rowIndex + 1].backList[0][
+              this.strList[columnIndex]
+            ]; //退还数组
+            y = row.backList[0][this.strList[columnIndex]];
+          } else {
+            x = this.tableData[rowIndex + 1][this.strList[columnIndex]];
+            y = row[this.strList[columnIndex]];
+          }
+          // console.log(x,y,row,this.strList[columnIndex],x==y)
+          // console.log(this.listArr)
+
+          // if (columnIndex === 1) {
+          if (x == y) {
+            // 对比，如果相等则合并
+            this.listArr[columnIndex]++;
+            console.log("%c 合并", "color:gold", this.listArr[columnIndex]);
+            return {
+              rowspan: 0,
+              colspan: 0
+            };
+          } else {
+            let len = this.listArr[columnIndex];
+            this.listArr[columnIndex] = 0; //归0，重新计数
+            // console.log(ind+1)
+            console.log("%c 不合并", "color:red", len);
+            return {
+              rowspan: len + 1,
+              colspan: 1
+            };
+          }
+          //   }
+        }
+      } else {
+        console.log("最后一行");
+        // return {
+        //           rowspan: 1,
+        //           colspan: 1
+        //         };
+      }
+
+      // row[]
+      // }
+      // let element = this.tabColumn[rowIndex];
+      // let el = element.sort[rowIndex];
+
+      // if (!element) {
+      //   return;
+      // } else {
+      //   el = element.sort[rowIndex];
+      // }
+
+      //   if(rowIndex === 0){
+      //     // this.list_y.
+      //   let keyArr=  Object.keys(this.list_y)
+      //     if(keyArr.indexOf(column.label) === -1){
+      //       this.list_y[column.label] = columnIndex
+      //       console.log(this.list_y)
+      //     }else {
+      //       let index = keyArr.indexOf(column.label)
+      //       let co = k
+      //     }
+
+      //   console.log(columnIndex, element.sumIndex, rowIndex, element.row);
+      // if (columnIndex == element.sumIndex && rowIndex === element.row) {
+      //   if (!el) {
+      //     element.sumIndex += 1;
+      //     return {
+      //       rowspan: 0,
+      //       colspan: 0
+      //     };
+      //   } else {
+      //     element.sumIndex += el.rowspan;
+      //     return {
+      //       rowspan: el.rowspan,
+      //       colspan: el.colspan
+      //     };
+    },
+
+    _initData() {
+      /**
+       * 模型状态管理
+       */
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [34] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    })
+  }
+};
+</script>
+<style lang='stylus' rel='stylesheet/stylus'>
+.container-procurement .leftBox {
+  width: calc(50% - 160px);
+  height: calc(100% - 60px);
+  position: fixed;
+  top: 60px;
+  background: #f5f6fa;
+  left: 160px;
+  z-index: 10;
+}
+
+.container-procurement-list .el-radio-group .el-radio__label {
+  font-size: 18px;
+  color: #333;
+}
+
+.container-procurement-list .el-input--suffix .el-input__inner {
+  font-size: 18px;
+}
+
+.container-procurement-list .el-table th>.cell, .container-procurement-list .temporary thead th {
+  font-size: 18px;
+}
+
+.container-procurement-list .el-form-item .el-form-item__label {
+  font-size: 18px;
+  color: #333333;
+}
+
+.container-procurement .demo-form-inline .ps {
+  float: left;
+}
+
+.container-procurement .tex-one {
+  text-align: center;
+  font-size: 24px;
+}
+
+.container-procurement .tex-two {
+  text-align: center;
+  font-size: 18px;
+  color: rgba(51, 51, 51, 1);
+}
+
+.container-procurement .tree_img>img {
+  display: block;
+  height: auto;
+}
+
+.container-procurement {
+  .button {
+    width: 160px;
+    height: 20px;
+    position: absolute;
+    top: 50%;
+    right: -20px;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 160px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 0px 6px 0 6px;
+    color: #fff;
+    border: none;
+  }
+}
+
+.container-procurement .leftBox .box-card {
+  width: 100%;
+  height: 100%;
+  padding: 20px 10px 20px 20px;
+}
+
+.container-procurement .model-container {
+  width: 98%;
+  height: calc(100% - 80px);
+  padding: 0 !important;
+  z-index: 900;
+}
+
+.container-procurement {
+  width: 100%;
+  height: 100%;
+  background: #f0f2f5;
+  position: relative;
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .in-date, .in-num, .in-sum {
+    width: 75px;
+    line-height: 40px;
+  }
+}
+
+.container-procurement-list {
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.container-procurement-list .box {
+  display: flex;
+  flex-flow: row;
+  justify-content: flex-start;
+  align-items: center;
+  line-height: 0 !important;
+}
+
+.container-procurement-list .box .tableBox {
+  width: 50%;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.container-procurement-list .box .tableBox i {
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.container-procurement-list .el-input__suffix {
+  width: 0.666667rem;
+  background: #44508a;
+  right: 0;
+  border-radius: 0 0.066667rem 0.066667rem 0;
+}
+
+.container-procurement-list .el-table thead.is-group th {
+  background: #44508a;
+  color: #fff;
+  text-align: center;
+}
+
+.container-procurement-list .el-table {
+  height: calc(100% - 82px);
+}
+
+.container-procurement-list .el-table--enable-row-transition .el-table__body-wrapper {
+  height: calc(100% - 68px);
+  overflow-y: auto;
+}
+
+.container-procurement-list .el-select .el-input .el-select__caret {
+  color: #fff;
+}
+
+.container-procurement-list .el-table--enable-row-transition .el-table__body td {
+  text-align: center;
+}
+
+.container-procurement-list .el-button--warning {
+  color: #FFF;
+  background-color: #E6A23C;
+  border-color: #E6A23C;
+  padding: 8px 30px;
+  font-size: 16px;
+}
+
+.container-procurement-list .bgeee {
+  background: #eee;
+}
+
+.container-procurement-list .el-form--inline .el-form-item__content {
+  width: 160px;
+  height: 40px;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0px 1px 7px 0px rgba(216, 223, 238, 0.75);
+  border-radius: 4px;
+  font-size: 18px;
+  font-family: SourceHanSansCN-Normal;
+  font-weight: 400;
+}
+
+.container-procurement-list .el-select .el-input__inner::placeholder {
+  color: rgba(51, 51, 51, 1);
+}
+
+.container-procurement-list .ser-bg .el-form-item__content {
+  width: 340px;
+  height: 40px;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0px 1px 7px 0px rgba(216, 223, 238, 0.75);
+  border-radius: 20px;
+}
+
+.container-procurement-list .ser-bg .el-form-item__content .el-input__inner {
+  border-radius: 20px;
+}
+
+.container-procurement-list .bgeee .el-form-item__content {
+  background: #f0f2f5;
+  box-shadow: none;
+  width: auto;
+}
+
+.container-procurement-list .el-button--warning {
+  padding: 0;
+  width: 100px;
+  height: 40px;
+  line-height: 40px;
+  background: rgba(253, 161, 67, 1);
+  box-shadow: 0px 1px 7px 0px rgba(176, 148, 119, 0.75);
+  border-radius: 4px;
+}
+
+.container-procurement-list .el-icon-location {
+  color: #4775ca;
+  box-shadow: 0px 1px 7px 0px rgba(216, 223, 238, 0.5);
+}
+
+.el-select .el-input__suffix-inner .el-select__caret::before {
+  content: '\E60C';
+  font-size: 0.32rem;
+}
+
+.container-procurement-list .el-table__body-wrapper .el-input__inner {
+  background: #f0f0f0;
+  text-align: center;
+}
+
+.line0 {
+  line-height: 1 !important;
+  display: block;
+}
+
+/* 滚动条的宽度 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background-color: transparent;
+}
+
+/* 滚动条的滑块 */
+::-webkit-scrollbar-thumb {
+  background-color: #a1a3a9;
+  border-radius: 6px;
+}
+</style>

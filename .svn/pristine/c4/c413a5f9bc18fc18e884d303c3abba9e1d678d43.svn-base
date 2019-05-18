@@ -1,0 +1,261 @@
+<!-- 发起采购 -->
+<template>
+  <div class="material-need-container flex-between material-structure material-speed">
+    <div class="model-wrapper">
+      <div class="model-container">
+        <div ref="modelContainer1" class="model-container"></div>
+      </div>
+    </div>
+    <div class="form-wrapper">
+      <div class="title">
+        物资需求
+        <span class="hiden-material el-icon-close" @click="closeMaterial"></span>
+      </div>
+      <div class="content">
+        <el-form :model="form" label-width="100px">
+          <el-form-item label-width="40px" class="radio-color">
+            <el-radio-group v-model="type">
+              <el-radio label="progress">按进度计划</el-radio>
+              <el-radio label="model">按模型构件</el-radio>
+              <el-radio label="form"  v-if="billsType!==0">按清单</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <!-- 按模型购件 -->
+          <template v-if="type === typeOptions.model">
+            <structure ref="structure"></structure>
+          </template>
+          <!-- 按进度计划 -->
+          <template :listtype="listtype" v-if="type === typeOptions.progress">
+            <MaterialNeed ref="MaterialNeed"></MaterialNeed>
+          </template>
+          <!-- 按清单 -->
+          <template v-if="type === typeOptions.form">
+            <hr>
+            <!-- <template v-if="billsType==2"> -->
+            <div class="flex">
+              <el-form-item label="项目名称">
+                <div class="originator">
+                  <el-select v-model="form.IsApprove">
+                    <el-option label="项目名称" value="1"></el-option>
+                    <el-option label="项目编码" value="2"></el-option>
+                  </el-select>
+                </div>
+              </el-form-item>
+            </div>
+            <div class="flex">
+              <el-form-item label="项目编码">
+                <div class="originator">
+                  <el-select v-model="form.people">
+                    <el-option label="项目编码" value="1"></el-option>
+                    <el-option label="项目编码" value="2"></el-option>
+                  </el-select>
+                  <el-button
+                    style="border: 0;padding-top: 0;padding-bottom: 0;vertical-align: -7px;"
+                  >
+                    <img src="../../../../assets/imgs/add.png" alt width="20" height="20">
+                  </el-button>
+                </div>
+              </el-form-item>
+            </div>
+            <!-- </template> -->
+            <hr>
+            <el-form-item label-width="40px">
+              <div class="teble-wrapper table-input">
+                <el-table :data="listItems" border :span-method="arraySpanMethod">
+                  <el-table-column label="楼栋" prop="task_name"></el-table-column>
+                  <el-table-column label="项目编码" prop="name"></el-table-column>
+                  <el-table-column label="项目名称" prop="type" width="180"></el-table-column>
+                  <el-table-column label="预算量" prop="budget"></el-table-column>
+                  <el-table-column label="已采购量" prop="yet_purchasing"></el-table-column>
+                  <el-table-column label="本次采购量">
+                    <template slot-scope="scope">
+                      <el-input v-model="scope.row.buy"></el-input>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+            </el-form-item>
+            <el-form-item label="需求时间">
+              <el-date-picker v-model="form.need_time" type="date" placeholder="选择日期"></el-date-picker>
+            </el-form-item>
+          <Timeline v-model="listFlow"/>
+          </template>
+          <el-form-item style="text-align: center">
+            <el-button type="success" @click="onSubmit">提交</el-button>
+            <el-button type="info" @click="closeMaterial">取消</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </div>
+  </div>
+</template>
+<style lang="stylus" src="./index.styl"></style>
+<style lang="stylus" scoped>
+.radio-color {
+  >>> {
+    .is-checked {
+      .el-radio__original, .el-radio__label {
+        color: #FDA143;
+      }
+
+      .el-radio__inner {
+        border-color: #FDA143;
+        background: #FDA143;
+      }
+    }
+  }
+}
+</style>
+
+
+<script type='textecmascript-6'>
+import MaterialNeed from "./components/material-need/index";
+import structure from "./components/material-structure/material-structure";
+import Timeline from "@/common/timeline/index";
+import { SaveRangeInfo,GetCurrentListType } from "../../../../api/api.js";
+import {initPurchase} from '../util/util.js'
+
+export default {
+  components: {
+    Timeline,
+    MaterialNeed,
+    structure
+  },
+  data() {
+    return {
+    projectid: localStorage.getItem("projectid"),
+    billsType:2,
+      /**[表单类型]
+       *  @progress   按进度计划
+       *  @model      按模型购件
+       *  @form       按清单
+       */
+      typeOptions: {
+        progress: "progress",
+        model: "model",
+        form: "form"
+      },
+      type: "progress",
+      /**[表单] */
+      form: {
+        Type: "3",
+        check: "",
+        StartTime:'',
+        EndTime:'',
+        DemandTime:'',
+      },
+      /**[采购审核] */
+      listFlow: [
+        {
+          bottom: [{ text: "发起" }],
+          icoClassName: "hideIco"
+        },
+        {
+          bottom: [{ text: "审核" }]
+        },
+        {
+          bottom: [{ text: "审批" }]
+        },
+        {
+          bottom: [{ text: "采购" }]
+        }
+      ],
+      /**[时间快捷选项] */
+      pickerOptions2: {
+        shortcuts: [
+          {
+            text: "最近一周",
+            onClick(picker) {
+              const end = new Date();
+              const start = new Date();
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+              picker.$emit("pick", [start, end]);
+            }
+          },
+          {
+            text: "最近一个月",
+            onClick(picker) {
+              const end = new Date();
+              const start = new Date();
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+              picker.$emit("pick", [start, end]);
+            }
+          },
+          {
+            text: "最近三个月",
+            onClick(picker) {
+              const end = new Date();
+              const start = new Date();
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+              picker.$emit("pick", [start, end]);
+            }
+          }
+        ]
+      },
+      /**[表格数据]
+       *  @mergeTwoRow  {合并第二列}
+       */
+      listItems: [
+        {
+          task_name: "A1栋",
+          name: "01040100400",
+          type: "商业办公工程（±0.000以上）",
+          budget: "1486.0",
+          yet_purchasing: "1486.0",
+          buy: "10.00m³",
+          isOk: false
+        },
+        {
+          task_name: "A1栋",
+          name: "01040100400",
+          type: "多孔砖墙",
+          budget: "1486.0",
+          yet_purchasing: "1486.0",
+          buy: "10.00m³",
+          isOk: false
+        },
+        {
+          task_name: "A1栋",
+          name: "01040100400",
+          type: "砌体部分",
+          budget: "1486.0",
+          yet_purchasing: "1486.0",
+          buy: "10.00m³",
+          isOk: false
+        }
+      ],
+      dataList: false,
+      dataStep: true
+    };
+  },
+  methods: {
+    // 获取清单类型
+    GetCurrentListType(){
+      GetCurrentListType({projectid:this.projectid}).then(res=>{
+        if(res.StatusCode==200){
+          this.billsType =res.Result;
+        }
+      })
+    },
+    // 提交
+    onSubmit() {
+      if(this.type === this.typeOptions.model){   // 按模型购件
+        this.$refs.structure.onSubmit();
+      }else if(this.type === this.typeOptions.progress){    //  按进度计划
+        this.$refs.MaterialNeed.onSubmit();
+      }else if(this.type === this.typeOptions.form){   // 按清单
+        initPurchase(this,SaveRangeInfo);
+      }
+    },
+    /**关闭 物资需求 */
+    closeMaterial() {
+      this.$router.back(-1);
+    },
+    /**[表格合并方法] */
+    arraySpanMethod({ row, column, rowIndex, columnIndex }) {}
+  },
+  created(){
+    this.GetCurrentListType();
+  },
+};
+</script>

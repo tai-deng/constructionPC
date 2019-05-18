@@ -1,0 +1,784 @@
+<!-- 5D模拟 -->
+<template>
+  <div class="gantt-sumContainer">
+    <div class="plan-container">
+      <el-form :model="fiveList" ref="formData">
+        <div class="plan-left">
+          <div class="mode-type">
+            <el-select
+              v-model="fiveList.modelName"
+              @change="selOp"
+              placeholder="请选择模型"
+              v-loading="buildLoading"
+            >
+              <el-option
+                v-for="(item,index) in modeList"
+                :key="index"
+                :label="item.text"
+                :value="item.text"
+              ></el-option>
+            </el-select>
+          </div>
+
+          <div class="date">
+            <el-date-picker
+              v-model="fiveList.date"
+              value-format="yyyy-MM-dd"
+              format="yyyy-MM-dd"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+            ></el-date-picker>
+          </div>
+
+          <div class="plan-play">
+            <div class="plan-play-l" @click="pause">
+              <img src="../../../assets/icons/gantt-pause.png" class="el-icon-error pause">
+            </div>
+            <div class="plan-play-r" @click="play">
+              <img
+                v-if="isPay"
+                src="../../../assets/icons/gantt-play.png"
+                class="el-icon-success play"
+              >
+              <img v-else src="../../../assets/icons/gantt-zt.png" class="el-icon-success play">
+            </div>
+          </div>
+        </div>
+      </el-form>
+      <div class="plan-right">
+        <div class="road-week flex-row" :class="{'day-opt':dayP==1}" @click="roadWeek(1)">
+          <i class="el-icon-upload2"></i>
+          施工组织计划导出
+        </div>
+        <div class="show-mode flex-row" :class="{'day-opt':dayP==1}" @click="showMode(2)">显示模型</div>
+      </div>
+    </div>
+    <div class="plan-content">
+      <div ref="gantt" :class="['gantt',{'ganttWidthBig':!isShowMode},modeWidth]" v-loading="isloading"></div>
+
+      <div class="right-container" v-show="isShowMode">
+        <ul class="gantt-infos">
+          <li class="gantt-infos-i">{{selectedTask.date}}</li>
+          <li class="gantt-infos-i">{{selectedTask.structure}}</li>
+          <li class="gantt-infos-i" v-for="(item,index) in selectedTask.stup" :key="index">{{item}}</li>
+        </ul>
+        <div class="gantt-infos-img">
+          <div ref="modelContainer" style="width:100%;height:100%;"></div>
+        </div>
+        <div class="gantt-infos-tip flex-row">施工进度模拟</div>
+      </div>
+    </div>
+
+    <el-dialog title="施工组织计划导出" :visible.sync="isDialog">
+      <el-form :model="educe">
+        <el-form-item>
+          <div class="plan-left">
+            <el-select v-model="educe.BuildingName" placeholder="选择楼栋" v-loading="buildLoading">
+              <el-option
+                v-for="item in modeList"
+                :key="item.id"
+                :label="item.text"
+                :value="item.text"
+              ></el-option>
+            </el-select>
+            <el-select v-model="educe.LevelName" placeholder="选择楼层" v-loading="floorLoading">
+              <el-option
+                v-for="item in FloorbyList"
+                :key="item.id"
+                :label="item.text"
+                :value="item.text"
+              ></el-option>
+            </el-select>
+          </div>
+        </el-form-item>
+
+        <el-form-item>
+          <div class="plan-left">
+            <el-date-picker
+              style="width:100%;"
+              v-model="educe.BaseStartTime"
+              type="date"
+              placeholder="开始时间"
+              value-format="yyyy-MM-dd"
+            ></el-date-picker>
+
+            <el-date-picker
+              style="width:100%;"
+              v-model="educe.BaseFinishTime"
+              type="date"
+              placeholder="结束时间"
+              value-format="yyyy-MM-dd"
+            ></el-date-picker>
+          </div>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="isDialog = false">取 消</el-button>
+        <el-button type="primary" @click="roadWeek(2)">确 定</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+<script>
+import "dhtmlx-gantt";
+import "dhtmlx-gantt/codebase/locale/locale_cn.js";
+import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_marker.js";
+import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_multiselect.js";
+import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_smart_rendering";
+import "./ganttExport.js";
+
+import config from "./config.js";
+import "../../virtualConstruction/schedulePlanning/base/educe.js";
+import { mapMutations, mapGetters } from "vuex";
+import {
+  getBuil,
+  getFiveList,
+  isPower,
+  getAllElementID,
+  onHandle,
+  educeProject,
+  getFloorList
+} from "./fiveGantt.js";
+
+export default {
+  name: "plan",
+  created() {
+    getBuil(this);
+    getAllElementID(this);
+    this.getModeDate(0);
+    if (this.$store.getters.getIsViewAdded) {
+      this.modelBox({
+        isShowModel: false, //是否显示模型 true:显示模型，如果模型已加载，则显示 false:隐藏模型
+        isLoadModel: true, //是否加载模型 true：加载模型，如果已经加载，不会重新加载， false:卸载模型
+        zIndex: 100, //模型层级
+        background: "",
+        ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+        highLightElementIDs: [], // 高亮显示的构件
+        functionNumber: [34] // 需要模型调用的函数编号数组
+      });
+    }
+  },
+  computed: {
+    ...mapGetters(["getIsViewAdded"])
+  },
+  mounted() {
+    if (this.$route.params.isTime) {
+      this.fiveList.modelName = this.$route.params.modelName;
+      this.isTime_layout = true;
+    }
+    if (this.getIsViewAdded) {
+      document.getElementsByClassName("bf-toolbar-bottom")[0].style.display =
+        "none";
+      document.getElementsByClassName("bf-tree-toolbar")[0].style.display =
+        "none";
+    }
+  },
+  data() {
+    return {
+      // 选择模型数据--模拟数据
+      selectedTask: {
+        date: "",
+        structure: "",
+        stup: []
+      },
+      elements: [],
+      allElementId: null,
+      isPay: true,
+      markerDate: null, // mark
+      timer: null,
+      i: 0, // 索引
+      isShowMode: false,
+      date_to_str: "",
+      point: 0,
+      dayP: 3,
+      isloading:false,
+
+      BuildNameList: [], // 楼栋下拉
+      FloorbyList: [], // 楼层下拉
+      buildLoading: false,
+      floorLoading: false,
+      tasks: null,
+      fiveList: {
+        modelName: null, // 模型选择
+        date: [] // 时间
+      },
+      modeList: [],
+      isTime_layout: false,
+      modeWidth: "",
+      stepDate: 0,
+      educe: {
+        BuildingName: "",
+        LevelName: "",
+        BaseStartTime:  require("moment")(new Date()).format("YYYY-MM-DD"),
+        BaseFinishTime:  require("moment")(new Date()).format("YYYY-MM-DD"),
+      },
+      isDialog: false,
+      playData: [],
+      maxDate: "",
+      minDate: ""
+    };
+  },
+  methods: {
+    $_initGanttEvents: function() {
+      if (gantt.$_eventsInitialized) return;
+      let _this = this;
+
+      // 滚动图表区域以使指定日期可见
+      // gantt.showDate(new Date())
+
+      // 将甘特图容器滚动到指定位置 X/Y
+      // gantt.scrollTo(30, 80)
+
+      // 返回滚动位置
+      // var sPos = gantt.getScrollState(); // {x:58,y:180}
+      // var posX = sPos.x;
+      // var posY = sPos.y;
+
+      // 甘特图滚动到特定点时触发
+      // gantt.attachEvent("onGanttScroll", function(left, top) {
+      // any custom logic here
+      // });
+
+      gantt.$_eventsInitialized = true;
+    },
+    // add mark
+    addMarker(date) {
+      var _this = this;
+      if (this.markerDate) {
+        gantt.deleteMarker(this.markerDate);
+      }
+      this.markerDate = gantt.addMarker({
+        start_date: new Date(date),
+        css: "today",
+        title: _this.date_to_str(new Date(date))
+      });
+      this.stepDate = new Date(date).getTime();
+      this.refreshMode();
+      gantt.render();
+    },
+
+    userLabelById(id) {
+      for (var i = 0; i < this.tasks.length; i++) {
+        if (this.tasks[i].data.id == id) {
+          return this.tasks[i].data.text;
+        }
+      }
+      return "";
+    },
+
+    // 获取模型数据
+    getModeDate(flag = 1) {
+      getFiveList(this, tasks => {
+        this.tasks = tasks;
+        if (flag) {
+          gantt.clearAll();
+          gantt.parse(this.tasks);
+          gantt.render();
+          gantt.setSizes();
+        } else {
+          this.$_initGanttEvents();
+          config.init(this, 0);
+          gantt.init(this.$refs.gantt);
+          gantt.parse(tasks);
+        }
+        this.date_to_str = gantt.date.date_to_str(gantt.config.task_date);
+      });
+    },
+
+    // 选择模块
+    selOp(p) {
+      let v = this.modeList[Number(p)];
+      this.gantState({ selModel: v });
+    },
+
+    // 取消播放
+    pause() {
+      if (!isPower(this)) return;
+      this.delMaker();
+    },
+
+    // 结束播放
+    delMaker() {
+      gantt.deleteMarker(this.markerDate);
+      gantt.render();
+      this.i = 0;
+      this.elements = [];
+      this.isPay = true;
+      if (this.timer) {
+        clearTimeout(this.timer);
+      }
+    },
+
+    // 播放按钮
+    play() {
+      let task = this.playData;
+      if (task.length == 0) return;
+      if (this.isPay) {
+        if (this.i == 0) {
+          this.addMarker(task[0].start_date);
+        }
+        this.isShowMode = true;
+        this.runMarker(task);
+      } else {
+        clearTimeout(this.timer);
+      }
+      this.isPay = !this.isPay;
+    },
+
+    // runMark
+    runMarker(task) {
+      let _this = this;
+      let taskDate = task[this.i].start_date;
+      
+      this.timer = setTimeout(() => {
+        let dayDate = gantt.getMarker(_this.markerDate);
+        dayDate.start_date = new Date(taskDate);
+        dayDate.title = _this.date_to_str(dayDate.start_date);
+        gantt.updateMarker(_this.markerDate);
+        let d = gantt.posFromDate(dayDate.start_date);
+        gantt.scrollTo(d, null);
+        _this.refreshMode();
+        onHandle(_this, task[_this.i].elements);
+        _this.i += 1;
+        if (_this.i != task.length) {
+          clearTimeout(_this.timer);
+          _this.runMarker(task);
+        } else {
+          _this.delMaker();
+        }
+      }, 1000);
+    },
+
+    // content
+    refreshMode() {
+      let taskDate = this.playData[this.i].start_date;
+
+      let sum = this.maxDate - this.minDate;
+      let s = taskDate - this.minDate;
+
+      let plan = Math.ceil((s / sum) * 100);
+
+      this.selectedTask.date = require("moment")(taskDate).format(
+        "YYYY-MM-DD"
+      );
+      this.selectedTask.structure = `主体结构 ${plan}%`;
+      this.selectedTask.stup = this.playData[this.i].resorce;
+    },
+
+    // 施工计划导出
+    roadWeek(flag) {
+      if (!isPower(this)) return;
+      if (flag == 1) {
+        this.isDialog = true;
+      } else {
+        educeProject(this);
+      }
+      console.log("导出施工图");
+      // gantt.exportToMSProject();
+      // gantt.exportToExcel();
+    },
+
+    // 显示模型
+    showMode() {
+      this.isShowMode = !this.isShowMode;
+      if (this.isShowMode) {
+        this.repaint(1);
+        this._initData();
+        if (this.getIsViewAdded) {
+          document.getElementsByClassName(
+            "bf-toolbar-bottom"
+          )[0].style.display = "none";
+          document.getElementsByClassName("bf-tree-toolbar")[0].style.display =
+            "none";
+        }
+      } else {
+        this.repaint(0);
+        this.modelBox({
+          isShowModel: false,
+          isLoadModel: true,
+          zIndex: 100,
+          background: "",
+          ElementIDs: [],
+          highLightElementIDs: [],
+          functionNumber: [34]
+        });
+      }
+    },
+    // 重绘
+    repaint(layout) {
+      config.init(this, layout);
+      gantt.init(this.$refs.gantt);
+      gantt.clearAll();
+      gantt.parse(this.tasks);
+      gantt.render();
+      gantt.setSizes();
+    },
+
+    _initData() {
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示 false:隐藏模型
+            isLoadModel: true, //是否加载模型 true：加载模型，如果已经加载，不会重新加载， false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [34] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+
+    // plays数据处理
+    onPlaysData(data) {
+      this.maxDate = Math.max.apply( Math,data.map(function(o) { return new Date(o.end).getTime();}));
+      this.minDate = Math.min.apply(Math,data.map(function(o) { return o.start_date;}));
+
+      this.playData = [];
+      let flagDate = this.minDate;
+      let i =0;
+      while (flagDate <= this.maxDate) {
+        let resorce = [];
+        let element = []
+
+        data.forEach((item, index) => {
+          let startdate = new Date(item.start_date).getTime();
+          let enddate = new Date(item.start_date).getTime() + (item.duration * 86400000);
+
+          if (flagDate>=startdate && flagDate<=enddate) {
+            resorce = resorce.concat(item.resorce);
+            element = element.concat(item.elements);
+          }
+        });
+
+        if(resorce.length >0 || element.length >0){
+          this.playData.push({
+            start_date: flagDate,
+            resorce: resorce,
+            elements:element,
+          });
+        }
+        if(i == 0){
+          console.log(flagDate)
+        }
+        flagDate += 86400000;
+        i++
+      }
+
+      this.playData.sort(this.compare("start_date"));
+
+      console.log(this.minDate,this.maxDate, this.playData[this.playData.length-1]);
+    },
+
+    compare(property) {
+      return function(a, b) {
+        var value1 = new Date(a[property]);
+        var value2 = new Date(b[property]);
+        return value1 > value2 ? 1 : -1;
+      };
+    },
+
+    ...mapMutations({
+      gantState: "GET_GANTT_STATE",
+      modelBox: "GET_MODEL_BOX"
+    })
+  },
+  watch: {
+    // 任务数据
+    "tasks.data": {
+      handler(val) {
+        if (val.length > 0) {
+          this.onPlaysData(val);
+        }
+      },
+      deep: true
+    },
+    // 楼栋
+    "educe.BuildingName"(val) {
+      this.FloorbyList = [];
+      this.educe.LevelName = "";
+      console.log(val);
+      if (val) {
+        getFloorList(this);
+      }
+    },
+    fiveList: {
+      handler(val, oldval) {
+        console.log(val, oldval);
+        this.getModeDate();
+      },
+      deep: true
+    },
+    isShowMode(val) {
+      if (val) {
+        if (this.isTime_layout) {
+          this.modeWidth = "ganttWidthLowb";
+        } else {
+          this.modeWidth = "ganttWidthLow";
+        }
+      }
+    },
+    getIsViewAdded(val) {
+      if (val) {
+        document.getElementsByClassName("bf-toolbar-bottom")[0].style.display =
+          "none";
+        document.getElementsByClassName("bf-tree-toolbar")[0].style.display =
+          "none";
+      }
+    }
+  },
+  beforeDestroy() {
+    gantt.clearAll();
+  }
+};
+</script>
+<style scope >
+/* .bf-toolbar {
+  display: none !important;
+} */
+.gantt-sumContainer .el-date-editor .el-range-input,
+.gantt-sumContainer .el-input--suffix .el-input__inner,
+.gantt-sumContainer .el-range-separator {
+  font-size: 18px;
+  color: #333333;
+}
+/* 滚动条的宽度 */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background-color: transparent;
+}
+
+/* 滚动条的滑块 */
+
+::-webkit-scrollbar-thumb {
+  background-color: #a1a3a9;
+  border-radius: 6px;
+}
+
+.plan-content {
+  height: calc(100% - 100px);
+  /* height: 100%; */
+  display: flex;
+}
+.right-container {
+  height: 100%;
+  width: 824px;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+  font-size: 18px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(51, 51, 51, 1);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.gantt-infos-i {
+  padding: 10px 0 0 20px;
+}
+.gantt-infos {
+  list-style-type: none;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  z-index: 999;
+  /* margin: 0;
+  overflow-x: hidden;
+  overflow-y: auto; */
+}
+.gantt-infos-img {
+  flex: 1;
+  width: 100%;
+}
+.gantt-infos-tip {
+  margin: 10px;
+}
+
+.gantt-sumContainer {
+  height: 100%;
+  width: 100%;
+}
+.plan-container {
+  height: 100px;
+  font-size: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.plan-left,
+.plan-right {
+  display: flex;
+}
+.plan-play-l,
+.plan-play-r {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.plan-play-l {
+  border-right: 1px dashed rgba(229, 229, 229, 1);
+}
+.plan-left .el-input--suffix,
+.plan-left .el-date-editor {
+  width: 343px !important;
+  height: 40px !important;
+  margin-right: 20px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.plan-left .el-date-editor i:nth-child(1) {
+  display: none;
+}
+.plan-left .el-date-editor .el-range__close-icon::before {
+  content: "\E608";
+}
+.plan-play {
+  width: 100px;
+  height: 40px;
+  color: #000000;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  border-radius: 6px;
+}
+.plan-play img {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+.road-week {
+  width: 200px;
+  height: 40px;
+  background: rgba(71, 117, 202, 1);
+  box-shadow: 0px 2px 4px 0px rgba(161, 192, 250, 1);
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+  margin-right: 20px;
+}
+.show-mode {
+  font-size: 16px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+
+  width: 120px;
+  height: 40px;
+  background: rgba(253, 161, 67, 1);
+  box-shadow: 0px 2px 4px 0px rgba(176, 148, 119, 0.5);
+  border-radius: 4px;
+}
+.flex-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+/* 下拉框变色---没有变色 */
+.plan-left .el-input__suffix {
+  background: rgba(67, 80, 137, 1);
+  border-radius: 0px 4px 4px 0px;
+  right: 0;
+  width: 40px !important;
+}
+.plan-left .el-icon-arrow-up:before {
+  content: "\e60c";
+  color: rgba(255, 255, 255, 1);
+}
+
+/* 加载gantt 样式 */
+@import "~dhtmlx-gantt/codebase/dhtmlxgantt.css";
+/* 右边标题背景/颜色 */
+.day_scale {
+  background-color: #6c7bbc;
+  color: rgba(168, 183, 250, 1);
+}
+.day_scale > .gantt_scale_cell {
+  /* border: none !important; */
+}
+.gantt {
+  /* height: calc(100% - 100px); */
+  height: 100%;
+}
+.ganttWidthBig {
+  flex: 1;
+}
+.ganttWidthLow {
+  width: calc(100% - 824px);
+}
+.ganttWidthLowb {
+  width: calc(100% - 724px);
+}
+.week_scale {
+  background-color: #666666;
+}
+
+.month_scale {
+  background-color: #6c7bbc;
+  color: rgba(255, 255, 255, 1);
+}
+.month_scale > .gantt_scale_line {
+  border: none !important;
+}
+
+.grid_header_class {
+  color: red;
+  background-color: #f1f1f1;
+}
+.gantt_task .gantt_task_scale .gantt_scale_cell {
+  font-size: 18px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+}
+/* 左边标题背景/颜色 */
+.gantt_grid_scale {
+  background-color: rgba(67, 80, 137, 1);
+}
+.gantt_grid_scale .gantt_grid_head_cell {
+  font-size: 18px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+}
+/* 灯箱按钮 */
+.gantt_btn_set div {
+  display: flex;
+  align-items: center;
+  justify-items: center;
+  margin: 0;
+}
+.gantt_delete_btn,
+.gantt_cancel_btn,
+.gantt_save_btn {
+  padding-right: 8px;
+}
+.gantt_section_time {
+  line-height: 2em;
+}
+.gantt_duration {
+  line-height: 2em;
+}
+.gantt_section_time .gantt_time_selects select,
+.gantt_section_time .gantt_duration {
+  height: 2em !important;
+}
+.gantt-today {
+  height: 300px;
+  width: 1px;
+  background: red;
+}
+</style>
+

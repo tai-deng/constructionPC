@@ -1,0 +1,176 @@
+import {
+  GetFiveDSchedulePlanList,
+  GetBuilding,
+  GetElementIDByInfo,
+  GetFiveDExport,
+  GetReportFloorbyBuilding,
+} from "../../../api/api";
+
+const projectid = localStorage.getItem("projectid");
+
+// 获取项目楼栋信息
+export const getBuil = that => {
+  that.buildLoading = true;
+  GetBuilding({ projectid }).then(res => {
+    that.buildLoading = false;
+    if (res.StatusCode == 200) {
+      that.modeList = [];
+      that.modeList = res.Detiel;
+      that.modeList.unshift({
+        text: '全部',
+        id: ''
+      })
+    }
+  }, res => {
+    that.buildLoading = false;
+  });
+};
+
+// 楼栋 -> 获取模型楼层
+export const getFloorList = (that) => {
+  // that.load();
+  that.floorLoading = true;
+  GetReportFloorbyBuilding({ projectid: projectid, building: that.educe.BuildingName }).then(
+    res => {
+      // that.$toast.clear();
+      that.floorLoading = false;
+      if (res.StatusCode == 200) {
+        that.FloorbyList = [];
+        that.FloorbyList = res.Detiel;
+        // that.FloorbyList.unshift({
+        //   text: '全部',
+        //   id: ''
+        // })
+      }
+    }, res => { that.floorLoading = false; }
+  );
+}
+
+// 获取列表
+export const getFiveList = (that, init, handle) => {
+  let BuildingName = that.fiveList.modelName;
+  if (BuildingName == '全部') {
+    BuildingName = '';
+  }
+  let par = {
+    ProjectID: projectid,
+    BuildingName,
+    BaseStartTime: that.fiveList.date[0],
+    BaseFinishTime: that.fiveList.date[1]
+  };
+  GetFiveDSchedulePlanList(par).then(res => {
+    let data = [];
+    let links = [];
+    if (res.StatusCode == 200 && res.Detiel.length > 0) {
+      res.Detiel.forEach((el, index) => {
+        data.push({
+          id: el.TaskId,
+          text: el.TaskName,
+          type: "task",
+          start_date: el.BaseStartTime,
+          // end_date:el.BaseFinishTime,  // 结束时间处理
+          duration: el.Duration,
+          parent: el.TaskParentId ? el.TaskParentId : 0,
+          progress: el.PercenTage,
+          open: true,
+          elements: el.TaskElementList,
+          actualStartTime: el.ActualStartTime,
+          actualFinishTime: el.ActualFinishTime,
+          states: el.states,
+          resorce:el.ResorceList,
+        });
+
+        if (el.PredecessorsId) {
+          links.push({
+            id: links.length + 1,
+            source: el.TaskId,
+            target: el.PredecessorsId,
+            type: "0"
+          });
+        }
+      });
+      init({ data, links });
+      handle(data);
+    } else {
+      that.$message({
+        type: "warning",
+        message: res.Message,
+        center: "true"
+      });
+      gantt.clearAll();
+    }
+  });
+};
+
+// 获取所有的构件ID
+export const getAllElementID = that => {
+  let par = { ProjectID: projectid };
+  GetElementIDByInfo(par).then(res => {
+    if (res.StatusCode == 200) {
+      res.Detiel = res.Detiel.map(item => {
+        return item.trim();
+      })
+      that.allElementId = res.Detiel;
+    }
+  });
+};
+
+// 定位高亮
+export const onHandle = (that, elements) => {
+  if (!elements && that.allElementId) return;
+  that.elements = that.elements.concat(elements);
+  that.modelBox({
+    isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+    isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+    zIndex: 100, //模型层级
+    background: "",
+    ElementIDs: that.allElementId, // 所有要显示的构件数组，包括半隐藏构件
+    highLightElementIDs: that.elements, // 高亮显示的构件
+    functionNumber: [33] // 需要模型调用的函数编号数组
+  });
+};
+
+// 权限
+export const isPower = that => {
+  let isPower = true;
+  if (sessionStorage.getItem("menuType") !== "2") {
+    that.$message({
+      type: "warning",
+      message: "您没有权限操作",
+      center: "true"
+    });
+    isPower = false;
+  }
+  return isPower;
+};
+
+// 导出
+export const educeProject = that => {
+  // if (BuildingName == '全部') {
+  //   BuildingName = '';
+  // }
+  // if (LevelName == '全部') {
+  //   LevelName = '';
+  // }
+  let BuildingName = that.educe.BuildingName;
+  let LevelName = that.educe.LevelName;
+  let BaseStartTime = that.educe.BaseStartTime;
+  let BaseFinishTime = that.educe.BaseFinishTime;
+  GetFiveDExport({
+    ProjectID: projectid,
+    BuildingName,
+    LevelName,
+    BaseStartTime,
+    BaseFinishTime,
+  }).then(res => {
+    that.isDialog = false;
+    if (res.StatusCode == 200) {
+      window.open(res.Result)
+    }
+    that.$message({
+      type: "warning",
+      message: res.Message,
+      center: "true"
+    })
+  })
+}

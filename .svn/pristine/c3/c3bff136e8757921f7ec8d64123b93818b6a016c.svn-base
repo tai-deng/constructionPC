@@ -1,0 +1,1755 @@
+<!-- 3dView 三维浏览 -->
+<template>
+  <div class="container-3d-view"> 
+    <div class="view_model">
+        <!-- 模型box -->
+        <div class="model-container">
+          <div ref="modelContainer" class="model-container"></div>
+        </div>
+    </div>
+    <!-- 表单 -->
+    <div class="my_other_from">
+      <!-- 表单box  v-if="fromStatus"-->
+      <div  class="froms" v-show="fromStatus">
+        <!-- 发起沟通 -->
+        <div v-show="fromCurrent==1" class="from">
+          <div class="row froms_title">
+            发起沟通
+            <span class="el-icon-close" @click="closeFrom"></span>
+          </div>
+          <div class="froms_content" :style="{'height': fromBoxHeight}">
+            <el-form
+              label-position="center"
+              :model="speakForm"
+              :rules="speakRules"
+              ref="speakForm"
+              label-width="160px"
+              class="demo-ruleForm"
+              :hide-required-asterisk="true"
+              :inline-message="false"
+            >
+              <el-form-item label="主题：" prop="title">
+                <el-input placeholder="请输入主题" v-model="speakForm.title"></el-input>
+              </el-form-item>
+              <el-form-item label="类型：" prop="type">
+                <el-select
+                  style="width:100%"
+                  class="view_setSelect"
+                  v-model="speakForm.type"
+                  placeholder="请选择类型"
+                >
+                  <el-option
+                    v-for="item in com_type_list"
+                    :key="item.id"
+                    :label="item.text"
+                    :value="item.id"
+                  ></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="问题描述：" prop="desc">
+                <el-input rows="4" type="textarea" v-model="speakForm.desc"></el-input>
+              </el-form-item>
+              <el-form-item class="el-form-item-box" label="模型视点：">
+                <div class="viewpoint" v-for="item in upload_base64_img" :key="item.index" v-show="fileext.length != 0">
+                  <img :src="item.TokenUrL+item.URL" alt="">
+                </div>
+                <div class="viewpoint" @click="createViewPoint">
+                  <img class="camera" src="../../assets/imgs/camera.png" alt>
+                </div>
+              </el-form-item>
+              <el-form-item class="el-form-item-box" label="上传凭证：">
+                <el-upload
+                  action
+                  list-type="picture-card"
+                  :on-change="handlePictureCardSuccess"
+                  :on-remove="handleRemove"
+                  :auto-upload="false"
+                >
+                  <i class="el-icon-plus"></i>
+                </el-upload>
+                <el-dialog :visible.sync="dialogVisible">
+                  <img width="100%" :src="dialogImageUrl" alt>
+                </el-dialog>
+              </el-form-item>
+              <el-form-item class="el-form-item-box" label="构件关联：">
+                <span class="relevance" @click="onRelevance1">
+                    <img src="../../assets/imgs/unlock.png" v-if="isRelevance1">
+                    <img src="../../assets/imgs/allRelation.png" v-else>
+                </span>
+              </el-form-item>
+              <div >
+                <changeLine @getFlowList="getFlowList1"></changeLine>  
+              </div>
+              <el-form-item class="align_center">
+                <el-button class="return_btn" @click="resetForm('speakForm')">取消</el-button>
+                <el-button class="submit_btn" @click="onSpeakSubmit('speakForm')">确认</el-button>
+              </el-form-item>
+            </el-form>
+          </div>
+        </div>
+        <!-- 工程变更 -->
+        <div v-show="fromCurrent==2" class="from">
+          <div class="row froms_title">
+            工程变更
+            <span class="el-icon-close" @click="closeFrom"></span>
+          </div>
+          <div class="froms_content" :style="{'height': fromBoxHeight}">
+            <el-form  label-position="right" :model="workForm"   :rules="workFormRules" ref="workForm"
+              label-width="160px" class="demo-ruleForm"  :hide-required-asterisk="false" >
+              <!-- <el-form-item label="编码" prop="number">
+                <el-input v-model="workForm.number"></el-input>
+              </el-form-item> -->
+              <el-form-item label="主题" prop="title">
+                <el-input v-model="workForm.title"></el-input>
+              </el-form-item>
+              <el-form-item class="el-form-item-box" label="变更类型" prop="type">
+                <el-select style="width:100%;" v-model="workForm.type" placeholder="请选择变更类型">
+                  <el-option
+                    v-for="item in workFormSelect"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  ></el-option>
+                </el-select>
+              </el-form-item>
+
+              <el-form-item label="选择">
+                <el-form-item style="width:30%;display:inline-block;margin-right:4%" prop="build">
+                  <el-select style="width:100%;" v-model="workForm.build" placeholder="请选择楼栋" @change="handleBuild">
+                    <el-option
+                      v-for="item in building"
+                      :key="item.id"
+                      :label="item.text"
+                      :value="item.id"
+                    ></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item
+                  style="width:30%;display:inline-block;margin-right:4%"
+                  prop="techology"
+                >
+                  <el-select style="width:100%;" v-model="workForm.techology" placeholder="请选择专业" @change="handleTechology">
+                    <el-option
+                      v-for="item in specialtyby_building"
+                      :key="item.id"
+                      :label="item.text"
+                      :value="item.id"
+                    ></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item style="width:30%;display:inline-block;" prop="louceng">
+                  <el-select style="width:100%;" v-model="workForm.louceng" placeholder="请选择楼层">
+                    <el-option
+                      v-for="item in floorby_building"
+                      :key="item.id"
+                      :label="item.text"
+                      :value="item.id"
+                    ></el-option>
+                  </el-select>
+                </el-form-item>
+              </el-form-item>
+
+              <el-form-item label="详细位置" prop="desc">
+                <el-input type="textarea" v-model="workForm.desc" placeholder="请输入详细位置"></el-input>
+              </el-form-item>
+              <el-form-item class="el-form-item-box" label="发起时间" prop="beginTime">
+                <el-date-picker
+                  style="width:100%;"
+                  v-model="workForm.beginTime"
+                  type="date"
+                  placeholder="选择日期"
+                ></el-date-picker>
+              </el-form-item>
+               <!-- <el-form-item class="el-form-item-box" label="结束时间" prop="beginTime">
+                <el-date-picker
+                  style="width:100%;"
+                  v-model="workForm.endTime"
+                  type="date"
+                  placeholder="选择日期"
+                ></el-date-picker>
+              </el-form-item> -->
+              <el-form-item label="发起人">
+                <el-input v-model="workForm.people" disabled="disabled"></el-input>
+              </el-form-item>
+              <el-form-item label="变更内容" prop="changeDesc">
+                <el-input type="textarea" v-model="workForm.changeDesc" placeholder="请输入变更内容"></el-input>
+              </el-form-item>
+
+              <el-form-item class="el-form-item-box" label="模型视点">
+                <div class="viewpoint" v-for="item in upload_base64_img" :key="item.index" v-show="fileext.length != 0">
+                  <img :src="item.TokenUrL+item.URL" alt="">
+                </div>
+                <div class="viewpoint" @click="createViewPoint">
+                  <img class="camera" src="../../assets/imgs/camera.png" alt>
+                </div>
+              </el-form-item>
+              <el-form-item class="el-form-item-box" label="上传凭证">
+                <el-upload
+                  action
+                  list-type="picture-card"
+                  :on-change="handlePictureCardSuccess"
+                  :on-remove="handleRemove"
+                  :auto-upload="false"
+                >
+                  <i class="el-icon-plus"></i>
+                </el-upload>
+                <el-dialog :visible.sync="dialogVisible">
+                  <img width="100%" :src="dialogImageUrl" alt>
+                </el-dialog>
+              </el-form-item>
+              <el-form-item class="el-form-item-box" label="构件关联">
+                <span class="relevance" @click="onRelevance">
+                    <img src="../../assets/imgs/unlock.png" v-if="isRelevance">
+                    <img src="../../assets/imgs/allRelation.png" v-else>
+                </span>
+              </el-form-item>
+
+              <div>
+                <!-- 设置工作流程 -->
+                <changeLine @getFlowList="getFlowList"></changeLine>  
+              </div>
+
+              <el-form-item class="align_center">
+                <el-button class="return_btn" @click="resetForm('workForm')">取消</el-button>
+                <el-button class="submit_btn" @click="onWorkSubmit('workForm')">确认</el-button>
+              </el-form-item>
+            </el-form>
+          </div>
+        </div>
+        <!-- 风险控制 -->
+        <div v-show="fromCurrent==3" class="from">
+          <div class="row froms_title">
+            风险控制
+            <span class="el-icon-close" @click="closeFrom"></span>
+          </div>
+          <div class="froms_content" :style="{'height': fromBoxHeight}">
+          <el-row>
+            <el-col :span="24">
+              <el-form ref="questionForm" :model="diffenform" label-width="160px" :rules="diffenrules">
+                <el-form-item label="主题" prop="theme">
+                  <div class="originator">
+                    <el-input v-model="diffenform.theme"></el-input>
+                  </div>
+                </el-form-item>
+                <el-form-item label="问题类型" prop="qt">
+                  <div class="originator question">
+                    <el-select v-model="diffenform.qt" placeholder="问题类型" @focus="getQuestionType" style="width:100%;">
+                      <el-option
+                        v-for="item in risk_type_list"
+                        :key="item.text"
+                        :label="item.id"
+                        :value="item.text"
+                      ></el-option>
+                    </el-select>
+                  </div>
+                </el-form-item>
+                <el-form-item label="风险类型" prop="category">
+                  <el-radio-group v-model="diffenform.category">
+                    <el-radio label="1">质量</el-radio>
+                    <el-radio label="2">安全</el-radio>
+                  </el-radio-group>
+                </el-form-item>
+                <el-form-item label="选择楼栋" prop="building">
+                  <div class="originator question">
+                    <el-select v-model="diffenform.building" placeholder="楼栋" @change="onSelectedBuilding()">
+                      <el-option
+                        v-for="item in building"
+                        :key="item.id"
+                        :label="item.text"
+                        :value="item.id"
+                      ></el-option>
+                    </el-select>
+                  </div>
+                </el-form-item>
+                <el-form-item label="选择楼层" prop="floor">
+                  <div class="originator question">
+                    <el-select v-model="diffenform.floor" placeholder="楼层" @change="onSelectedFloor()">
+                      <el-option
+                        v-for="item in floorList"
+                        :key="item.id"
+                        :label="item.text"
+                        :value="item.id"
+                      ></el-option>
+                    </el-select>
+                  </div>
+                </el-form-item>
+                <el-form-item label="发起人">
+                  <div class="originator">
+                    <el-input v-model="diffenform.initiator" :disabled="true"></el-input>
+                  </div>
+                </el-form-item>
+                <el-form-item label="发起时间" prop="startTime">
+                  <div class="originator">
+                    <el-date-picker
+                      type="date"
+                      placeholder="选择日期"
+                      v-model="diffenform.startTime"
+                      style="width: 100%;"
+                    ></el-date-picker>
+                  </div>
+                </el-form-item>
+                <el-form-item label="问题描述" prop="describe">
+                  <el-input type="textarea" v-model="diffenform.describe" placeholder="请输入问题描述"></el-input>
+                </el-form-item>
+                <el-form-item label="现场照片">
+                  <el-upload
+                    action
+                    list-type="picture-card"
+                    :on-change="uploadPicture"
+                    :auto-upload="false"
+                    :limit = "5"
+                  >
+                    <i class="el-icon-plus"></i>
+                  </el-upload>
+                </el-form-item>
+                <el-form-item label="视点上传">
+                  <div class="viewpoint" v-for="item in viewPointList" :key="item.index" v-show="fileext.length != 0">
+                    <img :src="item.TokenUrL+item.smallPhotoURL"  @click="onRemove(index)" alt="">
+                  </div>
+                  <div class="viewpoint" @click="createViewPoint" v-show="viewPointList.length < 3">
+                    <img class="camera" src="../../assets/imgs/camera.png" alt>
+                  </div>
+                  <!-- <div class="viewpoint" v-for="(item,index) in viewPointList" :key="index">
+                    <img
+                      class="modePic"
+                      @click="onRemove(index)"
+                      :src="item.TokenUrL+item.smallPhotoURL"
+                      alt
+                    >
+                  </div>
+                  <div class="viewpoint" @click="createViewPoint" v-show="viewPointList.length < 4">
+                    <img class="camera" src="../../assets/imgs/camera.png" alt>
+                  </div> -->
+                </el-form-item>
+                <el-form-item label="接收人" prop="person">
+                  <el-select v-model="diffenform.person" multiple placeholder="接收人" @focus="getReceiver">
+                    <el-option
+                      v-for="item in receiver"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    ></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="整改截止时间" prop="completionTime">
+                  <div class="originator">
+                    <el-date-picker
+                      type="date"
+                      placeholder="选择日期"
+                      v-model="diffenform.completionTime"
+                      style="width: 100%;"
+                    ></el-date-picker>
+                  </div>
+                </el-form-item>
+                <el-form-item class="align_center">
+                  <el-button class="return_btn" @click="resetForm('questionForm')">取消</el-button>
+                  <el-button class="submit_btn" @click="onSubmit('questionForm')" :loading="loading">确认</el-button>
+                </el-form-item>
+              </el-form>
+            </el-col>
+          </el-row>
+          </div>
+        </div>
+      </div>
+      <!-- 表单btns -->
+      <div v-show="!fromStatus" class="row btn">
+        <el-button type="info" @click="showFrom(3)">风险控制</el-button>
+        <el-button type="success" @click="showFrom(2)">工程变更</el-button>
+        <el-button type="primary" @click="showFrom(1)">发起沟通</el-button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { mapMutations, mapGetters } from "vuex";
+import { GetDefaultModelId, SaveCommunicate, UploadBase64Img, AddViewPoint, UploadImages, GetOrgList, GetDeptList,  GetBuilding,QueryElementByTask,GetElementTree,
+GetUserListByDept, SaveChange, SetGetBuilding, GetSpecialtybyBuilding, GetFloorbyBuilding, PublishRisk, GetRiskTypeList,GetDictInfoList,
+GetComTypeList, GetAllUserList,GetLoginUserInfo,GetElementIDByInfo } from "@/api/api.js";
+import { setTimeout } from 'timers';
+import changeLine from '../../common/timeline/index'
+export default {
+  data() {
+    return {
+      projectId: localStorage.getItem('projectid'), //项目ID
+      userID: localStorage.getItem('userId'), //用户ID
+      view_point: sessionStorage.getItem('e'), //视点路径
+      stateStr: sessionStorage.getItem('stateStr'), //视点快照图路径
+      fileext: '',//图片格式
+      upload_base64_img: [],//图片详情
+      viewPointList: [],//视点列表
+      photoList: [],//发起沟通--凭证列表
+      flowList: [],//工作流列表
+      text: {},//添加工作流程
+      elementIDS: '',//关联构件（多个构件ID用英文逗号分隔）
+      elementIdS: [],//构件ID临时存储
+      org_list: [],//单位列表
+      dept_list: [],//部门列表
+      user_list_by_dept: [],// 人员列表
+      building: [],//楼栋列表
+      specialtyby_building: [],//专业列表
+      floorby_building: [],//楼层列表
+      credentialsList: [],//工程变更--凭证列表
+      com_type_list: [],//发起沟通类型列表
+      risk_type_list: [],//风险控制类型列表
+      all_user_list: [],//所有接收人列表
+      treeIndx: [],
+      //from状态管理、数据
+      fromStatus: false,
+      fromCurrent: 1,
+      //风险控制-表单------(模型视点/活动形式)
+      ruleForm: {
+        title: "", //主题
+        problem: "", //问题类型
+        name: "", //发起人
+        beginTime: require('moment')().format('YYYY-MM-DD'), //发起时间
+        desc: "", //问题描述
+        people: [], //接收人--多选
+        time: "", //整改截止时间
+        radio:'1',//类型
+      },
+      floorList: [],
+      buildList: [],
+      //风险控制-表单验证
+      rules: {
+        title: [
+          { required: true, message: "请输入主题", trigger: "blur" }, //主题
+          { min: 3, max: 5, message: "长度在 3 到 5 个字符", trigger: "blur" }
+        ],
+        problem: [
+          { required: true, message: "请选择问题类型", trigger: "change" }
+        ], //问题类型
+        name: [
+          { required: true, message: "请输入发起人", trigger: "blur" },
+          { min: 2, max: 5, message: "长度在 2 到 5 个字符", trigger: "blur" }
+        ], 
+        desc: [{ required: true, message: "请填写问题描述", trigger: "blur" }], //问题描述
+        people: [
+          { required: true, message: "请选择接收人", trigger: "change" }
+        ]
+      },
+      //风险控制-接收人
+      ruleFormPeople: [
+        { value: 1, label: "黄晓明" },
+        { value: 2, label: "刘德华" },
+        { value: 3, label: "黎明" }
+      ],
+      //风险控制-上传文件的地址
+      dialogImageUrl: "",
+      //工程变更
+      workForm: {
+        number: "", //编码
+        title: "", //主题
+        type: "", //变更类型
+        build: "", //楼栋
+        techology: "", //专业
+        louceng: "", //楼层
+        desc: "", //详细位置
+        beginTime: "", // 发起时间
+        //endTime: "", // 结束时间
+        people: Number(localStorage.getItem('userId')), //发起人---不可以更改 （禁用）
+        changeDesc: "", //变更内容
+        isrelation: false //构件是否关联
+      },
+      //工程变更-表单验证
+      workFormRules: {
+        //number: [{ required: true, message: "请输入编码", trigger: "blur" }], //编码
+        title: [{ required: true, message: "请输入主题", trigger: "blur" }], //主题
+        type: [
+          { required: true, message: "请选择变更类型", trigger: "change" }
+        ], //变更类型
+        build: [{ required: true, message: "请选择楼栋", trigger: "change" }], //楼栋
+        techology: [
+          { required: true, message: "请选择专业", trigger: "change" }
+        ], //专业
+        louceng: [{ required: true, message: "请选择楼层", trigger: "change" }], //楼层
+        desc: [{ required: true, message: "请输入详细位置", trigger: "blur" }], //详细位置
+        beginTime: [
+          {
+            type: "date",
+            required: true,
+            message: "请选择发起时间",
+            trigger: "change"
+          }
+        ], //发起时间
+        changeDesc: [
+          { required: true, message: "请填写变更内容", trigger: "blur" }
+        ] //变更内容
+      },
+      //工程变更-变更类型
+      workFormSelect: [
+        { value: 1, label: "设计变更" },
+        { value: 2, label: "法令变更" },
+        { value: 3, label: "工程签证" },
+        { value: 4, label: "工程洽商" },
+        { value: 5, label: "其他" }
+      ],
+      //发起沟通
+      speakForm: {
+        title: "", //主题
+        type: "", //工程洽商-类型
+        desc: "", //描述
+        isRelation: false //构件关联
+      },
+      //发起沟通-表单验证
+      speakRules: {
+        title: [{ required: true, message: "请输入主题", trigger: "blur" }], //主题
+        type: [
+          { required: true, message: "请选择工程洽商-类型", trigger: "change" }
+        ], //工程洽商-类型
+        desc: [{ required: true, message: "请输入描述", trigger: "blur" }] //描述
+      },
+      //发起沟通-类型
+      speakFormType: [
+        { value: "工程洽商", label: "工程洽商" },
+        { value: "现场签证", label: "现场签证" },
+        { value: "技术讨论", label: "技术讨论" },
+        { value: "添加类别", label: "添加类别" }
+      ],
+
+      //排序--优先级
+      selectIndex: "",
+      indexList: [
+        { value: 1, label: "1" },
+        { value: 2, label: "2" },
+        { value: 3, label: "3" },
+        { value: 4, label: "4" },
+        { value: 5, label: "5" },
+        { value: 6, label: "6" }
+      ],
+      //排序--责任单位
+      speakResponsibility: "",
+      OrgTypeName:'',
+      //排序--岗位部门
+      speakClass: "",
+      speackText:'',
+      //排序--人员
+      speakPerson: "",
+      speakPersonText:'',
+      //排序--显示的数据列表
+      speakAllList: [],
+
+      dialogVisible: false,
+      options: [],
+      expandedKeys: [],
+      checkedKeys: [],
+      defaultProps: {
+          children: "children",
+          label: "label"
+      },
+      array: [],
+      sessionCheckedKeys:[],
+      floorId:'',
+      isRelatedParam: {
+          ElementID: '',
+          IndexId: ''
+      },
+
+
+      //风险管理
+      diffenform: {
+        //form表单
+        theme: "",
+        qt: "",
+        initiator: "",  //发起人
+        person: [],  //接收人
+        startTime: "",  //发起时间
+        describe: "",  //问题描述
+        completionTime: "",  //整改截止时间
+        category: "1",  //风险类型
+        building: "",  //楼栋
+        floor: ""  //楼层
+      },
+      isAddView: true,  //防止连续点击添加视点
+      diffenrules: {
+        theme: [{ required: true, message: "请输入主题", trigger: "blur" }],
+        qt: [{ required: true, message: "请选择问题类型", trigger: "blur" }],
+        category: [
+          { required: true, message: '请选择风险类型', trigger: 'blur' }
+        ],
+        startTime: [
+          { required: true, message: "请选择发起时间", trigger: "blur" }
+        ],
+        describe: [
+          { required: true, message: "请输入问题描述", trigger: "blur" }
+        ],
+        person: [{ required: true, message: "请选择接收人", trigger: "blur" }],
+        completionTime: [
+          { required: true, message: "请选择整改截止时间", trigger: "blur" }
+        ]
+      },
+      questionType: [], //所有问题类型
+      receiver: [], //所有接收人
+      loading: false,
+      disflowList: [],//工程变更-工作流程
+      disflowList1:[],//发起沟通-工作流程
+      isRelevance: false, //   开启关联
+      isRelevance1: false, //   开启关联
+      defaultModelID:[], //模型id
+      eids: [],
+
+
+
+    };
+  },
+  components: {changeLine},
+  created() {
+    this.getDefaultModelId() //模型ID
+    this._initData() //模型
+    this.orgList() //获取单位列表 
+    this.getBuilding() //获取楼栋信息
+    this.comTypeList() //获取沟通类型列表
+    this.riskTypeList() //获取风险管理问题类型列表
+    this.allUserList() //获取所有接收人列表
+    this.getLoginUserInfo()//获取当前用户详情
+  },
+  mounted() {
+    if(this.getIsViewAdded){
+        document.getElementsByClassName('bf-toolbar-bottom')[0].style.display= 'block'
+        document.getElementsByClassName('bf-tree-toolbar')[0].style.display= 'block'
+    }
+
+  },
+  methods: {
+    _initData() {
+      /**
+       * 模型状态管理
+       */
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示 false:隐藏模型
+            isLoadModel: true, //是否加载模型 true：加载模型，如果已经加载，不会重新加载， false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height:res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [34] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    }),
+    // 关闭关联
+    onRelevance() {
+      this.isRelevance = !this.isRelevance;
+    },
+    onRelevance1() {
+      this.isRelevance1 = !this.isRelevance1;
+    },
+    // 流程数据
+    getFlowList(d) {
+      console.log(d);
+      this.disflowList = d;
+    },
+    getFlowList1(d){
+      this.disflowList1 = d;
+    },
+    //  切换表单
+    showFrom(n) {
+      if(sessionStorage.getItem('menuType') !== "2"){
+        this.$message({type: "warning",message: "您没有权限操作",center: "true"});
+        return;
+      }
+      this.fromStatus = true;
+      this.fromCurrent = n;
+    },
+    //关闭右边的弹出框
+    closeFrom() {
+      this.fromStatus = false;
+    },
+    /**
+     * 获取当前用户详情
+     */
+    getLoginUserInfo(){
+      this.Request(GetLoginUserInfo({curUserId:Number(this.userID)})).then(res=>{
+        console.log(res)
+        if(res.StatusCode==200){
+          this.diffenform.initiator = res.Detiel[0].loginUserInfo.cName //获取发起人姓名
+          this.workForm.people = res.Detiel[0].loginUserInfo.cName
+        }
+      })
+    },
+
+    //文件上传的两个属性-----未处理
+    handleRemove(file, fileList) {
+      console.log(file, fileList);
+    },
+    //文件列表中上传成功时的钩子
+    async handlePictureCardSuccess(res,file) {
+      let prams = [{
+        key: 'files', value: res.raw
+      }]
+      // file.forEach(i=>{
+      //   prams.push({ key: 'files', value: i.raw })
+      // })
+      //上传图片
+      let upload_images = await this.Request(UploadImages(prams))
+      if(upload_images.StatusCode == 200){
+        this.photoList = upload_images.Detiel
+        this.credentialsList.push({
+          Url: this.photoList[0].URL,
+          ThumbUrl: this.photoList[0].smallPhotoURL,
+          Ext: this.photoList[0].Type
+        })
+      }else{
+        this.$message({type:'error',message:upload_images.message?upload_images.message:'后台异常',center:'true'})
+      }
+    },
+    //创建视点
+    createViewPoint() {
+      if(!this.isAddView){
+        this.$message({ type: "warning", message: "不要急", center: "true" });
+        return
+      }
+      this.isAddView = false;
+      // this.$util.getDomLocation(this, "modelContainer").then(res => {
+        this.modelBox({
+          isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示 false:隐藏模型
+          isLoadModel: true, //是否加载模型 true：加载模型，如果已经加载，不会重新加载， false:卸载模型
+          // top: res.top, //距离顶部距离‘px'
+          // left: res.left, //距离左边距离‘px'
+          // width: res.width, //模型宽‘px'
+          // height: res.height, //模型高 ‘px'
+          zIndex: 100, //模型层级
+          background: "",
+          ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+          highLightElementIDs: [], // 高亮显示的构件
+          functionNumber: [35] // 需要模型调用的函数编号数组
+        });
+      // });
+      setTimeout(()=>{
+        this.view_point = sessionStorage.getItem("e")
+        this.fileext = this.view_point.slice(10,14).replace('/','.')
+        // this.uploadBase64Img()
+        this.currentState();
+      },1000)
+    },
+    //获取当前模型的浏览状态，用于保存后恢复模型状态
+    currentState() {
+      this.$util.getDomLocation(this, "modelContainer").then(res => {
+        this.modelBox({
+          isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示 false:隐藏模型
+          isLoadModel: true, //是否加载模型 true：加载模型，如果已经加载，不会重新加载， false:卸载模型
+          top: res.top, //距离顶部距离‘px'
+          left: res.left, //距离左边距离‘px'
+          width: res.width, //模型宽‘px'
+          height: res.height, //模型高 ‘px'
+          zIndex: 100, //模型层级
+          background: "",
+          ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+          highLightElementIDs: [], // 高亮显示的构件
+          functionNumber: [36] // 需要模型调用的函数编号数组
+        });
+      });
+      setTimeout(()=>{
+        this.stateStr = sessionStorage.getItem("stateStr")
+        this.uploadBase64Img()
+      },1000)
+    },
+    //风险控制的--提交按钮
+    onSubmit(formName) {
+      this.$refs[formName].validate(valid => {
+        if (valid) {
+          this.publishRisk()
+        } else {
+          return false;
+        }
+      });
+    },
+    //风险控制的--取消按钮
+    resetForm(formName) {
+      this.$refs[formName].resetFields();
+      this.fromStatus = false;
+    },
+    /**
+     * @name 获取模型的楼栋信息
+     */
+    getBuildingData() {
+      this.Request(
+        GetBuilding({ projectid: localStorage.getItem("projectid") })
+      ).then(data => {
+        if (data.StatusCode === 200) {
+          if (data.Detiel.length > 0) {
+            this.buildList = data.Detiel;
+          }else{
+            this.buildList = [];
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+      });
+    },
+    /**
+     * @name 根据楼栋获取模型的楼层
+     */
+    getFloorbyBuildingData() {
+      if (this.diffenform.building == "") {
+        this.$message({
+          message: "请先选择楼栋！",
+          type: "warning"
+        });
+        return;
+      }
+      this.Request(
+        GetFloorbyBuilding({
+          projectid: localStorage.getItem("projectid"),
+          building: this.diffenform.building,
+        })
+      ).then(data => {
+        if (data.StatusCode === 200) {
+          if (data.Detiel.length > 0) {
+            this.floorList = data.Detiel
+          } else {
+            this.floorList = [];
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+      });
+    },
+    /**
+     * @name 楼栋的值发生变化时触发
+     */
+    onSelectedBuilding() {
+      this.getElementIDs()
+      this.getFloorbyBuildingData()  //获取楼层数据
+    },
+    /**
+     * @name 楼层的值发生变化时触发
+     */
+    onSelectedFloor() {
+      this.getElementIDs()
+    },
+    /**
+     * @name 根据构件类别获取所有ElementID
+     * @param {string} ProjectID 项目ID
+     * @param {string} BuildName 楼栋
+     * @param {string} Floor 楼层
+     */
+    async getElementIDs(){
+      // this.load()
+      let param = {
+        projectId: localStorage.getItem("projectid"),
+        BuildName: this.diffenform.building,
+        Floor: this.diffenform.floor
+      }
+      let res = await this.Request(GetElementIDByInfo(param))
+      if(res.StatusCode === 200){
+        this.elementIDs = res.Detiel
+        this.chanageModel()
+      }else {
+        this.$message({
+          type: 'error',
+          message: res.Message,
+          center: 'true'
+        })
+      }
+      // this.$toast.clear()
+    },
+    /**
+     * @name 根据筛选条件显示构件隐藏不符合条件构件
+     */
+    chanageModel(){
+      this.modelBox({
+        isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+        isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+        zIndex: 100, //模型层级
+        background: "",
+        ElementIDs: this.elementIDs, // 所有要显示的构件数组，包括半隐藏构件
+        highLightElementIDs: [], // 高亮显示的构件
+        functionNumber: [30] // 需要模型调用的函数编号数组
+      });
+    },
+
+    //工程变更的--提交按钮
+    onWorkSubmit(formName) {
+      this.$refs[formName].validate(valid => {
+        if (valid) {
+          this.saveChange()
+        } else {
+          return false;
+        }
+      });
+    },
+    //工程变更的--工作流程--前移动
+    changUp(index) {
+      if (index == 0) {
+        this.$message.warning("已在顶部！");
+      } else {
+        var nextIndex = index - 1;
+        let moveComm = (index, nextIndex) => {
+          let arr = this.warterList;
+          arr[index] = arr.splice(nextIndex, 1, arr[index])[0];
+          return arr;
+        };
+        this.warterList = moveComm(index, nextIndex);
+        return true;
+      }
+    },
+    //工程变更的--工作流程--后移
+    changDown(index) {
+      if (index == this.warterList.length - 1) {
+        this.$message.warning("已在底部！");
+      } else {
+        var beforeIndex = index + 1;
+        let moveComm = (index, beforeIndex) => {
+          let arr = this.warterList;
+          arr[index] = arr.splice(beforeIndex, 1, arr[index])[0];
+          return arr;
+        };
+        this.warterList = moveComm(index, beforeIndex);
+        return true;
+      }
+    },
+    //发起洽商--提交按钮
+    onSpeakSubmit(formName) {
+      this.elementIDS = this.elementIdS.join(',')
+      this.$refs[formName].validate(valid => {
+        if (valid) {
+          this.saveCommunicate()
+        } else {
+          return false;
+        }
+      });
+    },
+    //工作流程--添加
+    addSpeakList() {
+      let flow_list = {
+        ID: 1, 
+        Type: 1, //类型
+        MasterID: 1, //主表ID
+        Priority: Number(this.selectIndex), //优先级
+        OrgId: Number(this.speakResponsibility), //责任单位
+        DepId: Number(this.speakClass), //岗位部门
+        Person: Number(this.speakPerson), //人员
+        Status: 1, //状态
+        dCreateTime: require('moment')().format('YYYY-MM-DD'), //创建时间
+        iCreator: this.userID,   //创建人
+        dUpdateTime: require('moment')().format('YYYY-MM-DD'), //修改时间
+        iUpdator: this.userID,   //修改人
+        bDelFlag: true, //是否删除
+      }
+      this.flowList.push(flow_list);
+      if (
+        this.selectIndex == "" &&
+        this.speakResponsibility == "" &&
+        this.speakClass == "" &&
+        this.speakPerson == ""
+      ) {
+        this.$message.warning("工作流程数据不齐全！");
+        return false;
+      }
+      this.text = {
+        number: this.selectIndex, //优先级
+        respon: this.speakResponsibility, //责任单位
+        workClass: this.speakClass, //岗位部门
+        person: this.speakPerson, //人员
+      };
+      this.speakAllList.splice(this.text.number - 1, 0, this.text);
+    },
+    //发起洽商--工作流程--上移
+    changSpeakUp(index) {
+      if (index == 0) {
+        this.$message.warning("已在顶部！");
+      } else {
+        var nextIndex = index - 1;
+        let moveComm = (index, nextIndex) => {
+          let arr = this.speakAllList;
+          arr[index] = arr.splice(nextIndex, 1, arr[index])[0];
+          return arr;
+        };
+        this.speakAllList = moveComm(index, nextIndex);
+        return true;
+      }
+    },
+    //发起洽商--工作流程--下移
+    changSpeakDown(index) {
+      if (index == this.speakAllList.length - 1) {
+        this.$message.warning("已在底部！");
+      } else {
+        var beforeIndex = index + 1;
+        let moveComm = (index, beforeIndex) => {
+          let arr = this.speakAllList;
+          arr[index] = arr.splice(beforeIndex, 1, arr[index])[0];
+          return arr;
+        };
+        this.speakAllList = moveComm(index, beforeIndex);
+        return true;
+      }
+    },
+    //监听单位
+    handleResponsibility(val) {
+      this.OrgTypeName= this.returnName(this.org_list,this.speakResponsibility).Name
+      this.deptList()
+    },
+    //监听部门
+    handleClass(val) {
+      this.speackText= this.returnName(this.dept_list,this.speakClass).text
+      this.userListByDept()
+    },
+    //监听人员
+    handlePerson(val) {
+      this.speakPersonText= this.returnName(this.user_list_by_dept,this.speakPerson).text
+    },
+    //监听楼栋
+    handleBuild() {
+      this.specialtybyBuilding()
+    },
+    //监听专业
+    handleTechology() {
+      this.floorbyBuilding()
+    },
+    //发起沟通
+    async saveCommunicate() {
+      if (this.disflowList1.length == 0) {
+        this.$message({
+          type: "warning",
+          message: "工作流程不能为空！"
+        });
+        return;
+      }
+      let listFlow = this.disflowList1.map(item => {
+        return {
+          Priority: item.Priority,
+          OrgId: item.OrgId.id,
+          DepId: item.DepId.id,
+          Person: item.Person.id,
+          Status: item.Status
+        };
+      });
+      let step_count = Object.keys(this.text)
+      let prams = {
+        listFlow, //工作流列表
+        PhotoList: this.photoList,//上传凭证照片列表
+        listViewpoints: this.viewPointList,//视点快照列表
+        ID: 1,//风险ID
+        ProjectID: this.projectId,//项目ID
+        Subject: this.speakForm.title,//主题
+        ComType: this.speakForm.type,//类型
+        Description: this.speakForm.desc,//描述
+        Status: 1,//状态
+        CurrentStep: 1,//当前步骤
+        StepCount: step_count.length,//工作流总步骤
+        ElementIDS: this.elementIDS,//关联构件（多个构件ID用英文逗号分隔）
+        dCreateTime: require('moment')().format('YYYY-MM-DD'), //创建时间
+        iCreator: this.userID,   //创建人
+        dUpdateTime: require('moment')().format('YYYY-MM-DD'), //修改时间
+        iUpdator: this.userID,   //修改人
+        bDelFlag: true, //是否删除
+      }
+      let save_communicate = await this.Request(SaveCommunicate(prams));
+      if(save_communicate.StatusCode == 200){
+        this.$message({type:'success',message:save_communicate.Message,center:'true'})
+        this.resetForm('speakForm');
+      }else{
+        this.$message({type:'error',message:save_communicate.Message?save_communicate.message:'后台异常',center:'true'})
+      }
+    },
+    //工程变更
+    async saveChange() {
+       if (this.disflowList.length == 0) {
+        this.$message({
+          type: "warning",
+          message: "工作流程不能为空！"
+        });
+        return;
+      }
+      let listFlow = this.disflowList.map(item => {
+        return {
+          Priority: item.Priority,
+          OrgId: item.OrgId.id,
+          DepId: item.DepId.id,
+          Person: item.Person.id,
+          Status: item.Status
+        };
+      });
+      let prams = {
+        ID: 1,//ID
+        //Code: this.workForm.number,//编码
+        ProjectId: this.projectId,//项目ID
+        Type: this.workForm.type,//类型
+        Building: this.workForm.build,//楼栋
+        Specialty: this.workForm.techology,//专业
+        Floor: this.workForm.louceng,//楼层
+        DetailPoint: this.workForm.desc,//详细地址
+        Theme: this.workForm.title,//主题
+        Content: this.workForm.changeDesc,//内容
+        //StartPerson: this.workForm.people,//启动人
+        StartTime: require('moment')(this.workForm.beginTime).format('YYYY-MM-DD'),//启动时间
+        // EndTime: require('moment')(this.workForm.endTime).format('YYYY-MM-DD'),//结束时间 
+        RelationModel: this.eids.join(","),//关联构件（多个构件ID用英文逗号分隔）
+        dCreateTime: require('moment')().format('YYYY-MM-DD'), //创建时间
+        iCreator: this.userID,   //创建人
+        dUpdateTime: require('moment')().format('YYYY-MM-DD'), //修改时间
+        iUpdator: this.userID,   //修改人
+        bDelFlag: true, //是否删除
+        listFlow, //工作流列表
+        listFile: this.credentialsList,//上传凭证照片列表
+        listViewPoint: this.viewPointList,//视点列表
+      }
+      let save_change = await this.Request(SaveChange(prams));
+      if(save_change.StatusCode == 200){
+        this.$message({type:'success',message:save_change.Message,center:'true'})
+        this.resetForm('workForm');
+      }else{
+        this.$message({type:'error',message:save_change.Message?save_change.message:'后台异常',center:'true'})
+      }
+    },
+    //风险控制
+    async publishRisk() {
+      //风险管理
+      // diffenform: {
+      //   //form表单
+      //   theme: "",
+      //   qt: "",
+      //   initiator: "",  //发起人
+      //   person: [],  //接收人
+      //   startTime: "",  //发起时间
+      //   describe: "",  //问题描述
+      //   completionTime: "",  //整改截止时间
+      //   category: "1"  //风险类型
+      // },
+      // let prams = {
+      //   CurUserID: Number(this.userID),   //当前用户ID
+      //   ProjectId: this.projectId,//项目ID
+      //   Subject: this.ruleForm.title,//主题
+      //   Category: this.ruleForm.radio,//类型，质量为1，安全为2
+      //   ProblemType: this.ruleForm.problem,//问题类型
+      //   Initiator: Number(this.userID),//发起人
+      //   InitiateTime: require('moment')(this.ruleForm.beginTime).format('YYYY-MM-DD'),//发起时间
+      //   Problem: this.ruleForm.desc,//问题描述
+      //   DeadLine: require('moment')(this.ruleForm.time).format('YYYY-MM-DD'),//整改截止时间
+      //   listViewpoints: this.viewPointList,//视点列表
+      //   PhotoList: this.photoList,//上传凭证照片列表
+      //   ReceiverList: this.ruleForm.people, //接收人列表
+      // }
+      let prams = {
+        CurUserID: Number(this.userID),   //当前用户ID 
+        ProjectId: this.projectId,//项目ID
+        Subject: this.diffenform.theme,//主题
+        Category: this.diffenform.category,//类型，质量为1，安全为2
+        ProblemType: this.diffenform.qt,//问题类型
+        Initiator: Number(this.userID),//发起人
+        InitiateTime: require('moment')(this.diffenform.startTime).format('YYYY-MM-DD'),//发起时间
+        Problem: this.diffenform.describe,//问题描述
+        DeadLine: require('moment')(this.diffenform.completionTime).format('YYYY-MM-DD'),//整改截止时间
+        listViewpoints: this.viewPointList,//视点列表
+        PhotoList: this.photoList,//上传凭证照片列表
+        ReceiverList: this.diffenform.person, //接收人列表
+        Building: this.diffenform.building,  //楼栋
+        Floor: this.diffenform.floor  //楼层
+      }
+      let publish_risk = await this.Request(PublishRisk(prams));
+      if(publish_risk.StatusCode == 200){
+        this.$message({type:'success',message:publish_risk.Message,center:'true'})
+        this.resetForm('questionForm');
+      }else{
+        this.$message({type:'error',message:publish_risk.Message?publish_risk.message:'后台异常',center:'true'})
+      }
+    },
+    //模型ID
+    async getDefaultModelId() {
+      //获取默认模型ID
+      let defaultModelId = await this.Request(GetDefaultModelId({projectId: this.projectId}))
+      if(defaultModelId.StatusCode == 200){
+        this.defaultModelID = defaultModelId.Result
+      }else{
+        this.$message({type:'error',message:defaultModelId.message?defaultModelId.message:'后台异常',center:'true'})
+      }
+    },
+    //上传Base64String 图片
+    async uploadBase64Img() {
+      let upload_base64_img = await this.Request(UploadBase64Img({fileext: this.fileext, Base64Photo: this.view_point}));
+      if (upload_base64_img.StatusCode === 200) {
+        if (upload_base64_img.Detiel.length != 0) {
+          this.upload_base64_img = upload_base64_img.Detiel
+          // this.currentState()
+          this.viewPointList.push({
+            // ProjectID: this.projectId,
+            ModelID: this.defaultModelID,
+            State: this.stateStr,
+            Snapshot:  this.upload_base64_img[0].TokenUrL + this.upload_base64_img[0].smallPhotoURL,
+            TokenUrL: this.upload_base64_img[0].TokenUrL,
+            smallPhotoURL: this.upload_base64_img[0].smallPhotoURL
+          })
+        } else {
+          this.$message({ type: "error", message: "无数据", center: "true" })
+        }
+      } else {
+        this.$message({type: "error",message: upload_base64_img.message ? upload_base64_img : "后台异常",center: "true"})
+      }
+      this.isAddView = true;
+    },
+    //获取单位列表 
+    async orgList() {
+      let org_list = await this.Request(GetOrgList({projectId: this.projectId}));
+      if (org_list.StatusCode === 200) {
+        if (org_list.Detiel.length != 0) {
+          this.org_list = org_list.Detiel
+        } else {
+          this.$message({ type: "error", message: "无数据", center: "true" })
+        }
+      } else {
+        this.$message({type: "error",message: org_list.message ? org_list : "后台异常",center: "true"})
+      }
+    },
+    //按公司获取部门数据列表
+    async deptList() {
+      let dept_list = await this.Request(GetDeptList({orgId: this.speakResponsibility}));
+      if (dept_list.StatusCode === 200) {
+        if (dept_list.Detiel.length != 0) {
+          this.dept_list = dept_list.Detiel
+        } else {
+          this.$message({ type: "error", message: "无数据", center: "true" })
+        }
+      } else {
+        this.$message({type: "error",message: dept_list.message ? dept_list : "后台异常",center: "true"})
+      }
+    },
+    //获取人员列表
+    async userListByDept() {
+      let user_list_by_dept = await this.Request(GetUserListByDept({projectId: this.projectId, orgId: this.speakResponsibility, deptId: this.speakClass}));
+      if (user_list_by_dept.StatusCode === 200) {
+        if (user_list_by_dept.Detiel.length != 0) {
+          this.user_list_by_dept = user_list_by_dept.Detiel
+        } else {
+          this.$message({ type: "error", message: "无数据", center: "true" })
+        }
+      } else {
+        this.$message({type: "error",message: user_list_by_dept.message ? user_list_by_dept : "后台异常",center: "true"})
+      }
+    },
+    //获取楼栋信息
+    async getBuilding() {
+      let building = await this.Request(SetGetBuilding({projectId: this.projectId}));
+      if (building.StatusCode === 200) {
+        if (building.Detiel.length != 0) {
+          this.building = building.Detiel
+        } else {
+          this.$message({ type: "error", message: "无数据", center: "true" })
+        }
+      } else {
+        this.$message({type: "error",message: building.message ? building : "后台异常",center: "true"})
+      }
+    },
+    //获取专业信息
+    async specialtybyBuilding() {
+      let specialtyby_building = await this.Request(GetSpecialtybyBuilding({projectid: this.projectId, building: this.workForm.build}));
+      if (specialtyby_building.StatusCode === 200) {
+        if (specialtyby_building.Detiel.length != 0) {
+          this.specialtyby_building = specialtyby_building.Detiel
+        } else {
+          this.$message({ type: "error", message: "无数据", center: "true" })
+        }
+      } else {
+        this.$message({type: "error",message: specialtyby_building.message ? specialtyby_building : "后台异常",center: "true"})
+      }
+    },
+    //获取楼层信息
+    async floorbyBuilding() {
+      let floorby_building = await this.Request(GetFloorbyBuilding({projectid: this.projectId, building: this.workForm.build, Specialty: this.workForm.techology}));
+      if (floorby_building.StatusCode === 200) {
+        if (floorby_building.Detiel.length != 0) {
+          this.floorby_building = floorby_building.Detiel
+        } else {
+          this.$message({ type: "error", message: "无数据", center: "true" })
+        }
+      } else {
+        this.$message({type: "error",message: floorby_building.message ? floorby_building : "后台异常",center: "true"})
+      }
+    },
+    //获取沟通类型列表
+    async comTypeList() {
+      let com_type_list = await this.Request(GetComTypeList());
+      if (com_type_list.StatusCode === 200) {
+        if (com_type_list.Detiel.length != 0) {
+          this.com_type_list = com_type_list.Detiel
+        } else {
+          this.$message({ type: "error", message: "无数据", center: "true" })
+        }
+      } else {
+        this.$message({type: "error",message: com_type_list.message ? com_type_list : "后台异常",center: "true"})
+      }
+    },
+    //获取风险管理问题类型列表
+    async riskTypeList() {
+      let risk_type_list = await this.Request(GetRiskTypeList());
+      if (risk_type_list.StatusCode === 200) {
+        if (risk_type_list.Detiel.length != 0) {
+          this.risk_type_list = risk_type_list.Detiel
+        } else {
+          this.$message({ type: "error", message: "无数据", center: "true" })
+        }
+      } else {
+        this.$message({type: "error",message: risk_type_list.message ? risk_type_list : "后台异常",center: "true"})
+      }
+    },
+    /**
+     * @name 移除视点
+     * @param {} index 视点索引
+     */
+    onRemove(index) {
+      this.$alert("是否确认删除？", "提示！", {
+        confirmButtonText: "确定",
+        callback: action => {
+          if (action == "confirm") {
+            this.viewPointList.splice(index, 1);
+          }
+        }
+      });
+    },
+    //获取所有接收人员信息列表
+    async allUserList() {
+      let all_user_list = await this.Request(GetAllUserList({projectId: this.projectId}));
+      if (all_user_list.StatusCode === 200) {
+        if (all_user_list.Detiel.length != 0) {
+          this.all_user_list = all_user_list.Detiel
+        } else {
+          this.$message({ type: "error", message: "无数据", center: "true" })
+        }
+      } else {
+        this.$message({type: "error",message: all_user_list.message ? all_user_list : "后台异常",center: "true"})
+      }
+    },
+    //工作流程添加同步
+    returnName(arr ,id ) {
+      let nameObj = null
+      for(let i = 0; i<arr.length;i++) {
+        if(arr[i].ID ===id || arr[i].id === id) {
+          nameObj = arr[i]
+          return nameObj
+        }
+      }
+      return nameObj
+    },
+
+
+    /**
+     * 获取问题类型
+     */
+    getQuestionType() {
+      this.Request(GetDictInfoList({ProjectID:localStorage.getItem("projectid"), DICode: "风险类型"})).then(data => {
+        if (data.StatusCode === 200) {
+          this.questionType = [];
+          for (let i = 0; i < data.Detiel.length; i++) {
+            let Option1 = {};
+            Option1.label = data.Detiel[i].cDIName;
+            Option1.value = data.Detiel[i].cDIValue;
+            this.questionType.push(Option1);
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+      });
+    },
+    /**
+     * 获取接收人数据
+     */
+    getReceiver() {
+      this.Request(
+        GetAllUserList({ projectId: localStorage.getItem("projectid") })
+      ).then(data => {
+        if (data.StatusCode === 200) {
+          this.receiver = [];
+          for (let i = 0; i < data.Detiel.length; i++) {
+            let Option1 = {};
+            Option1.label = data.Detiel[i].text;
+            Option1.value = data.Detiel[i].id;
+            this.receiver.push(Option1);
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+      });
+    },
+    /**
+     * 上传：文件状态改变时的钩子，添加文件、上传成功和上传失败时都会被调用
+     */
+    async uploadPicture(file) {
+      let params = [
+        {
+          key: "files",
+          value: file.raw
+        }
+      ];
+      let data = await this.Request(UploadImages(params));
+      if (data.StatusCode == 200) {
+        if(data.Detiel.length > 0){
+          this.photoList.push({
+            Id: data.Detiel[0].Id, //上传后的文件名
+            URL: data.Detiel[0].URL, //文件地址
+            smallPhotoURL: data.Detiel[0].smallPhotoURL, //如果存在小图则返回小图地址
+            Type: data.Detiel[0].Type, //文件类型
+            TokenUrL: data.Detiel[0].TokenUrL //域名地址
+          });
+        }else{
+          this.$message({
+            type: "error",
+            message: data.message ? data.message : "图片上传失败",
+            center: "true"
+          });
+        }
+      } else {
+        this.$message({
+          type: "error",
+          message: data.message ? data.message : "后台异常",
+          center: "true"
+        });
+      }
+    },
+    // 收集构件ID 并让选中的高亮
+    onModeHighlight(val) {
+      this.defaultModelID = val.objectId;
+      if (this.isRelevance) {
+        this.eids.push(val.objectId);
+        this.eids = Array.from(new Set(this.eids));
+      }
+    },
+
+  },
+  computed: {
+    ...mapGetters(['getIsViewAdded']),
+    getViewer3d() {
+      return this.$store.getters.getViewer3d
+    },
+    fromBoxHeight(){
+      return (Number(document.documentElement.clientHeight) - 90) + "px";
+    }
+  },
+  watch:{
+    getViewer3d(val){
+      this.elementIdS.push(val.elementId);
+      this.onModeHighlight(val);
+    },
+    getIsViewAdded(val){
+      if(val){
+        document.getElementsByClassName('bf-toolbar-bottom')[0].style.display= 'block'
+        document.getElementsByClassName('bf-tree-toolbar')[0].style.display= 'block'
+      }
+    }
+  }
+};
+</script>
+<style>
+.container-3d-view {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  font-size: 18px;
+   background-color: #f5f6fa;
+}
+.three_d,
+.three_d > img {
+  width: 100%;
+  height: 100%;
+}
+.view_model {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #f5f6fa;
+  /* border: 1px solid red; */
+  box-sizing: border-box;
+  background-color: #f5f6fa;
+  /* padding-left: 8%; */
+ 
+}
+
+.container-3d-view .view_model .model-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* 表单 */
+.my_other_from {
+  position: absolute;
+  /* height: 96%; */
+  width: 700px;
+  top: 20px;
+  right: 20px;
+  overflow: auto;
+  z-index:1000;
+}
+.other_from {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+}
+.my_other_from::-webkit-scrollbar {
+  display: none;
+}
+
+/* 合并复制过来的 */
+.froms {
+  background: white;
+  height: 100%;
+  border: 1px solid #efeff2;
+  z-index: 1000;
+}
+.btn {
+  flex-direction: row-reverse;
+  float:right;
+  z-index:1000;
+}
+.btn > button:nth-child(1) {
+  background: rgba(71, 117, 202, 1);
+  border: 1px solid rgba(71, 117, 202, 1);
+  font-size: 18px;
+}
+.btn > button:nth-child(2) {
+  background: rgba(69, 128, 255, 1);
+  border: 1px solid rgba(69, 128, 255, 1);
+  font-size: 18px;
+}
+.btn > button:nth-child(3) {
+  background: rgba(253, 161, 67, 1);
+  border: 1px solid rgba(253, 161, 67, 1);
+  font-size: 18px;
+}
+.btn > button {
+  margin-left: 20px;
+}
+
+.froms_title > span {
+  position: absolute;
+  right: 20px;
+  top:10px;
+}
+
+.froms_title {
+  position: fixed;
+  width: 700px;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 50px;
+  box-sizing: border-box;
+  border-radius: 0px;
+  background-color: #435089;
+  color: rgba(255, 255, 255, 1);
+  box-shadow: 0px 0px 1px 0px rgba(170, 170, 170, 1);
+  font-family: Roboto;
+  border: 1px solid rgba(255, 255, 255, 0);
+  z-index: 1000;
+  line-height: 42px;
+  padding-left: 40px;
+}
+.froms_content {
+  padding-top: 70px;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  font-size: 18px;
+}
+.tree_item_name1 {
+  position: relative;
+  left: 10px;
+  top: 10px;
+}
+
+/* 表单按钮样式 */
+.submit_btn {
+  color: #ffffff;
+  background-color: #4775ca;
+  border-radius: 5px;
+  vertical-align: middle;
+  font-size: 18px;
+  padding: 12px 44px;
+  margin-left: 30px;
+}
+.return_btn {
+  color: #ffffff;
+  background-color: #999999;
+  border-radius: 5px;
+  vertical-align: middle;
+  font-size: 18px;
+  padding:12px 44px;
+}
+.align_center {
+  text-align: center;
+}
+/* 构件关联 */
+.box_relative_img {
+  border: 1px solid #e6e6e6;
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  padding: 9px;
+  box-sizing: border-box;
+  background-color: #f8f8f8;
+  cursor: pointer;
+}
+/* 发起变更里面的工作流程 */
+.from_div_water {
+  width: 100%;
+  height: 380px;
+  box-sizing: border-box;
+  padding: 10px 20px;
+}
+.from_div_water > p {
+  font-weight: bolder;
+  color: #555555;
+}
+.from_div_select {
+  height: 60px;
+}
+
+.model_list_add_img {
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  position: relative;
+  top: 20px;
+}
+.from_div_water_add {
+  background-color: #eff3ff;
+  border-radius: 8px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-left: 20px;
+  margin-top: 10px;
+  text-align: center;
+  font-size: 18px;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  max-height: 210px;
+}
+.model_list_add_span > span {
+  background-color: #ffffff;
+  padding: 11px 42px;
+  display: inline-block;
+  border-radius: 5px;
+}
+.model_list_add_span > b {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  background-color: #4775c9;
+  border-radius: 50%;
+  color: #ffffff;
+  text-align: center;
+  margin-right: 20px;
+}
+.dash_right_line {
+  box-sizing: border-box;
+  border-right: 1px dashed #d8d8d8;
+}
+.model_list_del_img {
+  margin-left: 15px;
+}
+.model_list_del_img > img {
+  width: 40px;
+  height: auto;
+  position: relative;
+  top: 10px;
+}
+.view_position_img {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 2px solid #435089;
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin-left: 15px;
+  padding: 10px;
+  position: relative;
+  top: 4px;
+}
+.view_position_img > img {
+  width: 20px;
+  height: auto;
+}
+/* 下拉框变色---没有变色 */
+.froms_content .el-select .el-input__suffix {
+  background: rgba(67, 80, 137, 1);
+  border-radius: 0px 4px 4px 0px;
+  right: 0;
+  width: 40px;
+}
+
+.froms_content  .el-select .el-icon-arrow-up:before {
+  content: "\e60c";
+  color: rgba(255, 255, 255, 1);
+}
+div.viewpoint {
+  width: 145px;
+  height: 145px;
+  border: 1px dashed #999;
+  border-radius: 6px;
+  text-align: center;
+  line-height: 145px;
+  display: inline-block;
+  vertical-align: middle;
+}
+.viewpoint+.viewpoint{
+  margin-left: 10px;
+}
+.viewpoint img {
+  width: 100%;
+  height: 100%;
+}
+.viewpoint img.camera {
+  width: 28px;
+  height: 24px;
+}
+.el-form-item__label{ 
+  font-size:18px !important;
+}
+.relevance {
+  width: 64px;
+  height: 40px;
+  border: 1px solid #E5E5E5;
+  background: #F8F8F8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+</style>
+<style>
+/* 隐藏模型部分工具条 */
+.bf-button.gld-bf-zoomrect ,
+.bf-button.gld-bf-measure,
+.bf-button.bf-toolbar-button.gld-bf-sectionbox,
+.bf-button.gld-bf-map,
+.bf-button.gld-bf-properties,
+.bf-button.gld-bf-settings,
+.bf-button.gld-bf-information,
+.bf-button.gld-bf-maximize,
+.bf-toolbar.bf-toolbar.bf-tree-toolbar{
+    display: inline-block;
+}
+.bf-button.gld-bf-home:hover,.bf-button.gld-bf-firstperson:hover{
+  background-color: rgba(0,0,0,.9)
+}
+.bf-toolbar.bf-toolbar-bottom{
+  left:initial !important;
+  right:35% !important;
+  transform:initial !important; 
+  background-color: rgba(0,0,0,.8);
+  border: none;
+}
+</style>

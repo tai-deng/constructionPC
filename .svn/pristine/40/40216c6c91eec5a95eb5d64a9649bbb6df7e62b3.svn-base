@@ -1,0 +1,1601 @@
+<template>
+  <div class="model_main_all">
+    <div class="model_btn_head">
+      <el-button class="add_btn_head" @click="addSingleModel()">
+        <i class="icon_add">
+          <img src="../../../../assets/imgs/add_model.png" alt>
+        </i>
+        新增建筑单体
+      </el-button>
+      <el-button class="upload_btn_head" @click="openUploadModel">上传模型</el-button>
+      <el-button class="redel_btn_head" :disabled="isTimeTogether" @click="openTogetModel()">合并模型</el-button>
+    </div>
+    <div class="model_main_body">
+      <div class="model_body_panel">
+        <div class="model_body_panel_title">整合模型</div>
+        <div class="model_body_panel_body" v-loading="togetherLoading">
+          <!-- 手风琴 -->
+          <!-- <el-collapse v-model="activeName" accordion>
+                        <el-collapse-item  v-for="(item,index) in tagetherMoudle" v-bind:key='item.index' :title="item.Name" :name="index">
+                            <div class="model_panel_list_body"  v-show="item.Thumbnails!=''">
+                             <img :src="item.Thumbnails" alt="">
+                                <div class="showModelList_1">
+                                   更新日期：{{item.dUpdateTime}} 
+                                   <div class="float_img">
+                                        <img src='../../../../assets/imgs/takeOut.png' class="showModelImg"/>
+                                        <div class='showModelList'>
+                                            <ul>
+                                                <li  @click="delTogetModel(item)">删除</li>
+                                                <li>更新模型</li>
+                                                <li>历史版本</li>
+                                            </ul>
+                                        </div>
+                                   </div>
+                                   <img src='../../../../assets/imgs/shaveModel.png' @click="shaveOther(item)"/>
+                                   
+                                </div>
+                            </div>
+                        </el-collapse-item>
+          </el-collapse>-->
+          <div
+            class="model_panel_list model_panel_border"
+            v-for="(item,index) in tagetherMoudle"
+            v-bind:key="item.index"
+          >
+            <div class="model_panel_list_title">
+              <span>{{item.Name}}</span>
+            </div>
+            <div class="model_panel_list_body"  v-loading="item.loading"  
+                    v-show="(item.loading==false && item.Thumbnails=='')?false:true"
+                    element-loading-background="rgba(0, 0, 0, 0.1)"
+                    element-loading-text="拼命上传中"
+                    element-loading-spinner="el-icon-loading">
+              <img v-if="item.Thumbnails==''?false:true" :src="tagetherMoudle[index].Thumbnails" alt>
+              <div class="showModelList_1">
+                更新日期：{{item.dUpdateTime}}
+                <div class="float_img">
+                  <img src="../../../../assets/imgs/takeOut.png" class="showModelImg">
+                  <div class="showModelList1">
+                    <ul>
+                      <li @click="delTogetModel(item)">删除</li>
+                      <!-- <li>更新模型</li> -->
+                    </ul>
+                  </div>
+                </div>
+                <!-- <img src="../../../../assets/imgs/shaveModel.png" @click="shaveOther(item.ModelID)"> -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="model_body_panel">
+        <div class="model_body_panel_title">场地模型</div>
+        <div class="model_body_panel_body" v-loading="glassLoading">
+          <div class="model_panel_list model_panel_border">
+            <div class="model_panel_list_title" @click="keepNumber(0,0)">
+              <span>场地模型</span>
+               <el-upload
+                  class="avatar-uploader"
+                  action
+                  :show-file-list="false"
+                  :on-change="addModule"
+                  :auto-upload="false"
+                >
+                  <i class="model_panel_list_img">
+                    <img src="../../../../assets/imgs/upload_model.png" alt>
+                  </i>
+                </el-upload>
+              </div>
+              <!-- &&(baseball[baseball.length-1].Thumbnails=='null'?false:true) -->
+              <div class="model_panel_list_body" v-loading="baseball.length=='0'?false:(baseball[baseball.length-1].loading==false?(baseball[baseball.length-1].Thumbnails=='null'?true:false):true)" 
+                    v-show="baseball.length=='0'?false:(baseball[baseball.length-1].loading==false?(baseball[baseball.length-1].Thumbnails=='null'?false:true):true)"
+                    element-loading-background="rgba(0, 0, 0, 0.1)"
+                    element-loading-text="拼命上传中"
+                    element-loading-spinner="el-icon-loading">
+                <img v-if="baseball.length=='0'?false:(baseball[baseball.length-1].Thumbnails!='null'?true:false)" :src="baseball[baseball.length-1].Thumbnails" alt>
+                <div class="showModelList_1">
+                  更新日期：{{baseball.length=='0'?'':baseball[baseball.length-1].dUpdateTime}}
+                  <div class="float_img">
+                    <img src="../../../../assets/imgs/takeOut.png" class="showModelImg">
+                    <div class="showModelList">
+                      <ul>
+                        <li @click="delModelSingle(baseball[baseball.length-1].FileID)">删除</li>
+                        <li @click="getNew(0,0)" class="model_upload_li" >
+                          <el-upload
+                            class="avatar-uploader uploadgetchange"
+                            action
+                            :show-file-list="false"
+                            :on-change="addModule"
+                            :auto-upload="false"
+                          ></el-upload>
+                          <span style="width:100%;height:100%;">更新模型</span>
+                        </li>
+                        <li @click="history(0,0)">历史版本</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <img src="../../../../assets/imgs/shaveModel.png"
+                    @click="shaveOther(baseball[baseball.length-1].FileID)">
+                </div>
+              </div>
+          </div>
+        </div>
+      </div>
+      <!-- 建筑单体 -->
+      <div class="model_body_panel_all" v-loading="allLoading">
+        <div class="model_body_panel" v-for="(list,index) in lists" v-bind:key="list.index">
+          <div class="model_body_panel_title">
+            <i>
+              <img
+                class="model_body_panel_title_del_img"
+                src="../../../../assets/imgs/model_del_tree.png"
+                alt
+                v-on:click="delModel(index)"
+              >
+            </i>
+            <input
+              class="model_change_name"
+              @blur="addModel(index)"
+              v-model="lists[index].BuildingName"
+              disabled="true"
+            >
+          </div>
+          <div class="model_body_panel_body">
+            <div class="model_panel_list" v-for="(item,i) in list.DictInfoList" v-bind:key="item.i">
+              <div
+                class="model_panel_list_title"
+                @click="keepNumber(list.ID,list.DictInfoList[i].ID)"
+              >
+                <span>{{item.cDIName}}</span>
+                <el-upload
+                  class="avatar-uploader"
+                  action
+                  :show-file-list="false"
+                  :on-change="addModule"
+                  :auto-upload="false"
+                >
+                  <i class="model_panel_list_img">
+                    <img src="../../../../assets/imgs/upload_model.png" alt>
+                  </i>
+                </el-upload>
+              </div>
+              <div class="model_panel_list_body" v-loading="item.loading"  v-show="(item.loading==false && item.ModeFileList.length=='0')?false:true"
+                    element-loading-background="rgba(0, 0, 0, 0.1)"
+                    element-loading-text="拼命上传中"
+                    element-loading-spinner="el-icon-loading">
+                <img
+                  v-if="item.ModeFileList.length=='0'?false:true"
+                  :src="item.ModeFileList[item.ModeFileList.length-1].Thumbnails"
+                  alt
+                >
+                <div class="showModelList_1">
+                  更新日期：
+                  <span v-if="item.ModeFileList.length=='0'?false:true">
+                    {{item.ModeFileList[item.ModeFileList.length-1].dUpdateTime==null?'':item.ModeFileList[item.ModeFileList.length-1].dUpdateTime.split('T')[0]}}
+                  </span>
+                  <div class="float_img">
+                    <img src="../../../../assets/imgs/takeOut.png" class="showModelImg">
+                    <div class="showModelList">
+                      <ul>
+                        <li @click="delModelSingle(item.ModeFileList[item.ModeFileList.length-1].FileID)">删除</li>
+                        <li @click="getNew(list.ID,item.ID)" class="model_upload_li" >
+                          <el-upload
+                            class="avatar-uploader uploadgetchange"
+                            action
+                            :show-file-list="false"
+                            :on-change="addModule"
+                            :auto-upload="false"
+                          ></el-upload>
+                          <span style="width:100%;height:100%;">更新模型</span>
+                        </li>
+                        <li @click="history(list.ID,item.ID)">历史版本</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <img
+                    src="../../../../assets/imgs/shaveModel.png"
+                    @click="shaveOther(item.ModeFileList[0].FileID)"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 分享模态框 -->
+    <div v-if="showShare" class="model_show_time">
+      <div class="model_show_time_div">
+        <div class="model_title">
+          分享链接
+          <i>
+            <img
+              class="model_show_time_img"
+              src="../../../../assets/imgs/close_model.png"
+              alt="关闭模态框"
+              @click="closeModel()"
+            >
+          </i>
+        </div>
+        <div class="model_body">
+          <el-input
+            class="model_body_input"
+            v-model="showModelInput"
+            disabled="disabled"
+            placeholder="请输入内容"
+          ></el-input>
+          <el-button
+            class="model_body_repeat_btn"
+            v-clipboard:copy="showModelInput"
+            v-clipboard:success="onCopy"
+            v-clipboard:error="onError"
+          >复制链接</el-button>
+          <div class="model_body_text">
+            <p>*温馨提示：复制链接分享打开即可查看模型</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 合并模态框 -->
+    <div v-if="showTogetherModule" class="model_toget_all">
+      <div class="model_toget_all_div">
+        <div class="model_title">
+          合并模型
+          <i>
+            <img
+              class="model_show_time_img"
+              src="../../../../assets/imgs/close_model.png"
+              alt="关闭模态框"
+              @click="closeTogetModel()"
+            >
+          </i>
+        </div>
+        <div class="model_body">
+          <div class="model_body_select">
+            <el-select
+              class="model_list_select"
+              v-model="selectOption"
+              @change="saveSelectOption"
+              placeholder="选择建筑单体"
+            >
+              <el-option
+                v-for="item in selectoptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+            <el-select
+              class="model_list_select"
+              v-model="selectMedel"
+              @change="saveSelectModel"
+              placeholder="建筑模型"
+            >
+              <el-option
+                v-for="item in model"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+
+            <i class="model_list_add_img" @click="addSelectModel()">
+              <img src="../../../../assets/imgs/model_add.svg" alt>
+            </i>
+          </div>
+          <div class="model_body_span">
+            <p>已添加模型</p>
+            <div class="model_ul_list">
+              <ul>
+                <li v-for="(list,index) in arr" v-bind:key="list.index">
+                  <div>
+                    <span class="model_list_span">{{list.singleName}}</span>
+                    <span class="model_list_span">{{list.buildingName}}</span>
+                    <i class="model_list_del_img" v-on:click="arr.splice(index, 1)">
+                      <img src="../../../../assets/imgs/del_model.png" alt>
+                    </i>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div class="model_body_footer">
+            <el-button
+              class="model_body_footer_btn"
+              :disabled="arr.length<2?true:false"
+              @click="getTogetherBtn"
+            >确认合并</el-button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 上传模态框 -->
+    <div v-if="showUploadModule" class="model_upload">
+      <div class="model_upload_all_div">
+        <div class="model_title">
+          上传模型
+          <i>
+            <img
+              class="model_show_time_img"
+              src="../../../../assets/imgs/close_model.png"
+              alt="关闭模态框"
+              @click="closeUploadModel()"
+            >
+          </i>
+        </div>
+        <div class="model_body">
+          <div class="model_body_select">
+            <el-select
+              class="model_list_select model_list_select_margin"
+              @change="changeSelectModel"
+              v-model="selectOption1"
+              placeholder="选择建筑单体"
+            >
+              <el-option
+                v-for="item in selectoptions1"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+            <el-select class="model_list_select" v-model="selectMedel1" placeholder="建筑模型">
+              <el-option
+                v-for="item in model1"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+          </div>
+          <div class="model_body_span">
+            <p>点击上传模型</p>
+            <div class="model_upload_list_small">
+              <ul>
+                <li>
+                  <div class="model_upload_img">
+                    <el-upload
+                      class="avatar-uploader"
+                      style="width:100%"
+                      action
+                      :show-file-list="false"
+                      :on-change="handleAvatarSuccess"
+                      v-loading.fullscreen.lock="fullscreenLoading"
+                      element-loading-background="rgba(0, 0, 0,0.1)"
+                      element-loading-text="拼命上传中"
+                      element-loading-spinner="el-icon-loading"
+                      :auto-upload="false"
+                    >
+                      <i class="el-icon-plus avatar-uploader-icon"></i>
+                    </el-upload>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <el-dialog title="新增提示" :visible.sync="centerDialogVisible" width="30%" center>
+      <p>
+        请输入建筑单体名称
+        <el-input v-model="writeName"></el-input>
+      </p>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="clearName">取 消</el-button>
+        <el-button type="primary" @click="getname">确 定</el-button>
+      </span>
+    </el-dialog>
+    <el-dialog title="合并提示" :visible.sync="togetherVisible" width="30%" center>
+      <p>
+        请输入集成模型名称名称
+        <el-input v-model="togetherName"></el-input>
+      </p>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="cleartogetherName">取 消</el-button>
+        <el-button type="primary" @click="getTogetherAll">确 定</el-button>
+      </span>
+    </el-dialog>
+    <el-dialog title="提示" :visible.sync="delVisible" width="30%" center>
+      <p>是否确定删除建筑单体？</p>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="delVisibleBtn">取 消</el-button>
+        <el-button type="primary" @click="agressBtn">确定</el-button>
+      </span>
+    </el-dialog>
+  </div>
+</template>
+<script>
+import {
+  AddSingBuilding,
+  GetSingBuildingList,
+  UpdateSingBuilding,
+  DeleteSingBuilding,
+  UploadBIMFaceAddModelFile,
+  GetList,
+  GetDictInfoList,
+  MergeFile,
+  GetModelList,
+  DelModelFile,
+  GetSingleFileViewToken,
+  DeleteMergeFile,GetModelByModelID
+} from "@/api/api.js";
+import { constants } from "crypto";
+import { setInterval, clearInterval } from 'timers';
+// import Vue from "vue";
+export default {
+  data() {
+    return {
+      isTimeTogether: false, //合并按钮是否禁用，上传模型以后，可以点击
+      showModelInput: "", //分享模态框中的输入框
+      selectOption: "", //合并模态框上的下拉--选择建筑单体
+      selectoptions: [{ value: "选择建筑单体", label: "选择建筑单体" }],
+      selectMedel: "", //合并模态框上的下拉--选择建筑模型
+      model: [{ value: "选择建筑模型", label: "选择建筑模型" }],
+      selectOption1: "", //上传模态框上的下拉--选择建筑单体
+      selectoptions1: [{ value: "选择建筑单体", label: "选择建筑单体" }],
+      selectMedel1: "", //上传模态框上的下拉--选择建筑模型
+      model1: [{ value: "选择建筑模型", label: "选择建筑模型" }],
+      selectoptionsName: "", //合并模态框上的-选择建筑单体--名称用于显示并加到arr数组中
+      selectMedelName: "", //合并模态框上的-选择建筑模型--名称用于显示并加到arr数组中
+      arr: [],
+      tableList: "",
+      dataList: {
+        text: "未命名",
+        textNameDis: true
+      },
+      lists: [], //添加的列表
+      number: 0, //新增单体的时候，名字必须不一样
+      showShare: false, //分享模态框是否显示
+      showTogetherModule: false, //合并模态框是否显示
+      showUploadModule: false, //上传模态框
+      centerDialogVisible: false, //添加建筑单体时候
+      writeName: "", //添加建筑单体模态框上的输入框
+      delVisible: false, //删除建筑单体模态框
+      delIndex: "", //点击删除时候，记录index
+
+      uploadId: "", //上传模型的楼栋---点击小图标的时候要传的参数
+      uploadN: "", //建筑模型/结构模型/机电模型---点击小图标的时候要传的参数
+
+      fullscreenLoading: false, //上传模态框--显示
+      togetherVisible: false, //合并模态框--输入名字
+      togetherName: "", ///合并模态框--输入名字--输入框
+
+      baseball: [], //场地模型
+      tagetherMoudle: [], //整合模型
+      activeName: "0", //整合模型--手风琴效果
+
+      listOne: [], //每个建筑单体中的模型分类
+      timeSender:null,  //合并模型的定时器
+      togetherLoading:false,//整合模型加载时候
+      glassLoading:false,//场地模型加载的时候
+      allLoading:false,//建筑单体加载的时候
+    };
+  },
+  created() {
+    this.GetDictInfoList();
+  },
+  methods: {
+    // handlePreview(file){},
+    //关闭分享模态框
+    closeModel: function() {
+      this.showShare = false;
+    },
+    //打开分享模态框
+    openModel: function() {
+      this.showShare = true;
+    },
+    //关闭合并模态框
+    closeTogetModel: function() {
+      this.arr = []; //清掉合并的列表
+      this.showTogetherModule = false;
+    },
+    //打开合并模态框
+    openTogetModel: function() {
+      if(sessionStorage.getItem('menuType') !== "2"){
+        this.$message({type: "warning",message: "您没有权限操作",center: "true"});
+        return;
+      }
+      this.showTogetherModule = true;
+      //并将添加的lists中列表的主标题加入到（建筑单体的下拉中）-----另外模型下拉的数组要改（未完成） baseball
+      this.selectoptions = [{ value: "", label: "选择建筑单体" }];
+      this.arr = [];
+      for (var i = 0; i < this.lists.length; i++) {
+        this.selectoptions.push({
+          value: this.lists[i].ID,
+          label: this.lists[i].BuildingName
+        });
+      }
+      if (this.baseball.length > 0) {
+        this.selectoptions.push({
+          value: this.baseball[this.baseball.length-1].ID,
+          label: "场地模型"
+        });
+      }
+    },
+    //打开上传模态框
+    openUploadModel() {
+      if(sessionStorage.getItem('menuType') !== "2"){
+        this.$message({type: "warning",message: "您没有权限操作",center: "true"});
+        return;
+      }
+      this.showUploadModule = true;
+      //并将添加的lists中列表的主标题加入到（建筑单体的下拉中）-----另外模型下拉的数组要改（未完成）
+      this.selectoptions1 = [
+        { value: "选择建筑单体", label: "选择建筑单体" },
+        { value: "0", label: "场地模型" }
+      ];
+      this.arr = [];
+      for (var i = 0; i < this.lists.length; i++) {
+        this.selectoptions1.push({
+          value: this.lists[i].ID,
+          label: this.lists[i].BuildingName
+        });
+      }
+    },
+    //关闭上传模态框
+    closeUploadModel: function() {
+      this.showUploadModule = false;
+    },
+    //新增建筑单体按钮--打开模态框
+    addSingleModel: function() {
+      if(sessionStorage.getItem('menuType') !== "2"){
+        this.$message({type: "warning",message: "您没有权限操作",center: "true"});
+        return;
+      }
+      this.centerDialogVisible = true;
+    },
+    //添加建筑单体模态框--取消
+    clearName() {
+      this.centerDialogVisible = false;
+      this.writeName = "";
+    },
+    //添加建筑单体模态框--确定
+    getname() {
+      this.allLoading=true;//建筑单体加载的时候
+      var post = {
+        projectId: localStorage.getItem("projectid"),
+        userId: localStorage.getItem("userId"),
+        buildName: this.writeName
+      };
+      this.Request(AddSingBuilding(post)).then(res => {
+        if (res.StatusCode === 200 && res.Message.length < 20) {
+          //输入的名字存在不相同的时候
+          this.centerDialogVisible = false;
+          this.getAll();
+          this.writeName = "";
+          this.$message({
+            type: "success",
+            message: "新增成功",
+            center: "true"
+          });
+        } else {
+          this.$message({
+            type: "error",
+            message: res.Message,
+            center: "true"
+          });
+          this.allLoading=false;
+        }
+        
+      });
+    },
+    //点击修改名字
+    changeName: function(e) {
+      this.lists[e].BuildingName = "";
+      this.lists[e].textNameDis = false;
+    },
+    //上传模态框上的下拉--包含场地模型
+    changeSelectModel() {
+      if (this.selectOption1 == "0") {
+        this.model1 = [
+          { value: "选择建筑模型", label: "选择建筑模型" },
+          { value: "0", label: "场地模型" }
+        ];
+      } else {
+        //this.listOne
+        this.model1 = this.listOne;
+      }
+    },
+    //合并模态框上面的选择建筑单体---记录名字（用于排序显示)
+    saveSelectOption() {
+      if (this.baseball.length > 0) {
+        if (this.selectOption == this.baseball[this.baseball.length-1].ID) {
+          this.model = [
+            { value: "选择建筑模型", label: "选择建筑模型" },
+            { value: "0", label: "场地模型" }
+          ];
+        } else {
+          this.model = this.listOne;
+        }
+      } else {
+        this.model = this.listOne;
+      }
+
+      for (var i = 0; i < this.selectoptions.length; i++) {
+        if (this.selectOption == this.selectoptions[i].value) {
+          this.selectoptionsName = this.selectoptions[i].label;
+        }
+      }
+    },
+    //合并模态框上面的选择模型的时候---记录名字（用于排序显示) selectMedelName
+    saveSelectModel() {
+      for (var i = 0; i < this.model.length; i++) {
+        if (this.selectMedel == this.model[i].value) {
+          this.selectMedelName = this.model[i].label;
+        }
+      }
+    },
+    //合并模态框上的点击添加信息
+    addSelectModel: function() {
+      if (this.selectOption == "" || this.selectMedel == "") {
+        return false;
+      }
+      var indexMax = this.arr.length - 1;
+      var text = {
+        index: indexMax,
+        single: this.selectOption,
+        building: this.selectMedel,
+        singleName: this.selectoptionsName,
+        buildingName: this.selectMedelName
+      };
+      this.arr.push(text);
+    },
+    //更新-再上传，默认显示数组中最后一个
+    getNew(i,n){
+      this.uploadN=n;
+      this.uploadId=i;
+    },
+    //加载页面的时候--查询所有
+    getAll() {
+      var that = this;
+      that.togetherLoading=true;//整合模型加载时候
+      that.glassLoading=true;//场地模型加载的时候
+      that.allLoading=true;//建筑单体加载的时候
+      that.lists = [];
+      that.baseball = [];
+      that.Request(GetModelList({ projectId: localStorage.getItem("projectid") }))
+        .then(res => {
+          if (res.StatusCode === 200) {
+            that.baseball= res.Result.ModeSiteList;
+            that.baseball.forEach(i => {
+              i.loading=false; 
+              i.dUpdateTime=i.dUpdateTime==null?'':i.dUpdateTime.split('T')[0];
+              this.$forceUpdate();
+            })
+            that.togetherLoading=false;
+            //场地模型
+            that.lists = [];
+            that.lists = res.Result.BuildingList; //获取建筑单体
+            //添加loading--用于上传的时候出现加载数据情况
+            for (var i = 0; i < that.lists.length; i++) {
+              that.lists[i].DictInfoList.forEach(element => {
+                element.loading=false; 
+                this.$forceUpdate(); //强制刷新，解决页面不会重新渲染的问题（在改变值的后面加上就可以了）
+              });
+            }
+            that.allLoading=false;
+            for (var z = 0; z < res.Result.ModelList.length; z++) {
+              res.Result.ModelList[z].dUpdateTime = res.Result.ModelList[z].dUpdateTime == null?"":res.Result.ModelList[z].dUpdateTime.split("T")[0];
+              res.Result.ModelList[z].loading=false;
+            }
+            that.tagetherMoudle = res.Result.ModelList;
+             that.glassLoading=false;
+          } else {
+            that.$message({
+              type: "error",
+              message: res.Message,
+              center: "true"
+            });
+          }
+        });
+    },
+    //删除单个模型 DelModelFile----bDelFlag-是否删除---TransStatus是指模型是否被整合
+    delModelSingle(item) {
+      if(sessionStorage.getItem('menuType') !== "2"){
+        this.$message({type: "warning",message: "您没有权限操作",center: "true"});
+        return;
+      }
+      this.allLoading=true;//建筑单体加载的时候
+      this.Request(DelModelFile({ fileId: item })).then(res => {
+        if (res.StatusCode === 200) {
+          this.$message({
+            type: "success",
+            message: res.Message,
+            center: "true"
+          });
+          this.getAll();
+        } else {
+          this.$message({
+            type: "error",
+            message: res.Message,
+            center: "true"
+          });
+        }
+        this.allLoading=false;//建筑单体加载的时候
+      });
+    },
+    //分享链接给别人---模态框-场地模型可以分享
+    shaveOther(item) {
+      var text1 = window.location.href;
+      var share = text1.split("allModel")[0];
+      this.Request(GetSingleFileViewToken({ fileId: item })).then(res => {
+        if (res.StatusCode === 200) {
+          var ViewToken = res.Detiel;
+          this.showShare = true;
+          this.showModelInput = share + "watchModel?ViewToken=" + ViewToken[0];
+        } else {
+          this.$message({type:"error",message:res.Message,center:"true"});
+        }
+      });
+    },
+    //删除整合模型
+    delTogetModel(item) {
+      if(sessionStorage.getItem('menuType') !== "2"){
+        this.$message({type: "warning",message: "您没有权限操作",center: "true"});
+        return;
+      }
+      this.Request(DeleteMergeFile({ modelId: item.ModelID })).then(res => {
+        if (res.StatusCode === 200) {
+          this.$message({type:"success",message:res.Message,center:"true"});
+          this.getAll();
+        } else {
+          this.$message({type: "error",message:res.Message,center:"true"});
+        }
+      });
+    },
+    //合并模态框上的合并按钮--弹出模态框--输入合并模型的名称
+    getTogetherBtn() {
+      this.togetherVisible = true;
+    },
+    //合并模态框上的合并按钮--弹出模态框--关闭
+    cleartogetherName() {
+      this.togetherVisible = false;
+    },
+    //输入合并模型名称的模态框上---发起合并的按钮 MergeFile
+    getTogetherAll() {
+      var sources = [];
+      for (var x = 0; x < this.arr.length; x++) {
+        var text = { fileId: "", specialty: "" };
+        if (this.arr[x].building == "0") {
+          text.fileId = this.baseball[this.baseball.length-1].FileID;
+          text.specialty = "场地";
+          sources.push(text);
+        }
+      }
+      for (var i = 0; i < this.lists.length; i++) {
+        for (var y = 0; y < this.arr.length; y++) {
+          var line = { fileId: "", specialty: "" };
+          if (this.arr[y].singleName == this.lists[i].BuildingName) {
+            var file = this.lists[i].DictInfoList.filter(
+              index => index.ID == this.arr[y].building
+            );
+            if (file[0].ModeFileList.length == "0") {
+              this.$message({
+                type: "error",
+                message: "合并模型数据中有空数据！",
+                center: "true"
+              });
+              this.togetherVisible = false;
+              return false;
+            }
+            //line.specialty在前面加了建筑单体的名称this.arr[y].singleName
+            line.fileId = file[0].ModeFileList[0].FileID;
+            line.specialty =this.arr[y].singleName+file[0].ModeFileList[0].Specialty;
+            sources.push(line);
+          }
+        }
+      }
+      var post = {
+        ProjectId: localStorage.getItem("projectid"),
+        name: this.togetherName,
+        sources: sources,
+        config: { loadOnDemand: true, fileType: "rvt" },
+        callback: ""
+      };
+      this.Request(MergeFile(post)).then(res => {
+        if (res.StatusCode == "0") {
+          this.$message({type: "error",message:"合并失败",center:"true"});
+        } else if (res.StatusCode == "200") {
+          //合并的时候转圈？
+          res.Detiel[0].loading=true;
+          this.tagetherMoudle.push(res.Detiel[0]);
+          if(res.Detiel[0].Thumbnails==null || res.Detiel[0].Thumbnails==''){
+            this.timeSender=setInterval(()=>{this.findTogether(res.Detiel[0])},60000)
+          }else{
+            res.Detiel[0].loading=false;
+          }
+        }
+      });
+      this.togetherVisible = false;
+    },
+    //查询整合模型的接口 GetModelByModelID
+    findTogether(item){
+      this.Request(GetModelByModelID({ModelID:item.ID})).then(res => {
+        if(res.StatusCode == "200"){
+            res.Detiel.loading=false;
+            this.tagetherMoudle[this.tagetherMoudle.length-1]=res.Detiel;
+            clearInterval(this.timeSender)
+        }else{
+          this.$message({type: "error", message: "整合模型已经成功，但是没有！",center: "true"});
+        }
+      })
+    },
+    //历史模型跳转---暂时   接收的时候this.$route.query.参数名
+    history(BuildingID,Category) {
+      this.$router.push({ path: "./history", query:{BuildingID:BuildingID,Category:Category} });
+    },
+    //建筑单体--修改名字时候-发起请求
+    addModel(index) {
+      this.load();
+      let text = {
+        projectId: localStorage.getItem("projectid"),
+        userId: localStorage.getItem("userId"),
+        buildName: this.lists[index].text,
+        buildId: this.lists[index].ID
+      };
+      this.Request(UpdateSingBuilding(text)).then(res => {
+        if (res.StatusCode === 200) {
+          this.$message({
+            type: "success",
+            message: res.Message,
+            center: "true"
+          });
+        } else {
+          this.$message({
+            type: "error",
+            message: res.Message,
+            center: "true"
+          });
+        }
+        this.$toast.clear();
+      });
+    },
+    //分享模态框上的----复制按钮成功提示
+    onCopy() {
+      this.$message({
+        message: `复制成功！`,
+        type: "success"
+      });
+    },
+    //分享模态框上的----复制按钮失败提示
+    onError() {
+      // this.$message.error(this.$t('prompt.copyFail'))
+      this.$message({
+        message: `复制失败！`,
+        type: "success"
+      });
+    },
+    //建筑单体--删除
+    delModel(index) {
+      this.delIndex = index;
+      this.delVisible = true;
+    },
+    //删除模态框上的取消按钮
+    delVisibleBtn() {
+      this.delVisible = false;
+      this.delIndex = "";
+    },
+    //删除模态框上的确定按钮
+    agressBtn() {
+      this.Request(
+        DeleteSingBuilding({ buildIds: this.lists[this.delIndex].ID })
+      ).then(res => {
+        if (res.StatusCode === 200) {
+          this.getAll();
+          this.delIndex = "";
+          this.delVisible = false;
+          this.$message({
+            type: "success",
+            message: res.Message,
+            center: "true"
+          });
+        } else {
+          this.$message({
+            type: "error",
+            message: res.Message,
+            center: "true"
+          });
+        }
+      });
+    },
+    //点击上传的小图标----上传模型 UploadBIMFaceAddModelFile
+    async addModule(res, file) {
+      if(sessionStorage.getItem('menuType') !== "2"){
+        this.$message({type: "warning",message: "您没有权限操作",center: "true"});
+        return;
+      }
+      //id是建筑单体的id,n是指-模型类型
+        if (this.uploadN == "0" && this.uploadId == "0") {
+            //场地模型的loading
+            if(this.baseball.length>0){
+              this.baseball[this.baseball.length-1].loading=true;
+            }
+            this.$forceUpdate();
+            let prams = [
+              { key: "files", value: res.raw },
+              { key: "category", value: this.uploadN},
+              { key: "buildingId", value: this.uploadId },
+              { key: "projectId", value: localStorage.getItem("projectid") }
+            ];
+            let upload_images = await this.Request(UploadBIMFaceAddModelFile(prams));
+            if (upload_images.StatusCode == 200) {
+              this.$message({ type: "success", message: "上传成功", center: "true" });
+              // this.getAll(); //上传成功以后，将该模型的相关数据发到数组中
+              this.baseball.push(upload_images.Detiel[0])
+              this.baseball[this.baseball.length-1].loading=false;
+              this.$forceUpdate();
+            } else {
+              this.$message({
+                type: "error",
+                message: upload_images.Message,
+                center: "true"
+              });
+            }
+
+          } else {
+            //建筑单体的loading
+            var list = this.lists.filter(i => i.ID == this.uploadId);
+            var text = list[0].DictInfoList.filter(
+              index => index.ID == this.uploadN
+            );
+            // Vue.set(text[0], "loading", true);
+            text[0].loading=true;
+            this.$forceUpdate();
+            let prams = [
+              { key: "files", value: res.raw },
+              { key: "category", value: this.uploadN},
+              { key: "buildingId", value: this.uploadId },
+              { key: "projectId", value: localStorage.getItem("projectid") }
+            ];
+            let upload_images = await this.Request(UploadBIMFaceAddModelFile(prams));
+            if (upload_images.StatusCode == 200) {
+              this.$message({ type: "success", message: "上传成功", center: "true" });
+              var list1 = this.lists.filter(i => i.ID == upload_images.Detiel[0].BuildingID);
+              var text1 = list1[0].DictInfoList.filter(
+                index => index.ID == upload_images.Detiel[0].Category
+              );
+              text1[0].ModeFileList.push(upload_images.Detiel[0])
+              text1[0].loading=false;
+              this.$forceUpdate();
+              // this.getAll(); //上传成功以后，将该模型的相关数据发到数组中
+            } else {
+              this.$message({
+                type: "error",
+                message: upload_images.Message,
+                center: "true"
+              });
+            }
+          }
+    },
+
+    //点击小图标的时候，将id和n保存起来
+    keepNumber(id, n) {
+      this.uploadId = id;
+      this.uploadN = n;
+    },
+    //上传模态框上的上传
+    async handleAvatarSuccess(res, file) {
+      this.fullscreenLoading = true;
+      let prams = [
+        { key: "files", value: res.raw },
+        { key: "category", value: this.selectMedel1 },
+        { key: "buildingId", value: this.selectOption1 },
+        { key: "projectId", value: localStorage.getItem("projectid") }
+      ];
+      let upload_images = await this.Request(UploadBIMFaceAddModelFile(prams));
+      if (upload_images.StatusCode == 200) {
+        this.$message({ type: "success", message: "上传成功", center: "true" });
+        this.getAll();
+      } else {
+        this.$message({
+          type: "error",
+          message: upload_images.Message,
+          center: "true"
+        });
+      }
+      this.fullscreenLoading = false;
+    },
+
+    //获取每个建筑单体的模型分类 listOne-用于上传模型及合并模型
+    GetDictInfoList() {
+      var prams = {
+        ProjectID: localStorage.getItem("projectid"),
+        DICode: "模型分类"
+      };
+      this.Request(GetDictInfoList(prams)).then(res => {
+        if (res.StatusCode == "200") {
+          this.listOne = []; //value: '1',label: '建筑模型'
+          for (var i = 0; i < res.Detiel.length; i++) {
+            var text = {
+              value: res.Detiel[i].ID,
+              label: res.Detiel[i].cDIName
+            };
+            this.listOne.push(text);
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: res.Message,
+            center: "true"
+          });
+        }
+        this.getAll();
+      });
+    },
+
+
+
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.model_main_all {
+  padding: 10px 20px;
+  background-color: #F5F6FA;
+  width: 100%;
+  height: 15rem;
+  box-sizing: border-box;
+  font-family:SourceHanSansCN-Medium;
+
+  .model_btn_head {
+    padding-top: 20px;
+    box-sizing: border-box;
+    font-family:SourceHanSansCN-Medium;
+    .add_btn_head {
+      color: #ffffff;
+      background-color: #4775CA;
+      border-radius: 5px;
+      vertical-align: middle;
+      font-size: 16px;
+      padding: 12px 28px;
+      .icon_add {
+        margin-right: 10px;
+        display: inline-block;
+        width: 25px;
+      }
+    }
+
+    .upload_btn_head {
+      color: #ffffff;
+      background-color: #4580FF;
+      border-radius: 5px;
+      vertical-align: middle;
+      font-size: 16px;
+      margin-left: 30px;
+      padding: 12px 28px;
+    }
+
+    .redel_btn_head {
+      color: #ffffff;
+      background-color: #FDA143;
+      border-radius: 5px;
+      vertical-align: middle;
+      font-size: 16px;
+      margin-left: 30px;
+      padding: 12px 28px;
+    }
+
+    .redel_btn_head:disabled {
+      background-color: #DDDDDD;
+    }
+  }
+
+  .model_main_body {
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 14.8rem;
+
+    .model_body_panel_all {
+      width: 400%;
+    }
+
+    .model_body_panel {
+      width: 400px;
+      height: 14rem;
+      background-color: #ffffff;
+      border: 1px solid #EAEDF6;
+      display: inline-block;
+      box-sizing: border-box;
+      margin-right: 20px;
+      margin-top: 20px;
+      float: left;
+
+      .model_body_panel_title {
+        padding: 10px 0px;
+        text-align: center;
+        color: #ffffff;
+        background-color: #435089;
+        font-size: 18px;
+
+        .model_change_name {
+          width: 45%;
+          display: inline-block;
+          background-color: #435089;
+          padding: 0;
+          border: 0 solid #435089;
+          color: #ffffff;
+          text-align: center;
+        }
+
+        .model_body_panel_title_img {
+          display: inline-block;
+          width: 15px;
+          height: 15px;
+          cursor: pointer;
+        }
+
+        .model_body_panel_title_del_img {
+          display: inline-block;
+          width: 15px;
+          height: 18px;
+          cursor: pointer;
+          float: left;
+          margin-left: 10px;
+        }
+      }
+
+      .model_body_panel_body {
+        width: 100%;
+        height: 13.2rem;
+        padding: 0px 20px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        box-sizing: border-box;
+
+        .model_panel_list_title {
+          font-size: 18px;
+          padding: 10px;
+          border-bottom: 1px solid #F0F0F0;
+          border-top: 1px solid #F0F0F0;
+
+          .avatar-uploader {
+            float: right;
+          }
+
+          .model_panel_list_img {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            float: right;
+          }
+        }
+
+        .model_panel_list_body {
+          height: 220px;
+          width: 100%;
+          position: relative;
+
+          img {
+            width: 100%;
+            height: 100%;
+          }
+
+          .showModelList_1 {
+            height: 50px;
+            width: 100%;
+            background: rgba(121, 121, 121, 0.5);
+            position: absolute;
+            z-index: 20;
+            bottom: 0;
+            display: none;
+            line-height: 50px;
+            color: #ffffff;
+            font-size: 16px;
+            padding-left: 20px;
+            box-sizing: border-box;
+
+            .float_img {
+              float: right;
+              padding-left: 20px;
+              width: 55px;
+              height: 100%;
+              box-sizing: border-box;
+            }
+
+            .float_img:hover {
+              .showModelList {
+                display: block;
+              }
+              .showModelList1 {
+                display: block;
+              }
+            }
+
+            img {
+              width: 25px;
+              height: 25px;
+              float: right;
+              margin-top: 12px;
+              margin-right: 20px;
+              cursor: pointer;
+            }
+
+            .showModelList {
+              position: absolute;
+              bottom: -1.6rem;
+              left: 60%;
+              background-color: #fff;
+              color: #333;
+              font-size: 0.213333rem;
+              z-index: 900;
+              width: 41%;
+              border: 1px solid #F5F6FA;
+              display: none;
+
+              li {
+                height: 30px;
+                line-height: 30px;
+                width: 100%;
+                text-align: center;
+                cursor: pointer;
+              }
+            }
+            .showModelList1 {
+              position: absolute;
+              bottom: -0.5rem;
+              left: 60%;
+              background-color: #fff;
+              color: #333;
+              font-size: 0.213333rem;
+              z-index: 900;
+              width: 41%;
+              border: 1px solid #F5F6FA;
+              display: none;
+
+              li {
+                height: 30px;
+                line-height: 30px;
+                width: 100%;
+                text-align: center;
+                cursor: pointer;
+              }
+            }
+
+
+          }
+        }
+
+        .model_panel_list_body:hover {
+          .showModelList_1 {
+            display: block;
+          }
+          .showModelList1 {
+            display: block;
+          }
+          .showModelList {
+            display: block;
+          }
+        }
+      }
+    }
+  }
+
+  // 模态框
+  .model_display_none {
+    display: none;
+  }
+
+  .model_display_show {
+    display: block;
+  }
+
+  .model_show_time {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 20;
+    background: rgba(121, 121, 121, 0.4);
+
+    .model_show_time_div {
+      background-color: #fff;
+      width: 1000px;
+      height: 600px;
+      margin-left: 30%;
+      margin-top: 10%;
+      border-radius: 6px;
+
+      .model_title {
+        background-color: #6460FF;
+        text-align: center;
+        color: #fff;
+        height: 40px;
+        font-size: 18px;
+        padding-top: 10px;
+
+        .model_show_time_img {
+          float: right;
+          display: inline-block;
+          width: 18px;
+          height: 18px;
+          margin-right: 25px;
+          margin-top: 5px;
+          cursor: pointer;
+        }
+      }
+
+      .model_body {
+        padding: 80px;
+
+        .model_body_input {
+          width: 640px;
+          background-color: #F0F0F0;
+          margin-right: 30px;
+        }
+
+        .model_body_repeat_btn {
+          color: #ffffff;
+          background-color: #4580FF;
+          border-radius: 5px;
+          height: 48px;
+          vertical-align: middle;
+          font-size: 20px;
+          padding: 0px 28px;
+        }
+
+        .model_body_text {
+          text-align: left;
+          font-size: 20px;
+          padding-top: 25px;
+          color: #ACACAC;
+        }
+      }
+    }
+  }
+
+  .model_toget_all, .model_upload {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 20;
+    background: rgba(121, 121, 121, 0.4);
+
+    .model_toget_all_div, .model_upload_all_div {
+      background-color: #fff;
+      width: 1000px;
+      height: 600px;
+      margin-left: 30%;
+      margin-top: 10%;
+      border-radius: 6px;
+
+      .model_title {
+        background-color: #6460FF;
+        text-align: center;
+        color: #fff;
+        height: 40px;
+        font-size: 18px;
+        padding-top: 10px;
+
+        .model_show_time_img {
+          float: right;
+          display: inline-block;
+          width: 18px;
+          height: 18px;
+          margin-right: 25px;
+          margin-top: 5px;
+          cursor: pointer;
+        }
+      }
+
+      .model_body {
+        padding: 44px 117px;
+
+        .model_body_select {
+          padding-bottom: 20px;
+          border-bottom: 1px solid #F0F0F0;
+
+          .model_list_select {
+            display: inline-block;
+            width: 41%;
+            margin-right: 5%;
+          }
+
+          .model_list_select_margin {
+            margin-right: 13%;
+          }
+
+          .model_list_add_img {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            position: relative;
+            top: 20px;
+          }
+        }
+      }
+
+      .model_body_span {
+        padding-top: 20px;
+        font-size: 20px;
+        vertical-align: middle;
+        min-height: 260px;
+
+        .model_ul_list {
+          height: 260px;
+          overflow-y: auto;
+          overflow-x: hidden;
+
+          .model_list_span {
+            width: 36%;
+            background-color: #F0F0F0;
+            border-radius: 5px;
+            color: #333333;
+            padding: 14px 20px;
+            margin-right: 5%;
+            display: inline-block;
+          }
+
+          .model_list_del_img {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            position: relative;
+            top: 20px;
+          }
+        }
+
+        .model_upload_list {
+          height: 360px;
+          overflow-y: auto;
+          overflow-x: hidden;
+        }
+
+        .model_upload_list_small {
+          height: 300px;
+          overflow-y: auto;
+          overflow-x: hidden;
+        }
+
+        .model_upload_list_small li {
+          float: left;
+          width: 30%;
+          display: block;
+          height: 150px;
+        }
+
+        .model_upload_img {
+          display: inline-block;
+          width: 100%;
+          margin-right: 3%;
+          border: 1px solid #7D86AD;
+          height: 150px;
+          box-sizing: border-box;
+
+          // el-upload样式更改
+          .avatar-uploader {
+            width: 100%;
+          }
+
+          .el-upload {
+            border: 1px dashed #d9d9d9;
+            border-radius: 6px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+          }
+
+          .el-upload--text {
+            width: 100%;
+          }
+
+          .el-upload:hover {
+            border-color: #409EFF;
+          }
+
+          .avatar-uploader-icon {
+            font-size: 28px;
+            color: #8c939d;
+            width: 100%;
+            height: 100%;
+            line-height: 150px;
+          }
+
+          .avatar {
+            width: 100%;
+            height: 100%;
+            display: block;
+          }
+        }
+      }
+
+      .model_body_footer {
+        padding-top: 20px;
+        text-align: center;
+
+        .model_body_footer_btn {
+          color: #ffffff;
+          background-color: #4580FF;
+          border-radius: 5px;
+          height: 48px;
+          vertical-align: middle;
+          font-size: 20px;
+          padding: 0px 28px;
+        }
+      }
+    }
+  }
+}
+</style>
+<style>
+.model_body_select .el-input__suffix {
+  background: rgba(67, 80, 137, 1);
+  border-radius: 0px 4px 4px 0px;
+  right: 0;
+  width: 40px;
+}
+.model_body_select .el-icon-arrow-up:before {
+  content: "\e60c";
+  color: rgba(255, 255, 255, 1);
+}
+/* 上传模态框上的upload样式 */
+.model_upload_list_small .model_upload_img .el-upload--text {
+  width: 100%;
+}
+.model_upload_list_small::-webkit-scrollbar,
+.model_ul_list::-webkit-scrollbar {
+  /*滚动条整体样式*/
+  width: 6px; /*高宽分别对应横竖滚动条的尺寸*/
+  height: 1px;
+}
+.model_upload_list_small::-webkit-scrollbar-thumb,
+.model_ul_list::-webkit-scrollbar-thumb {
+  /*滚动条里面小方块*/
+  border-radius: 10px;
+  width: 5px;
+  -webkit-box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.1);
+  background: #ccc;
+}
+.model_upload_list_small::-webkit-scrollbar-track,
+.model_ul_list::-webkit-scrollbar-track {
+  /*滚动条里面轨道*/
+  -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background: #ededed;
+}
+.model_body_panel_body::-webkit-scrollbar,
+.model_ul_list::-webkit-scrollbar {
+  /*滚动条整体样式*/
+  width: 6px; /*高宽分别对应横竖滚动条的尺寸*/
+  height: 1px;
+}
+.model_body_panel_body::-webkit-scrollbar-thumb,
+.model_ul_list::-webkit-scrollbar-thumb {
+  /*滚动条里面小方块*/
+  border-radius: 10px;
+  width: 5px;
+  -webkit-box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.1);
+  background: #ccc;
+}
+.model_body_panel_body::-webkit-scrollbar-track,
+.model_ul_list::-webkit-scrollbar-track {
+  /*滚动条里面轨道*/
+  -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background: #ededed;
+}
+/* 整合模型中--手风琴改样式 */
+.model_body_panel_body .el-collapse-item__wrap {
+  overflow: visible;
+}
+.model_panel_border {
+  border-bottom: 1px solid #f0f0f0;
+}
+/* 更新模型样式 */
+.model_upload_li{
+  position:relative;
+}
+.uploadgetchange{
+  height: 100%;width: 100%;position: absolute;top: 0;left: 0;opacity: 0;
+}
+.uploadgetchange .el-upload{
+  width:100%;height:100%;
+} 
+</style>
+   

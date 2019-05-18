@@ -1,0 +1,625 @@
+<!-- 成本管理cost -->
+<template>
+  <div class="container-cost">
+    <div class="wrapper">
+      <el-row>
+        <el-col :span="12" class="grid_left">
+          <div class="grid-content bg-purple">
+            <div class="container-cost-left">
+              <!-- 模型box -->
+              <div class="model-container">
+                <div ref="modelContainer" class="model-container"></div>
+              </div>
+            </div>
+          </div>
+          
+        </el-col>
+        <el-col :span="12" class="grid_right">
+          <div class="grid-content bg-purple-light">
+            <div class="container-cost-right">
+              <div class>
+                <el-form
+                  :inline="true"
+                  :model="formInline"
+                  class="demo-form-inline new-form-inline"
+                >
+                  <el-form-item>
+                    <el-select v-model="formInline.buildName" placeholder="整体模型" @focus="getBuildingData" @change="onSelectedBuilding($event, formInline.buildName)">
+                      <el-option :label="item.label" :value="item.value" v-for="item in buildingList"></el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item>
+                    <el-select v-model="formInline.specialty" placeholder="全部专业" @focus="getSpecialtyData" @change="onSelectedSpecialty($event, formInline.specialty)">
+                      <el-option :label="item.label" :value="item.value" v-for="item in specialtyList"></el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item>
+                    <el-select v-model="formInline.floor" placeholder="全部楼层" @focus="getFloorData" @change="onSelectedFloor($event, formInline.floor)">
+                      <el-option :label="item.label" :value="item.value" v-for="item in floorList"></el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item>
+                    <el-select v-model="formInline.resourceName" placeholder="全部资源" @focus="getResourceData" @change="onSelectedResource($event, formInline.resourceName)">
+                      <el-option :label="item.label" :value="item.value" v-for="item in resourceList"></el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item>
+                    <el-select v-model="formInline.taskId" placeholder="进度节点" @focus="getTaskData" @change="onSelectedTask($event, formInline.taskId)">
+                      <el-option :label="item.label" :value="item.value" v-for="item in taskList"></el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item class="width20">
+                    <el-button type="primary" @click="exportCost">导出</el-button>
+                  </el-form-item>
+                </el-form>
+              </div>
+              <div class="container-cost-right">
+                <el-table
+                  ref="singleTable"
+                  :data="tableData"
+                  @row-click="goToDetail"
+                  highlight-current-row
+                  style="width: 100%"
+                  v-loading="costLoading"
+                  height="900"
+                  :cell-style="rowClass"
+                >
+                  <el-table-column type="index" label="序号" width="50">
+                    <!-- <template slot-scope="scope">
+                      <div :class="scope.row.class">{{ scope.row.index }}</div>
+                    </template> -->
+                  </el-table-column>
+                  <el-table-column property="ResorceName" label="资源名称" width="120"></el-table-column>
+                  <el-table-column property="BOQ" label="施工图预算量" width="120"></el-table-column>
+                  <el-table-column property="Coefficient" label="系数"></el-table-column>
+                  <el-table-column property="AdjustBOQ" label="施工预算量"></el-table-column>
+                  <el-table-column property="RealConsume" label="实际消耗量"></el-table-column>
+                  <el-table-column property="DiffValue" label="差额">
+                    <template slot="header" slot-scope="scope">
+                      <el-tooltip
+                        class="item"
+                        effect="dark"
+                        content="差额=施工预算量*偏差率"
+                        placement="bottom"
+                      >
+                        <span>
+                          差额
+                          <i @click="view(scope.row)" class="el-icon-question"></i>
+                        </span>
+                      </el-tooltip>
+                    </template>
+                  </el-table-column>
+                  <el-table-column property="DiffRate" label="偏差率">
+                    <template slot="header" slot-scope="scope">
+                      <el-tooltip
+                        class="item"
+                        effect="dark"
+                        content="偏差率=差额/施工预算量"
+                        placement="bottom"
+                      >
+                        <span>
+                          偏差率
+                          <i @click="view(scope.row)" class="el-icon-question"></i>
+                        </span>
+                      </el-tooltip>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="详情">
+                    <template slot-scope="scope">
+                      <img src="../../../assets/imgs/detail.png" alt width="16" @click="view(scope.row)" height="16">
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+            </div>
+          </div>
+        </el-col>
+      </el-row>
+    </div>
+  </div>
+</template>
+<script ></script>
+<script type='textecmascript-6'>
+import { mapMutations } from "vuex";
+import {
+  QueryCostData,
+  GetBuilding,
+  GetFloorbyBuilding,
+  GetSpecialtybyBuilding,
+  GetResourceBySpInfo,
+  GetTaskByInfo,
+  ExportCostData,
+  QueryCostDataElement
+} from "@/api/api.js";
+export default {
+  data() {
+    return {
+      data: "成本管理cost",
+      costLoading: false,
+      buildingList: [],  //楼栋数据集
+      specialtyList: [],  //专业数据集
+      floorList: [],  //楼层数据集
+      taskList: [],  //进度ID数据集
+      resourceList: [],  //资源名称数据集
+      formInline: {
+        buildName: "",
+        specialty: "",
+        floor: "",
+        taskId: "",
+        resourceName: ""
+      },
+      tableData: [],
+      currentRow: null
+    };
+  },
+  created(){
+    this.initModel();
+    this.getCostData()
+  },
+  methods: {
+    /**
+     * 导出成本数据
+     */
+    async exportCost() {
+      let params = {
+          ProjectID: localStorage.getItem("projectid"),
+          BuildName: this.formInline.buildName,  //楼栋
+          Specialty: this.formInline.specialty,  //	专业
+          Floor: this.formInline.floor,  //	楼层
+          TaskId: this.formInline.taskId,  //	进度ID
+          ResourceName: this.formInline.resourceName  //	资源名称
+        }
+      let data = await this.Request(ExportCostData(params))
+      if(data.StatusCode == 200 && data.Result != ""){
+        window.open(data.Result)
+      }else{
+        this.$message({
+          type: 'error',
+          message: data.message ? data.message : '后台异常',
+          center: 'true'
+        })
+      }
+    },
+    goToDetail(row, event, column) {
+      this.$router.push({
+        path: "costdetail",
+        query:{
+          BuildName: this.formInline.buildName,
+          Specialty: this.formInline.specialty,
+          Floor: this.formInline.floor,
+          TaskId: this.formInline.taskId,
+          ResourceName: row.ResorceName,
+          AdjustBOQ: row.AdjustBOQ
+        }
+      });
+    },
+    /**
+     * 加载模型
+     */
+    initModel(){
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          console.log(res)
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    /**
+     * 获取模型的楼栋数据
+     */
+    async getBuildingData(){
+      let buildingData = await this.Request(GetBuilding({projectid: localStorage.getItem('projectid')}),)
+      if(buildingData.StatusCode == 200){
+        this.buildingList = [];
+        for (let i = 0; i < buildingData.Detiel.length; i++) {
+          let Option = {};
+          Option.label = buildingData.Detiel[i].text;
+          Option.value = buildingData.Detiel[i].id;
+          this.buildingList.push(Option);
+        }
+      }else{
+        this.$message({
+          type: 'error',
+          message: costData.message ? costData.message : '后台异常',
+          center: 'true'
+        })
+      }
+    },
+    /**
+     * 根据楼栋获取模型的专业
+     */
+    async getSpecialtyData(){
+      if(typeof(this.formInline.buildName) == "undefined" || this.formInline.buildName === ""){
+        this.$message({
+          message: '请先选择楼栋！',
+          type: 'warning'
+        });
+        return;
+      }
+      let specialtyData = await this.Request(GetSpecialtybyBuilding({projectid: localStorage.getItem('projectid'), building: this.formInline.buildName}),)
+      if(specialtyData.StatusCode == 200){
+        this.specialtyList = [];
+        if(specialtyData.Detiel.length > 0){
+          for (let i = 0; i < specialtyData.Detiel.length; i++) {
+            let Option = {};
+            Option.label = specialtyData.Detiel[i].text;
+            Option.value = specialtyData.Detiel[i].id;
+            this.specialtyList.push(Option);
+          }
+        }else{
+          this.formInline.specialty = ""
+        }
+      }else{
+        this.$message({
+          type: 'error',
+          message: costData.message ? costData.message : '后台异常',
+          center: 'true'
+        })
+      }
+    },
+    /**
+     * 根据楼栋获取模型的楼层
+     */
+    async getFloorData(){
+      if(this.formInline.buildName === "" || this.formInline.specialty === ""){
+        this.$message({
+          message: '请先选择楼栋和专业！',
+          type: 'warning'
+        });
+        return;
+      }
+      let floorData = await this.Request(
+        GetFloorbyBuilding({
+          projectid: localStorage.getItem('projectid'), 
+          building: this.formInline.buildName,
+          specialty: this.formInline.specialty
+        })
+      )
+      if(floorData.StatusCode == 200){
+        this.floorList = [];
+        if(floorData.Detiel.length > 0){
+          for (let i = 0; i < floorData.Detiel.length; i++) {
+            let Option = {};
+            Option.label = floorData.Detiel[i].text;
+            Option.value = floorData.Detiel[i].id;
+            this.floorList.push(Option);
+          }
+        }else{
+          this.formInline.floor = ""
+        }
+      }else{
+        this.$message({
+          type: 'error',
+          message: floorData.message ? floorData.message : '后台异常',
+          center: 'true'
+        })
+      }
+    },
+    /**
+     * 根据楼栋楼层专业获取物资名称
+     */
+    async getResourceData(){
+      if(this.formInline.buildName === "" || this.formInline.specialty === "" || this.formInline.floor === ""){
+        this.$message({
+          message: '请先选择楼栋、专业和楼层！',
+          type: 'warning'
+        });
+        return;
+      }
+      let resourceData = await this.Request(
+        GetResourceBySpInfo({
+          ProjectID: localStorage.getItem('projectid'), 
+          BuildName: this.formInline.buildName,
+          Specialty: this.formInline.specialty,
+          Floor: this.formInline.floor
+        })
+      )
+      if(resourceData.StatusCode == 200){
+        this.resourceList = [];
+        if(resourceData.Detiel.length > 0){
+          for (let i = 0; i < resourceData.Detiel.length; i++) {
+            let Option = {};
+            Option.label = resourceData.Detiel[i].text;
+            Option.value = resourceData.Detiel[i].id;
+            this.resourceList.push(Option);
+          }
+        }else{
+          this.formInline.resourceName = ""
+        }
+      }else{
+        this.$message({
+          type: 'error',
+          message: resourceData.message ? resourceData.message : '后台异常',
+          center: 'true'
+        })
+      }
+    },
+    /**
+     * 根据楼栋楼层专业获取任务（进度）名称
+     */
+    async getTaskData(){
+      if(this.formInline.buildName === "" || this.formInline.specialty === "" || this.formInline.floor === "" || this.formInline.resourceName === ""){
+        this.$message({
+          message: '请先选择楼栋、专业、楼层和资源！',
+          type: 'warning'
+        });
+        return;
+      }
+      let taskData = await this.Request(
+        GetTaskByInfo({
+          ProjectID: localStorage.getItem('projectid'), 
+          BuildName: this.formInline.buildName,
+          Specialty: this.formInline.specialty,
+          Floor: this.formInline.floor,
+          ResourceName: this.formInline.resourceName
+        })
+      )
+      if(taskData.StatusCode == 200){
+        this.taskList = [];
+        if(taskData.Detiel.length > 0){
+          for (let i = 0; i < taskData.Detiel.length; i++) {
+            let Option = {};
+            Option.label = taskData.Detiel[i].text;
+            Option.value = taskData.Detiel[i].id;
+            this.taskList.push(Option);
+          }
+        }else{
+          this.formInline.taskId = ""
+        }
+      }else{
+        this.$message({
+          type: 'error',
+          message: taskData.message ? taskData.message : '后台异常',
+          center: 'true'
+        })
+      }
+    },
+    /**
+     * @name 获取成本管理列表数据
+     * @param {string} ProjectID 项目ID
+     * @param {string} BuildName 楼栋
+     * @param {string} Specialty 专业
+     * @param {string} Floor 楼层
+     * @param {string} ResourceName 资源名称
+     * @param {string} TaskId 进度ID
+     */
+    async getCostData(){
+      this.costLoading = true;
+      let params = {
+        ProjectID: localStorage.getItem('projectid'),
+        BuildName: this.formInline.buildName,
+        Specialty: this.formInline.specialty,
+        Floor: this.formInline.floor,
+        TaskId: this.formInline.taskId,
+        ResourceName: this.formInline.resourceName
+      }
+      console.log("检索参数", params)
+      try{
+        let costData = await this.Request(QueryCostData(params))
+        if(costData.StatusCode == 200){
+          console.log("成本数据", costData)
+          if(costData.Detiel.length > 0){
+            this.tableData = costData.Detiel
+          }else{
+            this.$message({
+              type: "warning",
+              message: "无数据",
+              center: "true"
+            });
+            this.tableData = [];
+          }
+        }else{
+          this.$message({
+            type: 'error',
+            message: costData.message ? costData.message : '后台异常',
+            center: 'true'
+          })
+        }
+      } catch (err) {
+        console.log('%c函数 %s 抛出异常：%s', 'color: red;', 'getCostData', err);
+      }
+      this.costLoading = false;
+    },
+    /**
+     * 给第一个单元格加样式
+     */
+    rowClass({ row, column, rowIndex, columnIndex }){
+      if(columnIndex === 0){
+        return "border-left:5px solid " + row.ColorName;
+      }
+    },
+    /**
+     * 当整体模型楼栋数据发生改变时触发
+     */
+    onSelectedBuilding(event, item){
+      this.formInline.buildName = item;
+      this.getCostData()
+    },
+    /**
+     * 当专业数据发生改变时触发
+     */
+    onSelectedSpecialty(event, item){
+      this.formInline.specialty = item;
+      this.getCostData()
+    },
+    /**
+     * 当楼层数据发生改变时触发
+     */
+    onSelectedFloor(event, item){
+      this.formInline.floor = item;
+      this.getCostData()
+    },
+    /**
+     * 当资源数据发生改变时触发
+     */
+    onSelectedResource(event, item){
+      this.formInline.resourceName = item;
+      this.getCostData()
+    },
+    /**
+     * 当节点数据发生改变时触发
+     */
+    onSelectedTask(event, item){
+      this.formInline.taskId = item;
+      this.getCostData()
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    })
+  }
+};
+</script>
+<style lang='stylus' rel='stylesheet/stylus'>
+.container-cost {
+  width: 100%;
+  height: 100%;
+}
+
+.container-cost {
+  background: #f5f6fa;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.grid_left{
+  width:760px; 
+}
+.grid_right{
+  margin-left:15px;
+  width:900px; 
+  float:right;
+  right:0px;
+}
+.container-cost-left {
+  background: #fff;
+  height: 100%;
+  width:780px;
+  margin-right: 10px;
+  border: 1px solid #ecedf1;
+}
+.bg-purple{
+  width:780px;
+}
+.container-cost .wrapper, .container-cost .el-row, .container-cost .el-col, .container-cost .grid-content {
+  height: 100%;
+}
+
+.container-cost .el-form-item {
+  width: 160px;
+  height: 40px;
+  margin-right:5px !important;
+}
+
+.container-cost .width20 {
+  width: 75px;
+  position: absolute;
+  right: 4px;
+  text-align :right;
+}
+
+.container-cost .el-button {
+  height: 38px;
+  background: #4580fe;
+}
+
+.container-cost-right .el-select .el-input__inner {
+  border: 1px solid #ecedf1;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.container-cost .el-input__suffix {
+  width: 50px;
+  background: #44508a;
+  border-radius: 0 5px 5px 0;
+}
+
+.container-cost .el-input--suffix {
+  overflow: hidden;
+}
+
+.container-cost .el-select .el-input .el-select__caret {
+  color: #fff;
+}
+
+.container-cost .el-table th {
+  background: #44508a;
+  color: #fff;
+  text-align: center;
+}
+
+.container-cost .el-table--enable-row-transition .el-table__body td, .container-cost .el-table--enable-row-transition .el-table__body td .cell {
+  text-align: center;
+  padding: 0;
+}
+
+.container-cost .el-table--enable-row-transition .el-table__body td div {
+  padding: 12px;
+}
+
+.blueBorder {
+  border-left: 6px solid #4476cd;
+}
+
+.greenBorder {
+  border-left: 6px solid #05a663;
+}
+
+.lightGreenBorder {
+  border-left: 6px solid #9ce621;
+}
+
+.redBorder {
+  border-left: 6px solid #e63837;
+}
+
+.pinkBorder {
+  border-left: 6px solid #fe41b9;
+}
+
+.bottom {
+  clear: both;
+  text-align: center;
+}
+
+.item {
+  margin: 4px;
+}
+
+.left .el-tooltip__popper, .right .el-tooltip__popper {
+  padding: 8px 10px;
+}
+
+.new-form-inline {
+  position: relative;
+}
+
+.container-cost .el-input__suffix {
+  right: 0;
+}
+
+.container-cost .el-select .el-input__inner::placeholder {
+  color: rgba(51, 51, 51, 1);
+}
+</style>
+<style scoped>
+.model-container {
+  width: 100%;
+  height: 100%;
+  padding: 0 !important;
+  z-index:90
+}
+</style>
+

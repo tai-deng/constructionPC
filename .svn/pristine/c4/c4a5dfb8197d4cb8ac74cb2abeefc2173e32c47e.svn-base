@@ -1,0 +1,1159 @@
+<!-- 时间管理times -->
+<template lang="pug" src="./index.pug"></template>
+<style lang="stylus" src="./index.styl"></style>
+<style lang="stylus" scoped>
+.kaoqin
+  margin-top 18px
+  margin-right 0 !important
+  width 20% !important
+
+.search-input
+    .el-input-group__prepend
+      background #fff
+      border-right none
+      border-radius 29px 0 0 29px
+  .reason .is-checked
+    .el-radio__inner
+      border-color #FDA143
+      background #FDA143
+
+    .el-radio__label
+      color #606266
+
+  .el-table thead.is-group th
+    background #435089
+    border-right-color #435089
+    border-bottom-color #435089
+
+    .cell
+      color #fff
+
+.table
+  position relative
+
+.addIco
+  position absolute
+  left 330px
+  top 35px
+  color #fff
+  z-index 100
+  font-size 22px
+.padding_blank
+  padding-left 24%
+  
+  .blankList
+    .el-radio
+      display block
+      line-height 50px
+.human_little_img
+  width 35px
+  height 35px
+  position absolute
+  top 0.6rem
+  z-index 100
+
+.human_big_img
+  width 45px
+  height 45px
+  float left
+</style>
+<style>
+.padding_blank .el-form-item__label{
+  line-height:50px;
+}
+.supar_table table tr>td:first-child {
+    padding:0;
+    overflow: hidden;
+}
+</style>
+
+<script type="textecmascript-6">
+import CommonDialog from "@/common/common-dialog/index";
+import Calendar from "himmas-vue-calendar";
+import {GetGroupListWithPersonCount,
+        GetClassGroupToCbx,
+        AddClassGroup,
+        UploadImages,
+        DeleteClassGroup,
+        GetProvinceList,
+        GetCityList,
+        GetCountryList,
+        GetOrgList,
+        GetMemberList,
+        AddClassMember,
+        MdfClassMember,
+        GetMemberInfo,
+        AddBlackList,
+        RemoveBlackList} from '@/api/api.js'
+
+export default {
+  components: {
+    CommonDialog,
+    Calendar
+  },
+  created() {
+    this._initData();
+    this.getGroupAndCount();
+    this.getProvinceList();
+    this.getGroup()
+    this.getOrgList()
+  },
+  mounted() {},
+  data() {
+    return {
+      dialogStatus: "",
+      textMap: {
+        update: "编辑",
+        create: "新增"
+      },
+      humanID: "",  //人员ID
+      alteration: true, //变更弹框
+      provinceList: [],  //省数组
+      cityList: [], // 市数组
+      countryList: [],  //地区数组
+      companyList: [],  //公司集合
+      addLoading: false,  //新增人员按钮加载状态
+      editLoading: false,  //修改人员按钮加载状态
+      groupLoading: false,  //班组加载状态
+      humanLoading: false,  //人资表格加载
+      dialogLoading: false,
+      ruleForm: {
+        Photo: "",  //头像
+        UserName: "",//姓名
+        Age:'',//年龄
+        IdentityCard:'',//身份证
+        Mobile:'',//手机
+        WorkType: "",  //工种
+        UnionCard:'',//实名卡账号
+        WageCard:'',//工资卡号
+        ACCard:'',//门禁卡号
+        SignStatus:'',//劳动合同签署状态
+        TrainStatus:'',//安全培训状态
+        HasSpecialPermit: true,//是否有特种作业证
+        SpecialPermitNo: "",  //特种作业证号
+        OperateMethod: "",  //操作类别
+        GroupID: "", //班组ID
+        OrgID: "",  //公司
+        DetailAddress:'',//详细地址
+        // region: "",
+        Nation:'', //民族
+        FirstPermitDate: "",  //初次领证日期
+        StartUseDate: "",  //开始使用时间
+        EndUseDate: "",  //结束使用时间
+        // delivery: false,
+        // type: [],
+        Gender: "",//性别（男：M，女：F）
+        // desc: "",
+        Province: "", //已选择的省份
+        // ProvinceId:0,
+        City: "", //已选择的市
+        // CityId:0,//已选择城市的ID
+        Area: "", //已选择的区/镇
+        // CountryId:0,//区ID
+      },
+      pageSize: 10,
+      currentPage: 1,
+      pageTotal: 0,  //总条数
+      page_sizes: [10, 20, 40, 60],
+    
+      //新增人员--表单验证
+      rules:{
+        UserName:[{required: true, message: '请输入真实姓名', trigger: 'blur' },   //姓名
+            { min: 2, max: 5, message: '长度在 2 到 5 个字符', trigger: 'blur' },
+            {pattern:/^[\u0391-\uFFE5A-Za-z]+$/,message: '姓名只可以输入中文/英文',trigger: 'blur' }],
+        Gender: [{required: true, message: '请选择性别', trigger: 'change'}], //性别
+        Nation:[{required: true, message: "请输入民族", trigger: "blur"}],//民族
+        Age:[
+          {required: true, message: "请输入年龄", trigger: "blur"},
+          { type: 'number', message: '年龄必须为数字值', trigger: "blur"}
+          ],//年龄
+        IdentityCard:[{required: true, message: "请输入身份证", trigger: "blur"},
+            {pattern:/(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/,message:'身份证号码格式不对', trigger: "blur"}],//身份证号码
+        Mobile:[{required: true, message: '请输入手机号码', trigger: 'blur' },
+            {pattern:/^1[3|4|5|7|8][0-9]\d{8}$/,message: '手机号码格式不对',trigger: 'blur' }],//手机号码
+        UnionCard:[{required: true, message: '请输入实名卡账号', trigger: 'blur' }],    //实名卡账号
+        GroupID:[{required: true, message: '请选择班组', trigger: 'blur' }],    //班组
+        WageCard:[{required: true, message: '请输入工资卡号', trigger: 'blur' }],    //工资卡号
+        SignStatus:[{required: true, message: '请选择劳动合同签署状态', trigger: 'change'}],//劳动合同签署状态
+        HasSpecialPermit:[{required: true, message: '请选择是否含有特种作业证', trigger: 'change'}],//是否有特种作业证
+        Province:[{required: true, message: '请选择省份', trigger: 'change'}],
+        City:[{required: true, message: '请选择市', trigger: 'change'}],
+        Area:[{required: true, message: '请选择地区', trigger: 'change'}],
+        DetailAddress:[{required: true, message: '请输入详细地址', trigger: 'change'}],
+        WorkType:[{required: true, message: '请选择工种', trigger: 'change'}],
+        ACCard:[{required: true, message: '请输入门禁卡号', trigger: 'change'}],
+        TrainStatus:[{required: true, message: '请输选择安全培训状态', trigger: 'change'}]
+      },
+      rules2:{
+        SpecialPermitNo:[{required: true, message: '请输入特种作业证证号', trigger: 'blur' }],
+        OperateMethod:[{required: true, message: '请选择操作类别', trigger: 'blur' }],
+        FirstPermitDate:[{required: true, message: '请选择初次领证日期', trigger: 'blur' }],
+        StartUseDate:[{required: true, message: '请选择使用期限', trigger: 'blur' }],
+        EndUseDate:[{required: true, message: '请选择使用期限', trigger: 'blur' }]
+      },
+      // dialogImageUrl1: "", //视点图片
+      // dialogImageUrl2: "", //上传凭证
+      // dialogVisible1: false, //视点图片列表
+      // dialogVisible2: false, //上传凭证图片列表
+      centerDialogVisible: false,
+      addGroupVisible:false,//新增班组的模态框
+      addWriteName:'',//新增模态框上的输入框
+
+      credentialsList:[],//上传图片----要上传的图片列表
+      photoList:[],
+
+      allList: 0,
+
+
+      /**[当前选中按钮] */
+      activeBtn: true,
+      /**[筛选表单] */
+      filterForm: {
+        search: ""
+      },
+      /**[班组划分] */
+      menuList: [],
+      groupCount: [],   //全部班组列表以及各班组下总人数
+      /**[表格数据] */
+      tableData: [
+        // {
+        //   sort: "序号",
+        //   company: "所属公司",
+        //   name: "姓名",
+        //   grade: "班组",
+        //   card: "实名卡号",
+        //   tell: "手机号",
+        //   money: "工资发放状态",
+        //   zhengchang: "正常",
+        //   chidao: "迟到",
+        //   zaotui: "早退",
+        //   qingjia: "请假",
+        //   isHaswork:'0',  //是否含有特工证件
+        //   /**[是黑名单 ？true : false] */
+        //   isBlacklist: false
+        // },
+        // {
+        //   sort: "序号",
+        //   company: "所属公司",
+        //   name: "姓名",
+        //   grade: "班组",
+        //   card: "实名卡号",
+        //   tell: "手机号",
+        //   money: "工资发放状态",
+        //   zhengchang: "正常",
+        //   chidao: "迟到",
+        //   zaotui: "早退",
+        //   qingjia: "请假",
+        //   isHaswork:'1',  //是否含有特工证件
+        //   /**[是黑名单 ？true : false] */
+        //   isBlacklist: false
+        // },
+        // {
+        //   sort: "序号",
+        //   company: "所属公司",
+        //   name: "姓名",
+        //   grade: "班组",
+        //   card: "实名卡号",
+        //   tell: "手机号",
+        //   money: "工资发放状态",
+        //   zhengchang: "正常",
+        //   chidao: "迟到",
+        //   zaotui: "早退",
+        //   qingjia: "请假",
+        //   isHaswork:'1',  //是否含有特工证件
+        //   /**[是黑名单 ？true : false] */
+        //   isBlacklist: true
+        // }
+      ],
+      /**[分页数据] */
+      // page: 1,
+      // total: 0,
+      // page_size: 20,
+      // page_sizes: [10, 20, 40, 60],
+      /**[弹框类型] */
+      dialogType: "blacklist",
+      /**[弹框类型] 可选项
+       *  @blacklist  黑名单
+       *  @info       人员详情
+       *  @attendance 考勤管理
+       */
+      dialogTypeOptions: {
+        blacklist: "blacklist",
+        info: "info",
+        attendance: "attendance"
+      },
+      /**[弹框表单] */
+      dialogForm: {
+        reason: "不服从管理"
+      },
+      dialogRules: {
+        reason: [{ required: true, message: "请选择拉黑理由" }]
+      },
+      /**[拉黑理由] */
+      reasonOptions: [
+        { label: "AAA", value: 1 },
+        { label: "bbb", value: 2 },
+        { label: "ccc", value: 3 }
+      ],
+      /**[个人信息-配置] */
+      userInfo: [
+        /**[第1栏] */
+        [
+          { label: "姓名", prop: "UserName" },
+          { label: "性别", prop: "Gender" },
+          { label: "年龄", prop: "Age", class: "age" },
+          { label: "身份证", prop: "IdentityCard", class: "idcard" },
+          { label: "手机号", prop: "Mobile" },
+          { label: "民族", prop: "Nation" },
+          { label: "实名卡号", prop: "UnionCard", class: "card" },
+          { label: "门禁卡号", prop: "ACCard" },
+          { label: "工种", prop: "WorkType" },
+          { label: "家庭住址", prop: "DetailAddress", class: "addres" }
+        ],
+        /**[第2栏] */
+        [
+          { label: "特种作业证证号", prop: "SpecialPermitNo" },
+          { label: "操作类别", prop: "OperateMethod" },
+          { label: "初次领证日期", prop: "FirstPermitDate" },
+          { label: "使用期限", prop: "service_life" }
+        ],
+        /**[第3栏] */
+        [
+          { label: "所属公司", prop: "OrgID" },
+          { label: "所属班组", prop: "GroupID" },
+          { label: "劳动合同签署状态", prop: "SignStatus" },
+          { label: "安全培训状态", prop: "TrainStatus" },
+          { label: "工资卡账号", prop: "WageCard" },
+          { label: "工资发放状态", prop: "salary_state" },
+          {
+            label: "本月考情天数（正常）",
+            prop: "check_normal",
+            class: "kaoqin"
+          },
+          { label: "（迟到）", prop: "check_chidao", class: "kaoqin" },
+          { label: "（早退）", prop: "check_zaotui", class: "kaoqin" },
+          { label: "（缺勤）", prop: "check_queqin", class: "kaoqin" }
+        ]
+      ],
+      /**个人信息-数据 */
+      userInfoData: {
+        // UserName,
+        // Gender,
+        // Age,
+        // IdentityCard,
+        // Mobile,
+        // Nation,
+        // UnionCard,
+        // ACCard,
+        // WorkType,
+        // DetailAddress,
+        // SpecialPermitNo,
+        // OperateMethod,
+        // FirstPermitDate,
+        // service_life,
+        // OrgID,
+        // GroupID,
+        // SignStatus,
+        // TrainStatus,
+        // WageCard,
+        // salary_state,
+        // check_normal,
+        // check_chidao,
+        // check_zaotui,
+        // check_queqin
+      },
+      userInfoData2: {}
+    };
+  },
+  computed: {
+    dialogTitle: function() {
+      let tit = "加入黑名单";
+      if (this.dialogType === this.dialogTypeOptions.info) {
+        tit = "人员详情";
+      } else if (this.dialogType === this.dialogTypeOptions.attendance) {
+        tit = "考勤管理";
+      }
+      return tit;
+    },
+    okText: function() {
+      let tit = "确定";
+      if (
+        this.dialogType === this.dialogTypeOptions.info ||
+        this.dialogType === this.dialogTypeOptions.attendance
+      ) {
+        tit = "";
+      }
+      return tit;
+    },
+    closeText: function() {
+      let tit = "取消";
+      if (
+        this.dialogType === this.dialogTypeOptions.info ||
+        this.dialogType === this.dialogTypeOptions.attendance
+      ) {
+        tit = "";
+      }
+      return tit;
+    },
+    rulesAll(){
+      if(this.ruleForm.HasSpecialPermit){
+        const object2 = Object.assign(this.rules2, this.rules);
+        // console.log("有",object2)
+        return object2;
+      }else{
+        // console.log("无",this.rules)
+        return this.rules;
+      }
+    }
+  },
+  methods: {
+    /**
+     * @name 根据项目ID和班组ID获取班组人员分页列表
+     * @param {string} projectId 项目ID
+     * @param {integer} groupId 如果传0 则显示全部班组人员
+     * @param {boolean} isBlackList 是否黑名单，false为不是，true为是
+     * @param {string} keyword 搜索关键字，单位名称或班组名称或人员
+     * @param {integer} pageIndex 页码
+     * @param {integer} pageSize 页大小
+     */
+    async _initData() {
+      this.humanLoading = true;
+      let memberParams = {
+        projectId: localStorage.getItem('projectid'),
+        groupId: this.ruleForm.GroupID == "" ? 0 : Number(this.ruleForm.GroupID),
+        isBlackList: !this.activeBtn,
+        keyword: this.filterForm.search,
+        pageIndex: this.currentPage,
+        pageSize: this.pageSize
+      }
+      console.log("班组人员参数",memberParams)
+      let memberData = await this.Request(GetMemberList(memberParams));
+      if(memberData.StatusCode === 200){
+        this.tableData = memberData.Detiel
+        this.pageTotal = Number(memberData.Message)
+        console.log("班组人数据",memberData)
+      } else {
+        this.$message({
+          type: "error",
+          message: memberData.Message,
+          center: "true"
+        });
+      }
+      this.humanLoading = false;
+    },
+    /**
+     * 筛选人力资源列表
+     */
+    searchHuman(){
+      this._initData()
+    },
+    /**
+     * @name 获取省下拉列表
+     */
+    async getProvinceList() {
+      let provinceData = await this.Request(GetProvinceList());
+      if(provinceData.StatusCode === 200){
+        this.provinceList = provinceData.Detiel
+      } else {
+        this.$message({
+          type: "error",
+          message: provinceData.Message,
+          center: "true"
+        });
+      }
+    },
+    renderHeader(h) {
+      return h("span", {
+        innerHTML: "序号1"
+      });
+    },
+    /**[添加考勤颜色] */
+    renderContent(h, row) {
+      let cla = "";
+      if (row.day === 1) cla = "error";
+      if (row.day === 2) cla = "warning";
+      if (row.day === 3) cla = "brand";
+      return h(
+        "div",
+        {
+          class: "day-style"
+        },
+        [row.day, h("span", { class: cla })]
+      );
+    },
+    getClassName(index) {
+      let cla = "";
+      switch (index) {
+        case 0:
+          cla = "one";
+          break;
+        case 1:
+          cla = "two";
+          break;
+        case 2:
+          cla = "three";
+          break;
+      }
+      return cla;
+    },
+    close() {
+      //关闭变更
+      this.alteration = false;
+    },
+    onSubmit() {
+      //表单提交
+      console.log("submit!");
+    },
+    // 视点
+    handleRemove1(file, fileList) {
+      //图标删除
+      console.log(file, fileList);
+    },
+    // handlePictureCardPreview1(file) {
+    //   //点击文件列表中已上传的文件
+    //   this.dialogImageUrl1 = file.url;
+    //   this.dialogVisible1 = true;
+    // },
+    //上传凭证
+    // handleRemove2(file, fileList) {
+    //   //图标删除
+    //   console.log(file, fileList);
+    // },
+    handleAvatarSuccess(res, file) {
+      this.ruleForm.Photo = URL.createObjectURL(file.raw);
+    },
+    beforeAvatarUpload(file) {
+      const isJPG = file.type === 'image/jpeg';
+      const isLt1M = file.size / 1024 / 1024 < 1;
+
+      if (!isJPG) {
+        this.$message.error('上传头像图片只能是 JPG 格式!');
+      }
+      if (!isLt1M) {
+        this.$message.error('上传头像图片大小不能超过 1MB!');
+      }
+      return isJPG && isLt1M;
+    },
+    //上传图片--新增班组人员----UploadImages  
+    async handlePictureCardPreview2(res,file) {
+      let prams = [{
+        key: 'files', value: res.raw
+      }]
+      //上传图片
+      let upload_images = await this.Request(UploadImages(prams))
+      if(upload_images.StatusCode == 200){
+        this.photoList = upload_images.Detiel
+        this.ruleForm.Photo = this.photoList[0].URL
+        this.credentialsList=[{
+          Url: this.photoList[0].URL,
+          ThumbUrl: this.photoList[0].smallPhotoURL,
+          Ext: this.photoList[0].Type
+        }];
+      }else{
+        this.$message({type:'error',message:upload_images.message?upload_images.message:'后台异常',center:'true'})
+      }
+    },
+    /**
+     * @name 加入黑名单
+     * @param {integer} Id 人员ID
+     * @param {string} projectId 项目ID
+     * @param {string} reason 拉黑原因
+     */
+    dialogOk() {
+      this.$refs.dialogFormRef.validate(valid => {
+        if (valid) {
+          let params = {
+            Id: Number(this.humanID),
+            projectId: localStorage.getItem('projectid'),
+            reason: this.dialogForm.reason
+          }
+          console.log("黑名单参数", params);
+          this.Request(AddBlackList(params)).then(data => {
+            if (data.StatusCode === 200) {
+              this.dialogClose()
+              this.$message({
+                type: "success",
+                message: "加入黑名单成功！",
+                center: "true"
+              });
+              this._initData()
+            } else {
+              this.$message({
+                type: "error",
+                message: data.Message,
+                center: "true"
+              });
+            }
+          });
+        }
+      });
+    },
+    dialogClose() {
+      this.$refs.dialogRef.hide();
+    },
+    /**
+     * 关闭新增/编辑人员Dialog
+     */
+    closeDialog(){
+      this.ruleForm.GroupID = ""
+    },
+    handleSizeChange(page_size) {
+      this.pageSize = page_size;
+      this._initData()
+    },
+    handleCurrentChange(page) {
+      this.currentPage = page;
+      this._initData()
+    },
+    /**
+     * @name 打开编辑班组人员Dialog
+     * @param {integer} Id 人员ID
+     **/
+    async openEditHumanDialog() {
+      this.$refs.dialogRef.hide();
+      this.dialogStatus = "update";
+      this.centerDialogVisible = true;
+      this.ruleForm = Object.assign({}, this.userInfoData2);
+      this.getCityData(this.userInfoData2.Province)
+      this.getCountryData(this.userInfoData2.City)
+      this.ruleForm.Province = this.userInfoData2.Province.toString()
+      this.ruleForm.City = this.userInfoData2.City.toString()
+      this.ruleForm.Area = this.userInfoData2.Area.toString()
+      this.ruleForm.GroupID = this.userInfoData2.GroupID.toString()
+      console.log("编辑数据", this.userInfoData2)
+      // let humanData = await this.Request(
+      //   GetMemberInfo({
+      //     projectid: localStorage.getItem('projectid'), 
+      //     Id: id
+      //   })
+      // )
+      // if(humanData.StatusCode == 200){
+      //   if(humanData.Detiel.length > 0){
+      //     this.ruleForm = humanData.Detiel[0]
+      //     this.ruleForm.GroupID = humanData.Detiel[0].GroupID.toString()
+      //     // this.ruleForm.Province = humanData.Detiel[0].Province
+      //     // this.ruleForm.City = humanData.Detiel[0].City
+      //     this.getCityData(humanData.Detiel[0].Province)
+      //     this.getCountryData(humanData.Detiel[0].City)
+      //     this.ruleForm.Province = humanData.Detiel[0].Province.toString()
+      //     this.ruleForm.City = humanData.Detiel[0].City.toString()
+      //     this.ruleForm.Area = humanData.Detiel[0].Area.toString()
+      //   }
+      // }else{
+      //   this.$message({
+      //     type: 'error',
+      //     message: humanData.message ? humanData.message : '后台异常',
+      //     center: 'true'
+      //   })
+      // }
+    },
+    /**
+     * @name Dialog取消操作
+     */
+    cancelDialog(formName){
+      this.$refs[formName].resetFields();
+      this.centerDialogVisible = false;
+    },
+    /**[查看考勤详情] */
+    onLooKattendance() {
+      this.dialogType = this.dialogTypeOptions.attendance;
+      this.$refs.dialogRef.show();
+    },
+    /** @name 移除黑名单
+     * @param {Object} row 数据对象
+     * @param {string} projectId 项目ID
+     * @param {integer} Id 人员ID
+     */
+    onOutBlacklist(row) {
+      this.$confirm('确定移除黑名单吗?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+           this.Request(RemoveBlackList({projectId: localStorage.getItem('projectid'), Id: row.ID})).then(res=>{
+             if(res.StatusCode === 200){
+                 this.$message({type: 'success',message: '移除成功!'});
+                 this._initData()
+             }else{
+               this.$message({type: 'error',message: res.Message});
+             }
+           })
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消移除'
+          });          
+        });
+    },
+    /**
+     * @name 查看详情 
+     * @param {Object} row 当前行的数据对象
+     **/
+    async onLook(row) {
+      this.dialogType = this.dialogTypeOptions.info;
+      this.$refs.dialogRef.show();
+      this.dialogLoading = true;
+      let humanData = await this.Request(
+        GetMemberInfo({
+          projectid: localStorage.getItem('projectid'), 
+          Id: row.ID
+        })
+      )
+      if(humanData.StatusCode === 200){
+        this.userInfoData = [];
+        if(humanData.Detiel.length > 0){
+          this.userInfoData2 = JSON.parse(JSON.stringify(humanData.Detiel[0]));  //坑：把对象中的数据给了某个变量，改变一个对象的值，另一个对象也变化的解决办法！
+          this.userInfoData = humanData.Detiel[0]
+          this.userInfoData.Gender = humanData.Detiel[0].Gender == "M" ? "男" : "女"
+          // this.userInfoData.Province = humanData.Detiel[0].Province
+          // this.userInfoData.City = humanData.Detiel[0].City
+          // this.userInfoData.Area = humanData.Detiel[0].Area
+          this.userInfoData.FirstPermitDate = humanData.Detiel[0].FirstPermitDate.substring(0, humanData.Detiel[0].FirstPermitDate.indexOf("T"));
+          this.userInfoData.service_life = this.$util.getDiffYmdBetweenDate(humanData.Detiel[0].StartUseDate, humanData.Detiel[0].EndUseDate).y + "年"
+          this.userInfoData.SignStatus = humanData.Detiel[0].SignStatus == 1 ? "已签署" : "未签署"
+          this.userInfoData.TrainStatus = humanData.Detiel[0].TrainStatus == 1 ? "已培训" : "未培训"
+        }else{
+          this.userInfoData = []
+          this.userInfoData2 = []
+        }
+      }else{
+        this.$message({
+          type: 'error',
+          message: humanData.message ? humanData.message : '后台异常',
+          center: 'true'
+        })
+      }
+      this.dialogLoading = false;
+    },
+    /**
+     * @name 打开添加人员Dialog
+     */
+    openAddHumanDialog(){
+      this.dialogStatus = "create";
+      this.centerDialogVisible = true
+      // this.ruleForm = Object.assign({}, this.ruleForm);
+      // this.ruleForm = {}
+      this.$nextTick(() => {
+        this.$refs['ruleForm'].resetFields()
+      })
+      // this.ruleForm.HasSpecialPermit = true
+      // if(typeof(this.$refs["ruleForm"]) != "undefined"){
+      //   this.$refs["ruleForm"].resetFields();
+      // }
+    },
+    /**
+     * @name 关闭添加/编辑人员Dialog
+     */
+    cancelHumanDialog(formName){
+      this.centerDialogVisible = false
+      this.$refs[formName].resetFields();
+    },
+    /**
+     * @name 详情页打开黑名单dialog
+     **/
+    openBlackDialog() {
+      this.dialogType = this.dialogTypeOptions.blacklist;
+      this.$refs.dialogRef.show();
+      this.humanID = this.userInfoData.ID
+    },
+    /**
+     * @name 列表页打开黑名单dialog
+     * @param {Object} row 当前行的数据对象
+     */
+    onToBlacklist(row) {
+      this.dialogType = this.dialogTypeOptions.blacklist;
+      this.$refs.dialogRef.show();
+      this.humanID = row.ID
+    },
+    /**[数据导入] */
+    dataImport() {},
+    /**[模板下载] */
+    downloadModel() {},
+    /**[生成二维码] */
+    createQRcode() {},
+    /**[实名制信息] */
+    onCertification() {
+      this.activeBtn = !this.activeBtn;
+      this._initData()
+    },
+    /**[黑名单] */
+    onBlacklist() {
+      this.activeBtn = !this.activeBtn;
+      this._initData();
+    },
+    /**
+     * @name 根据项目ID和是否黑名单获取全部班组列表以及各班组下总人数
+     * @param {string} projectId 项目ID
+     * @param {boolean} isBlackList 是否黑名单，false为不是，true为是
+     * @param {string} keyword 搜索关键字，单位名称或班组名称或人员
+     */
+    getGroupAndCount(){
+      this.groupLoading = true;
+      this.Request(GetGroupListWithPersonCount({
+        projectId: localStorage.getItem('projectid'),
+        isBlackList: !this.activeBtn,
+        keyword: this.filterForm.search
+      })).then(res=>{
+        if(res.StatusCode === 200){
+          this.groupCount = res.Detiel
+          res.Detiel.forEach(element => {
+            this.allList += element.GroupPersonCount
+          })
+        } else {
+          this.$message({
+            type: "error",
+            message: res.Message,
+            center: "true"
+          });
+        }
+        this.groupLoading = false;
+      })
+    },
+    /**
+     * @name 根据项目ID获班组下拉列表
+     * @param {string} projectId 项目ID
+     */
+    getGroup(){
+      this.Request(GetClassGroupToCbx({projectId:localStorage.getItem('projectid')})).then(res=>{
+          if(res.StatusCode=='200'){
+            this.menuList=res.Detiel
+          }else{
+            this.$message({type:'error',message:res.Message,center:'true'});
+          }
+          
+      })
+    },
+    //添加班组按钮
+    addGroup(){
+      this.addGroupVisible=true;
+    },
+    clearName(){//添加班组模态框上的取消按钮
+      this.addGroupVisible=false;
+    },
+    getname(){//添加班组模态框上的确定按钮
+      console.log(this.addWriteName);
+      if(this.addWriteName==''){
+        this.$message({type:'error',message:'班组名字不能为空!',center:'true'});
+        return false;
+      }
+      this.Request(AddClassGroup({projectId:localStorage.getItem('projectid'),GName:this.addWriteName})).then(res=>{
+          if(res.StatusCode=='200'){
+            this.$message({type:'success',message:'添加成功',center:'true'});
+            this.addWriteName='';
+            this.addGroupVisible=false;
+            this.getGroupAndCount()
+          }else{
+            this.$message({type:'error',message:res.Message,center:'true'});
+          }
+      })
+    },
+    /**
+     * @name 班组删除
+     * @msg 是否删除班组中的人？
+     * @param {Number} index 索引
+     * @param {Object} item 数据对象
+     * @param {string} groupId 班组Id(多个时用英文逗号分隔)
+     */
+    delGroup(item,index){
+      this.$confirm('是否继续删除班组?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+           this.Request(DeleteClassGroup({groupId:item.GroupId})).then(res=>{
+             if(res.StatusCode=='200'){
+                 this.$message({type: 'success',message: '删除成功!'});
+                 this.getGroupAndCount()
+             }else{
+               this.$message({type: 'error',message: res.Message});
+             }
+           })
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });          
+        });
+    },
+    changeProvince(event, item){
+      this.ruleForm.Province = item;
+      this.getCityData(item)
+    },
+    changeCity(event, item){
+      this.ruleForm.City = item;
+      this.getCountryData(item)
+    },
+    /**
+     * @name 获取市下拉列表
+     * @param {integer} ID ID(省)
+     */
+    async getCityData(id){
+      let cityData = await this.Request(GetCityList({ID: id}));
+      if(cityData.StatusCode === 200){
+        this.cityList = cityData.Detiel
+      } else {
+        this.$message({
+          type: "error",
+          message: cityData.Message,
+          center: "true"
+        });
+      }
+    },
+    /**
+     * @name 获取区下拉列表
+     * @param {integer} ID ID(市)
+     */
+    async getCountryData(id){
+      let countryData = await this.Request(GetCountryList({ID: id}));
+      if(countryData.StatusCode === 200){
+        this.countryList = countryData.Detiel
+      } else {
+        this.$message({
+          type: "error",
+          message: countryData.Message,
+          center: "true"
+        });
+      }
+    },
+    /**
+     * @name 获取单位列表
+     * @msg type为单位类型(1:建设单位,2:勘察单位,3:设计单位,4:监理单位,5:施工单位,6:其他单位)
+     * @param {string} projectId 项目ID
+     */
+    async getOrgList(){
+      let orgData = await this.Request(GetOrgList({projectId: localStorage.getItem('projectid')}));
+      if(orgData.StatusCode === 200){
+        this.companyList = orgData.Detiel
+      } else {
+        this.$message({
+          type: "error",
+          message: orgData.Message,
+          center: "true"
+        });
+      }
+    },
+    /**
+     * @name 添加班组成员
+     * @msg 函数参数
+     * @param {Object} formName 表单对象
+     * @msg 接口参数 32个（很多都是必填数据，待调整）
+     * @param {string} projectId 项目ID
+     * @param {integer} GroupID 班组ID
+     * @param {string} UserName 姓名
+     * @param {string} Gender 性别（男：M，女：F）
+     * @param {string} Nation 民族
+     * @param {integer} Age 年龄
+     * @param {string} IdentityCard 身份证号
+     * @param {string} Mobile 手机
+     * @param {integer} Province 省
+     * @param {integer} City 市
+     * @param {integer} Area 区
+     * @param {string} DetailAddress 详细住址
+     * @param {string} WorkType 工种
+     * @param {string} UnionCard 实名卡账号
+     * @param {integer} OrgID 所属公司
+     * @param {string} WageCard 工资卡号
+     * @param {string} ACCard 门禁卡号
+     * @param {string} SignStatus 劳动合同签署状态
+     * @param {string} TrainStatus 安全培训状态
+     * @param {boolean} HasSpecialPermit 是否有特种作业证
+     * @param {string} SpecialPermitNo 特种作业证号
+     * @param {string} OperateMethod 操作类别
+     * @param {date} FirstPermitDate 初次领证日期
+     * @param {date} StartUseDate 开始使用时间
+     * @param {date} EndUseDate 结束使用时间
+     * @param {string} Photo 照片
+     * @param {boolean} IsInBlackList 是否黑名单 true为在黑名单 false为不在黑名单
+     * @param {} Reason 
+     * @param {date} dCreateTime 创建时间
+     * @param {integer} iCreator 创建人
+     * @param {date} dUpdateTime 修改时间
+     * @param {integer} iUpdator 修改人
+     * @param {boolean} bDelFlag 是否删除
+     */
+    submitForm(formName){
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          this.addLoading = true;
+          let params = {
+            ProjectID: localStorage.getItem('projectid'),
+            GroupID: Number(this.ruleForm.GroupID),
+            UserName: this.ruleForm.UserName,
+            Gender: this.ruleForm.Gender,
+            Nation: this.ruleForm.Nation,
+            Age: Number(this.ruleForm.Age),
+            IdentityCard: this.ruleForm.IdentityCard,
+            Mobile: this.ruleForm.Mobile,
+            Province: Number(this.ruleForm.Province),
+            City: Number(this.ruleForm.City),
+            Area: Number(this.ruleForm.Area),
+            DetailAddress: this.ruleForm.DetailAddress,
+            WorkType: this.ruleForm.WorkType,
+            UnionCard: this.ruleForm.UnionCard,
+            OrgID: Number(this.ruleForm.OrgID),
+            WageCard: this.ruleForm.WageCard,
+            ACCard: this.ruleForm.ACCard,
+            SignStatus: this.ruleForm.SignStatus,
+            TrainStatus: this.ruleForm.TrainStatus,
+            HasSpecialPermit: this.ruleForm.HasSpecialPermit,
+            SpecialPermitNo: this.ruleForm.SpecialPermitNo,
+            OperateMethod: this.ruleForm.OperateMethod,
+            FirstPermitDate: this.ruleForm.FirstPermitDate == "" ? require('moment')(new Date()).format('YYYY-MM-DD') : require('moment')(this.ruleForm.FirstPermitDate).format('YYYY-MM-DD'),
+            StartUseDate: this.ruleForm.StartUseDate == "" ? require('moment')(new Date()).format('YYYY-MM-DD') : require('moment')(this.ruleForm.StartUseDate).format('YYYY-MM-DD'),
+            EndUseDate: this.ruleForm.EndUseDate == "" ? require('moment')(new Date()).format('YYYY-MM-DD') : require('moment')(this.ruleForm.EndUseDate).format('YYYY-MM-DD'),
+            Photo: this.ruleForm.Photo,
+            dCreateTime: require('moment')(new Date()).format('YYYY-MM-DD'),
+            iCreator: localStorage.getItem('userId'),
+            dUpdateTime: require('moment')(new Date()).format('YYYY-MM-DD')
+            // iUpdator: "",
+            // bDelFlag: 0,
+            // IsInBlackList: 0
+          }
+          console.log("添加班组成员参数：", params);
+          this.Request(AddClassMember(params)).then(data => {
+            if (data.StatusCode === 200) {
+              this.$message({
+                type: "success",
+                message: "添加成功！",
+                center: "true"
+              });
+              this.$refs["ruleForm"].resetFields();
+              this.centerDialogVisible = false;
+              this._initData()
+            } else {
+              this.$message({
+                type: "error",
+                message: data.Message,
+                center: "true"
+              });
+            }
+          });
+          this.addLoading = false;
+        } else {
+          console.log("error submit!!");
+          return false;
+        }
+      });
+    },
+    formatterGroupName(row, column){
+      
+    },
+    /**
+     * @name 是否有特种作业证
+     * @msg 当点击“否”时清空数据
+     * @param v 选中的值，0为没有
+     */
+    changeHasSpecialPermit(v){
+      if(v==0){
+        this.ruleForm.SpecialPermitNo = ""
+        this.ruleForm.OperateMethod = ""
+        this.ruleForm.FirstPermitDate = ""
+        this.ruleForm.StartUseDate = ""
+        this.ruleForm.EndUseDate = ""
+      }
+    },
+    /**
+     * @name 添加班组成员
+     * @param {Object} formName 表单对象
+     */
+    createData(formName){
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          this.addLoading = true;
+          let params = Object.assign({}, this.ruleForm);
+          params.FirstPermitDate = params.FirstPermitDate == "" ? require('moment')(new Date()).format('YYYY-MM-DD') : require('moment')(params.FirstPermitDate).format('YYYY-MM-DD')
+          params.StartUseDate = params.StartUseDate == "" ? require('moment')(new Date()).format('YYYY-MM-DD') : require('moment')(params.StartUseDate).format('YYYY-MM-DD')
+          params.EndUseDate = params.EndUseDate == "" ? require('moment')(new Date()).format('YYYY-MM-DD') : require('moment')(params.EndUseDate).format('YYYY-MM-DD')
+          params.dCreateTime = require('moment')(new Date()).format('YYYY-MM-DD')
+          params.iCreator = localStorage.getItem('userId')
+          params.dUpdateTime = require('moment')(new Date()).format('YYYY-MM-DD')
+          params.Province = Number(params.Province)
+          params.City = Number(params.City)
+          params.Area = Number(params.Area)
+          params.GroupID = Number(params.GroupID)
+          params.ProjectID = localStorage.getItem('projectid')
+          console.log("添加班组成员参数：", params);
+          this.Request(AddClassMember(params)).then(data => {
+            if (data.StatusCode === 200) {
+              this.$message({
+                type: "success",
+                message: "添加成功！",
+                center: "true"
+              });
+              // this.$refs["ruleForm"].resetFields();
+              this.$refs[formName].resetFields();
+              this.centerDialogVisible = false;
+              this._initData()
+            } else {
+              this.$message({
+                type: "error",
+                message: data.Message,
+                center: "true"
+              });
+            }
+          });
+          this.addLoading = false;
+        } else {
+          console.log("error submit!!");
+          return false;
+        }
+      });
+    },
+    /**
+     * @name 修改班组成员
+     * @param {Object} formName 表单对象
+     */
+    updateData(formName){
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          this.editLoading = true;
+          let params = Object.assign({}, this.ruleForm);
+          params.FirstPermitDate = params.FirstPermitDate == "" ? require('moment')(new Date()).format('YYYY-MM-DD') : require('moment')(params.FirstPermitDate).format('YYYY-MM-DD')
+          params.StartUseDate = params.StartUseDate == "" ? require('moment')(new Date()).format('YYYY-MM-DD') : require('moment')(params.StartUseDate).format('YYYY-MM-DD')
+          params.EndUseDate = params.EndUseDate == "" ? require('moment')(new Date()).format('YYYY-MM-DD') : require('moment')(params.EndUseDate).format('YYYY-MM-DD')
+          params.dCreateTime = require('moment')(new Date()).format('YYYY-MM-DD')
+          params.iCreator = localStorage.getItem('userId')
+          params.dUpdateTime = require('moment')(new Date()).format('YYYY-MM-DD')
+          params.Province = Number(params.Province)
+          params.City = Number(params.City)
+          params.Area = Number(params.Area)
+          params.GroupID = Number(params.GroupID)
+          params.ProjectID = localStorage.getItem('projectid')
+          console.log("修改班组成员参数：", params);
+          this.Request(MdfClassMember(params)).then(data => {
+            if (data.StatusCode === 200) {
+              this.$message({
+                type: "success",
+                message: "修改成功！",
+                center: "true"
+              });
+              // this.$refs["ruleForm"].resetFields();
+              this.$refs[formName].resetFields();
+              this.centerDialogVisible = false;
+              this._initData()
+            } else {
+              this.$message({
+                type: "error",
+                message: data.Message,
+                center: "true"
+              });
+            }
+          });
+          this.editLoading = false;
+        } else {
+          console.log("error submit!!");
+          return false;
+        }
+      });
+    }
+  },
+  watch: {},
+  filters: {
+    filterDate(v) {
+      console.log("v",v)
+      return v + "="
+        // return require('moment')(this.userInfoData.StartUseDate).format('YYYY-MM-DD') + "至" + require('moment')(this.userInfoData.EndUseDate).format('YYYY-MM-DD')
+    }
+  },
+};
+</script>

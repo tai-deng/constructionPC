@@ -1,0 +1,94 @@
+.container-scope-list
+  .filter 
+    el-form(
+      ref="filterFormRef"
+      :model="filterForm"
+      :rules="filterRules"
+      :inline="true"
+      :validate-on-rule-change="false"
+    )
+      el-form-item
+        el-select(v-model="filterForm.BuildName" placeholder="楼栋")
+          el-option(
+            v-for="item in BuildNameList"
+            :key="item.id"
+            :label="item.text"
+            :value="item.text"
+          )
+      el-form-item
+        el-select(v-model="filterForm.Specialty" placeholder="专业")
+          el-option(
+            v-for="item in SpecialtyList"
+            :key="item.id"
+            :label="item.text"
+            :value="item.text"
+          )
+      el-form-item
+        el-select(v-model="filterForm.Floor" placeholder="楼层")
+          el-option(
+            v-for="item in FloorbyList"
+            :key="item.id"
+            :label="item.text"
+            :value="item.text"
+          )
+      el-form-item.input-text
+        el-input(v-model="filterForm.Name" placeholder="楼栋、专业、楼层、资源")
+          i(slot="prefix" class="el-input__icon el-icon-search")
+  
+  .table
+    .title
+      el-table
+        el-table-column(label="编码" align='center')
+        el-table-column(label="楼栋" align='center')
+        el-table-column(label="专业" align='center')
+        el-table-column(label="楼层" align='center')
+        el-table-column(label="变更主题" align='center')
+        el-table-column(label="截止时间" align='center')
+        el-table-column(label="状态" align='center')
+        el-table-column(label="处理" align='center')
+    .content
+      el-collapse(v-model="nowCollapse")
+        el-collapse-item(:title="`待接收（${ingPageTotal}）`" name="1")
+          el-table(:data="dataIng" :show-header="false" v-loading="ingLoading" @row-click="onPosition")
+            el-table-column(prop="Code" align='center')
+            el-table-column(prop="Building" align='center')
+            el-table-column(prop="Specialty" align='center')
+            el-table-column(prop="Floor" align='center')
+            el-table-column(prop="Theme" align='center')
+            el-table-column(prop="EndTime" align='center')
+            el-table-column(prop="DoNum" align='center')
+            el-table-column
+              template(slot-scope="scope")
+                img(:src="require('./info-ico.png')" @click="onHandle(scope.row,0)")
+          el-pagination(:total="ingPageTotal" @current-change="ingCurrentChange" :current-page.sync="ingCurrentPage"
+              :page-size="pageSize" background layout="prev, pager, next" v-show="this.ingPageTotal > this.pageSize" class="text-center" )
+
+        el-collapse-item(:title="`处理中（${dataHandle.length}）`" name="2")
+          el-table(:data="dataHandle" :show-header="false" v-loading="handleLoading" @row-click="onPosition")
+            el-table-column(prop="Code")
+            el-table-column(prop="Building")
+            el-table-column(prop="Specialty")
+            el-table-column(prop="Floor")
+            el-table-column(prop="Theme")
+            el-table-column(prop="EndTime")
+            el-table-column(prop="DoNum")
+            el-table-column
+              template(slot-scope="scope")
+                img(:src="require('./info-ico.png')" @click="onHandle(scope.row,3)")
+          el-pagination(:total="handlePageTotal" @current-change="handleCurrentChange" :current-page.sync="handleCurrentPage"
+              :page-size="pageSize" background layout="prev, pager, next" v-show="this.handlePageTotal > this.pageSize" class="text-center" )
+
+        el-collapse-item(:title="`已处理（${dataOver.length}）`" name="3")
+          el-table(:data="dataOver" :show-header="false" v-loading="overLoading" @row-click="onPosition")
+            el-table-column(prop="Code")
+            el-table-column(prop="Building")
+            el-table-column(prop="Specialty")
+            el-table-column(prop="Floor")
+            el-table-column(prop="Theme")
+            el-table-column(prop="EndTime")
+            el-table-column(prop="DoNum")
+            el-table-column
+              template(slot-scope="scope")
+                img(:src="require('./info-ico.png')" @click="onHandle(scope.row,4)")
+          el-pagination(:total="overPageTotal" @current-change="overCurrentChange" :current-page.sync="overCurrentPage"
+              :page-size="pageSize" background layout="prev, pager, next" v-show="this.overPageTotal > this.pageSize" class="text-center" )

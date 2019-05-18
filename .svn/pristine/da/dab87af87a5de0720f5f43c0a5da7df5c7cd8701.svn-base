@@ -1,0 +1,74 @@
+
+<template>
+  <div class="container-schedule-planning">
+    <!-- <five class="five" @sel-model="selModel"></five> -->
+    <fiveModul class="fiveMode"></fiveModul>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import five from "./fiveDsimulation_components/fiveHead";
+import fiveModul from "./fiveDsimulation_modules/fiveD_modules";
+
+export default {
+  name: "schedulePlanning",
+  components: {
+    five,
+    fiveModul
+  },
+  props: {
+    selectSchedule: {
+      type: Object,
+      default() {
+        return {};
+      }
+    },
+    ganttOrChartsData: Array
+  },
+  methods: {
+    selModel(v) {
+      this.selModelValue = v;
+    }
+  },
+  data() {
+    return {
+      data: "5d",
+      selModelValue: null
+    };
+  }
+  // width: 100%;
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-schedule-planning {
+  height: 100%;
+  background-color: #f0f2f5;
+  padding: 0 40px;
+}
+.container-schedule-planning .el-input--suffix .el-input__inner {
+  font-size: 18px;
+}
+</style>
+<style>
+  /* 隐藏模型部分工具条 */
+  .bf-button.gld-bf-zoomrect ,
+  .bf-button.gld-bf-measure,
+  .bf-button.bf-toolbar-button.gld-bf-sectionbox,
+  .bf-button.gld-bf-map,
+  .bf-button.gld-bf-properties,
+  .bf-button.gld-bf-settings,
+  .bf-button.gld-bf-information,
+  .bf-button.gld-bf-maximize{
+      display: none;
+  }
+  .bf-button.gld-bf-home:hover,.bf-button.gld-bf-firstperson:hover{
+    background-color: rgba(0,0,0,.5)
+  }
+  .bf-toolbar.bf-toolbar-bottom{
+    left:initial !important;
+    right:0 !important;
+    transform:initial !important; 
+    background-color: rgba(0,0,0,.4);
+    border: none;
+  }
+</style>

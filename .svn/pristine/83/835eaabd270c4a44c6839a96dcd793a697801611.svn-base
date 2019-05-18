@@ -1,0 +1,65 @@
+<template>
+  <div>
+    <header>构件清单</header>
+    <el-select v-model="floorId" placeholder="请选择" id="select1" @change="GetElementTree">
+      <el-option v-for="item in options" :key="item.id" :label="item.text" :value="item.id"></el-option>
+    </el-select>
+    <el-tree ref="tree" node-key="id" class="tree_height" show-checkbox :default-expanded-keys="expandedKeys" :default-checked-keys="checkedKeys" highlight-current :data="array" :props="defaultProps" @check="handleCheckChange" @node-click="handleNodeClick"></el-tree>
+  </div>
+</template>
+
+<script>
+  export default {
+    props: {
+      options: Array,
+      expandedKeys: Array,
+      checkedKeys: Array,
+      array: Array,
+      defaultProps: Object
+    },
+    data () {
+      return {
+        floorId: ''
+      }
+    },
+    methods: {
+      GetElementTree () {
+        this.$emit('GetElementTree', this.floorId)
+      },
+      handleCheckChange (data, checked) {
+        let treeList = this.$refs.tree.getCheckedNodes(true)
+        this.$emit('handleCheckChange', data, checked, treeList)
+      },
+      handleNodeClick (row, node) {
+        this.$emit('handleNodeClick', row, node)
+      }
+    }
+  }
+</script>
+
+<style>
+</style>
+
+<style lang="stylus" scoped>
+  header {
+    width: 100%;
+    background: #435089;
+    color: white;
+    text-align: center;
+    padding: 0.1rem 0;
+  }
+
+  .el-select {
+    width: 100%;
+    height: 50px;
+    color: white;
+    text-align: center;
+  }
+
+  .tree_height {
+    height: 750px;
+    overflow: auto;
+  }
+</style>
+
+

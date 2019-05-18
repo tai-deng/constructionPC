@@ -1,0 +1,702 @@
+<!-- navigatorBar导航栏 -->
+<template>
+  <div class="container-navigator-bar">
+    <div style="height:100%">
+      <el-container>
+        <el-header>
+          <div class="header-t">
+            <div class="head-l">
+              <p>
+                <span class="project-title">工程项目PM协同管理平台</span>
+                <span class="project-note">— {{projectName}}</span>
+              </p>
+            </div>
+            <div class="head-r">
+              <p>
+                <span class="el-icon-question"></span>
+                <span class="icon-30">
+                  <el-badge :value="999" :max="99" ></el-badge>
+                </span>
+                <span class="icon-29 user-avatar"></span>
+
+                <el-dropdown  @command="handleCommand">
+                  <span class="user-name">{{job}}-{{name}}<i class="el-icon-arrow-down el-icon--right"></i></span>
+                  <el-dropdown-menu slot="dropdown" class="dropdownmenu" style="top:50px">
+                    <el-dropdown-item command="a" >退出</el-dropdown-item>
+                  </el-dropdown-menu>
+                </el-dropdown>
+
+                <!-- <span class="user-name">项目经理-刘祥</span> -->
+              </p>
+            </div>
+          </div>
+        </el-header>
+        <el-container>
+          <el-aside>
+            <div class="nav-d">
+              <ul class="layui-nav layui-nav-tree"  lay-filter="test" v-loading="menuLoading">
+
+
+
+                <li
+                  :class="['layui-nav-item',classIndex==index?'class-index layui-nav-itemed':'',item.cMenuName=='PM节点'?'layui-nav-itemed':'','layui-nav-item' ]"
+                  v-for="(item,index) in navigations"
+                  :key="item.id"
+                  @click="toMain(index,item.cCommandName,item.ID,item.children,item.Types,item.cMenuName)"
+                >
+                  <a>
+                    <span :class="[['icon-3','icon-15','icon-22','icon-D','icon-4','icon-PM','icon-21','icon-14'][index],'icon-size']"></span>
+                    &nbsp;{{item.cMenuName.split('-')[0]}}<span class="small-suffix">{{item.cMenuName.split('-').length > 1 ? '-' + item.cMenuName.split('-')[1] : ''}}</span>
+                  </a>
+                  <dl class="layui-nav-child">
+                    <dd
+                      :class="[hoverMenu == item2.ID ? 'layui-this' : '']"
+                      v-for="(item2,siteIndex) in item.children"
+                      :key="item2.id"
+                      @click.stop="toChild(index,siteIndex,item2.cCommandName,item2.ID,item2.Types,item2.cMenuName)"
+                    >
+                      <a>&nbsp;&nbsp;•&nbsp;{{item2.cMenuName}}</a>
+                    </dd>
+                  </dl>
+                </li>
+
+
+
+
+                <!-- 侧边导航: <ul class="layui-nav layui-nav-tree layui-nav-side">-->
+                <!-- 渲染主类名 -->
+                <li
+                  :class="['layui-nav-item',classIndex==index?'class-index layui-nav-itemed':'',mainItem=='PM节点'?'layui-nav-itemed':'','layui-nav-item' ]"
+                  @click="toMainClass(index)"
+                  v-for="(mainItem,index) in mainsClass"
+                  :key="mainItem.index"
+                  style="display:none"
+                >
+                  <a>
+                    <span :class="[['icon-3','icon-15','icon-22','icon-D','icon-4','icon-PM','icon-21','icon-14'][index],'icon-size']"></span>
+                    &nbsp;{{mainItem.split('-')[0]}}<span class="small-suffix">{{mainItem.split('-').length>1?'-'+mainItem.split('-')[1]:''}}</span>
+                  </a>
+                  <!-- 渲染虚拟建造 -->
+                  <dl class="layui-nav-child" v-if="mainItem=='智慧工地'">
+                    <dd
+                      :class="[site_index==siteIndex?'layui-this':'']"
+                      v-for="(wisdomSite,siteIndex) in wisdomSiteClass"
+                      :key="wisdomSite.siteIndex"
+                      @click.stop="toWisdomSiteClass(index,siteIndex)"
+                    >
+                      <a>&nbsp;&nbsp;•&nbsp;{{wisdomSite}}</a>
+                    </dd>
+                  </dl>
+                  <dl class="layui-nav-child" v-if="mainItem=='虚拟建造-技术员'">
+                    <dd
+                      :class="[virtua_index==virtuaIndex?'layui-this':'']"
+                      v-for="(virtualItem,virtuaIndex) in virtualClass"
+                      :key="virtualItem.virtuaIndex"
+                      @click.stop="toVirtualClass(index,virtuaIndex)"
+                    >
+                      <a>&nbsp;&nbsp;•&nbsp;{{virtualItem}}</a>
+                    </dd>
+                  </dl>
+                  <dl class="layui-nav-child" v-if="mainItem=='PM节点'">
+                    <dd
+                      :class="[pm_index==pmIndex?'layui-this':'']"
+                      v-for="(PMnode,pmIndex) in PMnodeClass"
+                      :key="PMnode.pmIndex"
+                      @click.stop="toPMnodeClass(index,pmIndex)"
+                    >
+                      <a>&nbsp;&nbsp;•&nbsp;{{PMnode.split('-')[0]}}<span class="small-suffix">{{PMnode.split('-').length>1?'-'+PMnode.split('-')[1]:''}}</span></a>
+
+                    </dd>
+                  </dl>
+                  <dl class="layui-nav-child" v-if="mainItem=='系统配置'">
+                    <dd
+                      :class="[c_index==cIndex?'layui-this':'']"
+                      v-for="(configuration_class,cIndex) in configurationClass"
+                      :key="configuration_class.cIndex"
+                      @click.stop="toConfigurationClass(index,cIndex)"
+                    >
+                      <a>&nbsp;&nbsp;•&nbsp;{{configuration_class}}</a>
+
+                    </dd>
+                  </dl>
+                </li>
+              </ul>
+            </div>
+          </el-aside>
+          <el-main>
+            <!-- 内容区 -->
+            <keep-alive>
+              <router-view v-if="$route.meta.keepAlive"/>
+            </keep-alive>
+            <router-view v-if="!$route.meta.keepAlive"/>
+          </el-main>
+        </el-container>
+      </el-container>
+    </div>
+
+    <!-- 导航栏 -->
+  </div>
+</template>
+
+<script>
+import {GetDetails, GetLoginUserInfo, GetMenuListByUID, AddLogInfo} from '@/api/api.js'
+import {mapGetters} from 'vuex'
+export default {
+  data() {
+    return {
+      // active: 0 // tab导航下标
+      hoverMenu: sessionStorage.getItem('menuID'),
+      menuLoading: false,  //菜单栏加载动画
+      job:'',
+      name:'',
+      mainsClass: [
+        "项目主页",
+        "虚拟建造-技术员",
+        "三维浏览",
+        "5D模拟",
+        "智慧工地",
+        "PM节点",
+        "智能报表-资料员",
+        "系统配置"
+      ], //主类
+      wisdomSiteClass: [
+        "数据总览",
+        "劳务实名制",
+        "视频监控",
+        "环境监测",
+        "塔吊监测",
+        "升降机监测"
+      ], //智慧工地子类
+      virtualClass: [
+        "step1 模型上传",
+        "step2 信息配置",
+        "step3 协同设定",
+        "step4 进度规划",
+        "step5 清单导入",
+        "step6 构件关联",
+        "step7 清单调优",
+        "step8 认证设定"
+      ], //虚拟建造子类
+      PMnodeClass: [
+        "集成管理-工作台",
+        "时间管理-施工员",
+        "范围管理-施工员",
+        "采购管理-材料员",
+        "成本管理-预算员",
+        "质量管理-质量员",
+        "风险管理-质安员",
+        "人力资源-劳资员",
+        "沟通管理-资料员"
+      ], // PM节点子类
+      configurationClass:[
+        '进度配置',
+        '数据字典',
+        '权限配置',
+        '模型样式',
+        '时限设置',
+        '项目开通',
+        '系统日志',
+        '考勤设置'
+      ],//系统配置子类
+      // configurationClass:[
+      //   '进度配置',
+      //   '数据字典',
+      //   '周期管理',
+      //   '项目开通',
+      //   '权限配置',
+      //   '系统日志'
+      // ],//系统配置子类
+      classIndex: 0, //所选大类目下标，默认PM节点
+      site_index:-1,//智慧工地子下标
+      virtua_index:-1,//虚拟建造子下标
+      pm_index:-1,//PM节点子下标
+      c_index:-1,//系统配置 子下标
+      projectName:'',//项目名称
+      navigations: []  //侧边导航
+    };
+  },
+  created() {
+    console.log("== created mapGetters ==", this.getMenuAndOAuth)
+    this.getMenus()
+    this.getProject();
+    console.log(this.$router.history.current.path);
+    //获取路由路径
+    let path = this.$router.history.current.path;
+    // 获取没有下级的主导航菜单下标
+    let classI = [
+      "/nav/to/index",
+      "/nav/to/threedView",
+      "/nav/to/fiveDsimulation",
+      "/nav/to/intelligenceReports",
+      // "/nav/to/configuration"
+    ].indexOf(path);
+    console.log(classI);
+    //下标分别对应layui导航菜单组件的主菜单下标
+    switch (classI) {
+      case 0:
+        this.classIndex = 0; //项目主页
+        break;
+      case 1:
+        this.classIndex = 2; // 三维浏览
+        break;
+      case 2:
+        this.classIndex = 3; //5D模拟
+        break;
+      case 3:
+        this.classIndex = 6; //智能报表
+        break;
+      // case 4:
+      //   this.classIndex = 7; //系统配置
+      //   break;
+    }
+    if(classI!=-1) return
+    //智慧工地
+    this.classIndex = 4;
+    this.site_index = [
+      "/nav/to/dataOverView",
+      "/nav/to/laborRealName",
+      "/nav/to/monitoring",
+      "/nav/to/environmentalMonitoring",
+      "/nav/to/towerCrane",
+      "/nav/to/elevator"].indexOf(path)
+    if(this.site_index!=-1) return
+    //虚拟建造
+    this.classIndex = 1;
+    this.virtua_index = ["/nav/to/uploadModel",
+          "/nav/to/information",
+          "/nav/to/collaborativeSetting",
+          "/nav/to/schedulePlanning",
+          "/nav/to/listingImport",
+          "/nav/to/artifactsAssociated",
+          "/nav/to/qingDrab",
+          "/nav/to/SetAuthentication"].indexOf(path)
+          if(this.virtua_index!=-1) return
+          //PM节点
+    this.classIndex = 5;
+    this.pm_index = ["/nav/to/integration",
+          "/nav/to/time",
+          "/nav/to/scope",
+          "/nav/to/procurement",
+          "/nav/to/cost",
+          "/nav/to/quality",
+          "/nav/to/risk",
+          "/nav/to/human",
+          "/nav/to/communication"].indexOf(path)
+          if(this.pm_index!=-1) return
+    // 系统配置
+    this.classIndex = 7;
+    this.c_index = [
+          "/nav/to/progress",
+          "/nav/to/dataDictionary",
+          "/nav/to/organization",
+          "/nav/to/cycle",
+          "/nav/to/cycle",
+          "/nav/to/project",
+          "/nav/to/systemlog",
+          "/nav/to/attendance"
+          ].indexOf(path)
+          console.log(this.c_index)
+          if(this.c_index!=-1) return
+
+  },
+  mounted() {
+    this.getLoginUserInfo()
+    this.$nextTick(() => {
+      /* eslint-disable */
+      console.log(layui);
+      //注意：导航 依赖 element 模块，否则无法进行功能性操作
+      layui.use("element", () => {
+        let element = layui.element;
+
+        //…
+      });
+    });
+  },
+  methods: {
+    /**
+     * @name 获取菜单栏
+     */
+    async getMenus(){
+      this.menuLoading = true;
+      this.navigations = []
+      this.navigations = await this.getDataByVuex(GetMenuListByUID, {uID: Number(localStorage.getItem('userId'))}, 'GET_MENU_OAUTH', 'getMenuAndOAuth', true)
+      this.menuLoading = false;
+      // console.log("==getMenus==",this.navigations)
+    },
+    toChild(index,siteIndex,cCommandName,ID,Types,cMenuName){
+      this.classIndex = index;
+      // this.$store.commit("GET_MENU_TYPE", Types);  //不好用：刷新后值清空的问题
+      sessionStorage.setItem('menuType', Types);  //可完善：如果用户不通过点击菜单栏跳转路由
+      sessionStorage.setItem('menuID', ID);
+      this.hoverMenu = sessionStorage.getItem('menuID');
+      //添加日志
+      this.Request(AddLogInfo({MenuName: cMenuName}))
+      this.$router.push({ path: "/nav/to/" + cCommandName });
+      if([8,9,10,11,12,128,132,133,135,136,138,139,140,141,142,144,146].indexOf(ID) != -1){
+        this.closeModel()
+      }
+    },
+    toMain(index,cCommandName,ID,children,Types,cMenuName){
+      this.classIndex = index;
+      if(children == null){
+        // this.$store.commit("GET_MENU_TYPE", Types);  //不好用，刷新后值清空的问题
+        sessionStorage.setItem('menuType', Types);  //可完善：如果用户不通过点击菜单栏跳转路由
+        sessionStorage.setItem('menuID', ID);
+        this.hoverMenu = sessionStorage.getItem('menuID');
+        //添加日志
+        this.Request(AddLogInfo({MenuName: cMenuName})).then(data => {
+          if(data.StatusCode === 200){
+            console.log("日志插入成功！")
+          }else{
+            console.log("日志插入失败！")
+          }
+        })
+        this.$router.push({ path: "/nav/to/" + cCommandName });
+      }
+      if([130].indexOf(ID) != -1){
+        this.closeModel()
+      }
+    },
+    getLoginUserInfo(){
+      this.Request(GetLoginUserInfo({curUserId:Number(localStorage.getItem('userId'))})).then(res=>{
+        console.log(res)
+        if(res.StatusCode==200){
+          this.job = res.Detiel[0].loginUserInfo.cRoleName
+          this.name = res.Detiel[0].loginUserInfo.cName
+        }
+      })
+    },
+    /**
+     * 点击主类
+     */
+    toMainClass(index) {
+      console.log(index);
+      this.classIndex = index;
+      this.$router.push({
+        path: [
+          "/nav/to/index",
+          // "/nav/to/wisdomSite",
+          "",
+          // "/nav/to/uploadModel",
+          "/nav/to/threedView",
+          "/nav/to/fiveDsimulation",
+          "",
+          // "/nav/to/PMnode",
+          "",
+          "/nav/to/intelligenceReports",
+          // "/nav/to/configuration"
+        ][index]
+      });
+      if([0,3,5,6].indexOf(index)!=-1){
+        this.closeModel()
+      }
+    },
+    /**
+     * 点击智慧工地子类
+     */
+    toWisdomSiteClass(index, siteIndex) {
+      this.classIndex = index;
+      this.$router.push({
+        path: [
+          "/nav/to/dataOverView",
+          "/nav/to/laborRealName",
+          "/nav/to/monitoring",
+          "/nav/to/environmentalMonitoring",
+          "/nav/to/towerCrane",
+          "/nav/to/elevator"
+        ][siteIndex]
+      });
+      this.closeModel()
+    },
+    /**
+     * 点击虚拟建造子类
+     */
+    toVirtualClass(index, virtuaIndex) {
+      this.classIndex = index;
+      this.$router.push({
+        path: [
+          "/nav/to/uploadModel",
+          "/nav/to/information",
+          "/nav/to/collaborativeSetting",
+          "/nav/to/schedulePlanning",
+          "/nav/to/listingImport",
+          "/nav/to/artifactsAssociated",
+          "/nav/to/qingDrab",
+          "/nav/to/SetAuthentication"
+        ][virtuaIndex]
+      });
+      this.closeModel()
+    },
+    /**
+     * 点击PM节点子类
+     */
+    toPMnodeClass(index, pmIndex) {
+      console.log(index);
+      this.classIndex = index;
+      this.$router.push({
+        path: [
+          "/nav/to/integration",
+          "/nav/to/time",
+          "/nav/to/scope",
+          "/nav/to/procurement",
+          "/nav/to/cost",
+          "/nav/to/quality",
+          "/nav/to/risk",
+          "/nav/to/human",
+          "/nav/to/communication"
+        ][pmIndex]
+      });
+      this.closeModel()
+    },
+    /**
+     * 点击系统配置子类
+     */
+    toConfigurationClass(index, cIndex) {
+      console.log(index);
+      this.classIndex = index;
+      this.$router.push({
+        path: [
+          "/nav/to/progress",
+          "/nav/to/dataDictionary",
+          "/nav/to/organization",
+          "/nav/to/modelStyle",
+          "/nav/to/timeSetting",
+          "/nav/to/project",
+          "/nav/to/systemlog",
+          "/nav/to/attendance"
+        ][cIndex]
+      });
+      this.closeModel()
+    },
+
+    closeModel(){
+      /**
+       * 直接关闭模型
+       */
+      this.$store.commit('GET_MODEL_BOX',{
+        isShowModel:false,//是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+        isLoadModel:true,//是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+        top: 0,//距离顶部距离‘px'
+        left: 0,//距离左边距离‘px'
+        width: 0,//模型宽‘px'
+        height: 0,//模型高 ‘px'
+        zIndex:0,//模型层级
+        background:'rgba(0,0,0,0)',
+        ElementIDs:[],// 所有要显示的构件数组，包括半隐藏构件
+        highLightElementIDs: [],// 高亮显示的构件
+        functionNumber:[],// 需要模型调用的函数编号数组
+      })
+    },
+    //根据项目id获取项目详情
+    getProject(){
+      this.Request(GetDetails({projectId:localStorage.getItem('projectid')})).then(res=>{
+        if(res.StatusCode === 200){
+          this.projectName=res.Detiel[0].Name
+        }else{
+          this.$message({type:"error",message:res.Message,center:"true"});
+        }
+      })
+    },
+    handleCommand(command){
+      console.log('退出登录')
+      localStorage.clear()
+      sessionStorage.clear()
+      this.$router.push({path:'/login'})
+    }
+  },
+  computed:{
+    ...mapGetters([
+        'getMenuAndOAuth'
+    ])
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+@import '../../assets/stylus/variable.styl'
+
+.container-navigator-bar
+  width 100%
+  height 100%
+  overflow hidden
+  .header-t
+    box-sizing border-box
+    height 100%
+    display flex
+    justify-content space-between
+    background-color #eff3ff
+    .head-l
+      height 100%
+      line-height 60px
+      box-sizing border-box
+      padding-left 20px
+      .project-title
+        font-size $font-size-24
+        font-family SourceHanSansCN-Medium
+        font-weight 500
+        color $font-color-11
+        line-height $font-size-24
+        padding-right 20px
+      .project-note
+        font-size $font-size-20
+        font-family SourceHanSansCN-Medium
+        font-weight 500
+        color $font-color-09
+        line-height $font-size-20
+    .head-r
+      height 100%
+      line-height 60px
+      box-sizing border-box
+      padding-right 20px
+      p
+        span
+          display inline-block
+          width 80px
+          font-size $font-size-24
+          .el-badge
+            margin-top -26px
+            margin-left -5px
+        .user-name
+          font-size $font-size-16
+          font-family SourceHanSansCN-Normal
+          font-weight 400
+          color $font-color-10
+          line-height 60px
+          width initial
+          // float right
+        .user-avatar
+          width 40px
+  .nav-d
+    .icon-size
+      font-size $font-size-16
+    .small-suffix
+      font-size $font-size-14
+      display inline-block
+      font-weight 100
+</style>
+<style>
+.class-index {
+  box-sizing: border-box;
+  background: -moz-radial-gradient(
+    rgba(55, 55, 55, 0.2),
+    rgba(55, 52, 55, 0.2),
+    rgba(71, 117, 202, 0.3)
+  );
+  background: -webkit-radial-gradient(
+    rgba(55, 55, 55, 0.2),
+    rgba(55, 52, 55, 0.2),
+    rgba(71, 117, 202, 0.3)
+  );
+      background-size: 100% 60px;
+}
+.class-index::before {
+  content: "▏";
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 60px;
+  color: #4580ff;
+  line-height: 60px;
+  overflow: hidden;
+}
+.navigator-bar .van-tabbar-item {
+  font-size: 24px;
+}
+.navigator-bar .van-icon:before {
+  font-size: 40px;
+}
+.container-navigator-bar .van-tabbar {
+  height: 100px;
+  border-top: 1px solid #e5e5e5;
+}
+[class^="icon-"],
+[class*=" icon-"] {
+  font-size: 42px;
+}
+</style>
+<style>
+.el-header {
+  height: 60px !important;
+  background: rgba(239, 243, 255, 1);
+  box-shadow: 0px 1px 4px 0px rgba(210, 213, 219, 1);
+  z-index: 99;
+}
+.el-aside {
+  width: 180px !important;
+  height: 100%;
+  background-color: #1e2637 !important;
+}
+.el-aside .layui-nav {
+  background-color: #00152a;
+}
+.el-aside .layui-nav-tree {
+  width: 100%;
+}
+.el-aside .layui-nav-itemed > .layui-nav-child {
+  background-color: #242f45 !important;
+}
+.el-aside .layui-nav-tree .layui-nav-item a {
+  font-size: 16px;
+}
+.el-aside .layui-nav .layui-nav-item a {
+  padding: 0 0 0 16px;
+  font-weight: 100;
+  color: #fff;
+  height: 60px;
+  line-height: 60px;
+  cursor: default;
+}
+/* 去掉下拉三角形*/
+.el-aside .layui-nav .layui-nav-more {
+  border-width: 0 !important;
+}
+.el-container {
+  height: 100%;
+}
+.el-main,
+.el-aside,
+.el-header,
+.el-footer {
+  background-color: initial;
+  color: initial;
+  text-align: initial;
+  line-height: initial;
+  padding: initial;
+}
+
+body > .el-container {
+  margin-bottom: 40px;
+}
+.layui-nav-tree .layui-nav-child dd.layui-this {
+  background-color: initial;
+}
+.layui-nav-tree .layui-nav-bar {
+  background-color: #4580ff !important;
+  width: 5px;
+}
+.layui-nav-tree .layui-nav-child dd.layui-this a,
+.layui-nav-tree .layui-this > a {
+  background-color: initial;
+  color: #4580ff;
+}
+.el-container:nth-child(5) .el-aside,
+.el-container:nth-child(6) .el-aside {
+  line-height: 260px;
+}
+
+.el-container:nth-child(7) .el-aside {
+  line-height: 320px;
+}
+.container-navigator-bar .layui-nav-tree {
+  height: 100%;
+}
+.container-navigator-bar .layui-nav {
+  border-radius: initial;
+}
+.el-aside::-webkit-scrollbar {
+  display: none;
+}
+.el-header .el-popper[x-placement^=bottom]{
+  margin-top: 0 !important
+}
+.dropdownmenu{top:50px!important}
+</style>

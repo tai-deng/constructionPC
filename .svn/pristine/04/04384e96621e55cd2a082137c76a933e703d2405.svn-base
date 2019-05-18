@@ -1,0 +1,321 @@
+<!-- 权限 jurisdiction -->
+<template>
+  <div class="jurisdiction-container">
+    <div class="j-title flex-row">
+      <div class="j-title-text">权限</div>
+    </div>
+    <div class="j-set-content-scroll" v-if="jurisdiction_s.length">
+       <div class="check-all">
+         <el-checkbox v-model="allChecked" @change="allCheckedChange" >全选</el-checkbox>
+       </div>
+      <!-- 第一层导航 -->
+      <div class="j-set-content" v-for="(item,index) in jurisdiction_s" :key="item.id" >
+        <div class="j-set-warp">
+          <div class="j-set flex-between" @click.stop="onChoose(index)">
+            <div class="j-set-l flex">
+              <div class="j-set-check">
+                <el-checkbox size="18px" v-model="item.check" @change="onCheck(item.check,item)"></el-checkbox>
+              </div>
+              <div class="j-set-name">
+                <span>{{item.text}}</span>
+                <span v-if="[0,2,3,6].indexOf(index)!=-1" class="j-state" @click="onSelect(item,true)" :style="{'background-color':item.sate=='1'?'#FDA143':'#DDDDDD'}">只读</span>
+                <span v-if="[0,2,3,6].indexOf(index)!=-1" class="j-state" @click="onSelect(item,false)" :style="{'background-color':item.sate=='2'?'#FDA143':'#DDDDDD'}">编辑</span></div>
+            </div>
+            <div
+              class="j-set-r flex-end"
+              :class="item.isClick?'el-icon-caret-bottom':'el-icon-caret-top'"
+              v-if="item.children"
+            ></div>
+          </div>
+        </div>
+
+
+        <!-- 第二层子导航 -->
+        <template v-if="item.isClick">
+          <div class="j-set-children flex" v-for="va in item.children" :key="va.id">
+            <!-- <el-checkbox
+              size="18px"
+              class="j-set-children-check"
+              v-model="va.check"
+              @change="onCheckChildren(va.check,item,va)"
+            ></el-checkbox> -->
+            <div class="j-set-children-name">
+              <span>{{va.text}}</span>
+              <span class="j-state"  @click="onSelect(va,true)"  :style="{'background-color':va.sate=='1'?'#FDA143':'#DDDDDD'}">只读</span>
+              <span class="j-state"  @click="onSelect(va,false)" :style="{'background-color':va.sate=='2'?'#FDA143':'#DDDDDD'}">编辑</span>
+            </div>
+            <template v-if="item.name== 'PM节点'">
+              <div
+                class="j-set-children-config"
+                @click.stop="onConfig(va.id)"
+              >{{va.config? '解除配置':'配置导航'}}</div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import {GetMenuList,GetListByRoleID,SaveMenu} from '@/api/api.js'
+import {infaces} from '../module/interfaces.js'
+export default {
+  name: "departments",
+  data() {
+    return {
+      jurisdiction_s: [],
+      i: 0,
+      allChecked:-1,//全选
+    };
+  },
+  created(){
+    this._initData()
+  },
+  
+  props: [
+    'role_sel',//选中的人员
+    ],
+  methods: {
+    _initData(){
+      //获取所有权限
+      infaces(this,GetMenuList,{}).then(list=>{
+        console.log(list)
+        // 数据处理
+        list.Detiel.forEach(i=>{
+          i.check=false //是否选
+          i.isClick = true //是否选择
+          if(i.children){
+            console.log(i.children)
+            i.children.forEach(j=>{
+              j.check = false // 是否选择
+            })
+          }
+        })
+        console.log(list)
+        this.jurisdiction_s = list.Detiel
+      })
+      console.log(this.role_sel)
+      // this.getListByRoleID(this.role_sel.id) 
+      
+    },
+    /**
+     * 根据角色id获取权限列表
+     */
+    getListByRoleID(Rid){
+      infaces(this,GetListByRoleID,{Rid}).then(res=>{
+        console.log(res.Detiel)
+        let arr = this.jurisdiction_s
+        this.jurisdiction_s.forEach((i,index)=>{
+          i.check = res.Detiel.sate=='授权'?true:false
+          if(i.children){
+            i.children.forEach(j=>{
+              j.check = res.Detiel[index].sate=='授权'?true:false
+            })
+          }
+        })
+        console.log(this.jurisdiction_s)
+
+      })
+    },
+    // 展开节点
+    onChoose(index) {
+      this.jurisdiction_s[index].isClick = !this.jurisdiction_s[index].isClick;
+    },
+    
+    // 子选项
+    onCheckChildren(e,item,va) {
+      console.log(e,item,va);
+    },
+    // 配置
+    onConfig(id) {
+      console.log("配置", id);
+    },
+    /**
+     * 监听全选
+     */
+    allCheckedChange(allChecked){
+      console.log('是否全选',allChecked)
+      this.jurisdiction_s[0].check = true
+      this.jurisdiction_s.forEach(i=>{
+        i.check = allChecked
+      })
+    },
+    // 点击第一层权限菜单复选框
+    onCheck(check,item) {
+      console.log('点击第一层权限菜单复选框',check,item);
+    },
+    /**
+     * 只读与编辑选择
+     *   isReadyOnly: true只读,flase:编辑
+     *   item: 选项对象
+     */
+    onSelect(item,isReadyOnly){
+      console.log(item,isReadyOnly)
+      let sate = isReadyOnly?1:2
+      item.sate = item.sate!=sate?sate:0
+      console.log(this.role_sel)
+      // let params = {
+      //   ids:item.id,
+      //   Types:sate,
+      //   rID:this.role_sel.id,
+      //   isCancel:item.sate?--item.sate:++item.sate
+      // }
+      // this.saveMenu(params)
+      },
+      /**
+       * 分配和取消权限菜单
+       */
+      // saveMenu(params){
+      //   infaces(this,SaveMenu,params).then(res=>{
+      //     console.log(res)
+      //   })
+      // },
+  },
+  computed: {
+    roleId(){
+      return this.role_sel.id
+    }
+  },
+  watch:{
+    roleId(d){
+      console.log(d)
+      this.getListByRoleID(d)
+    }
+  }
+};
+</script>
+
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.jurisdiction-container {
+  width: 24.44%;
+  overflow: hidden;
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+  color: rgba(102, 102, 102, 1);
+  position: relative;
+
+  .j-title {
+    width: 100%;
+    height: 50px;
+    background: rgba(67, 80, 137, 1);
+    font-size: 20px;
+    font-family: SourceHanSansCN-Medium;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 1);
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+  }
+
+  .j-set-content-scroll {
+    padding-top: 50px;
+    height: 95.6%;
+    overflow-y: auto;
+  }
+   .j-set-content-scroll .check-all{
+      background-color: white;
+      
+      // line-height:27px;
+      padding-left 20px;
+   }
+
+  .j-set-content {
+    .j-set-warp {
+      padding: 0 20px;
+      background-color: #fff;
+    }
+
+    .j-set-children {
+      height: 40px;
+      background: rgba(244, 246, 255, 1);
+      font-size: 18px;
+      font-family: SourceHanSansCN-Regular;
+      font-weight: 400;
+      margin-left: 56px;
+      position: relative;
+
+      .j-set-children-check {
+        width: 18px;
+        height: 18px;
+        margin-right: 20px;
+      }
+
+      .j-set-children-config {
+        position: absolute;
+        right: 21px;
+        top: 5px;
+        font-size: 18px;
+        font-family: SourceHanSansCN-Regular;
+        font-weight: 400;
+        color: rgba(69, 128, 255, 1);
+      }
+    }
+
+    .selText {
+      color: #4580FF;
+    }
+
+    .j-set {
+      height: 40px;
+      border-bottom: 1px solid #E5E5E5;
+
+      .j-set-l {
+        flex: 1;
+        font-size: 16px;
+        font-family: SourceHanSansCN-Normal;
+        font-weight: 400;
+        color: rgba(51, 51, 51, 1);
+
+        .j-set-l-name {
+          flex: 1;
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+
+        .j-set-check {
+          width: 18px;
+          margin-right: 20px;
+        }
+      }
+
+      .j-set-r {
+        font-size: 18px;
+        font-family: SourceHanSansCN-Medium;
+        font-weight: 500;
+
+        .j-set-reset {
+          color: rgba(69, 128, 255, 1);
+          margin-right: 15px;
+        }
+      }
+    }
+  }
+}
+</style>
+<style>
+.j-state{
+  display: inline-block;
+  background:rgba(221,221,221,1);
+border-radius:12px;
+font-size:14px;
+font-family:PingFangSC-Regular;
+font-weight:400;
+color:rgba(255,255,255,1);
+line-height:20px;
+margin-left: 10px;
+padding: 1px 16px;
+}
+.j-set-children-name span:first-child, .j-set-name span:first-child{
+  display: inline-block;
+  width: 140px;
+  margin-right: 10px;
+}
+.check-all .el-checkbox__label{
+      font-size:16px;
+      font-family:SourceHanSansCN-Medium;
+      font-weight:500;
+      color:rgba(69,128,255,1);
+      margin-left: 14px
+}
+</style>

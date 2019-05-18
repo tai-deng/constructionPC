@@ -1,0 +1,550 @@
+<template>
+  <div class="scopeList-container">
+    <div class="house-model" :span="12">
+      <div class="model-container">
+        <!-- <el-col :span="10">
+          <element-tree
+            :options="options"
+            :expandedKeys="expandedKeys"
+            :checkedKeys="checkedKeys"
+            :array="array"
+            :defaultProps="defaultProps"
+            @GetElementTree="GetElementTree"
+            @handleCheckChange="handleCheckChange"
+            @handleNodeClick="handleNodeClick"
+          ></element-tree>
+        </el-col>-->
+        <div ref="modelContainer" class="model-container"></div>
+      </div>
+    </div>
+    <div class="filter">
+      <el-row>
+        <el-col :span="20">
+          <el-form
+            ref="filterFormRef"
+            :model="filterForm"
+            :inline="true"
+            :validate-on-rule-change="false"
+          >
+          <el-col :span="6">
+            <el-form-item>
+              <el-select v-model="filterForm.BuildName" placeholder="楼栋">
+                <el-option
+                  v-for="item in BuildNameList"
+                  :key="item.id"
+                  :label="item.text"
+                  :value="item.text"
+                ></el-option>
+              </el-select>
+            </el-form-item></el-col>
+<el-col :span="6">
+            <el-form-item>
+              <el-select v-model="filterForm.Specialty" placeholder="专业">
+                <el-option
+                  v-for="item in SpecialtyList"
+                  :key="item.id"
+                  :label="item.text"
+                  :value="item.text"
+                ></el-option>
+              </el-select>
+            </el-form-item></el-col>
+<el-col :span="6">
+            <el-form-item>
+              <el-select v-model="filterForm.Floor" placeholder="楼层">
+                <el-option
+                  v-for="item in FloorbyList"
+                  :key="item.id"
+                  :label="item.text"
+                  :value="item.text"
+                ></el-option>
+              </el-select>
+            </el-form-item></el-col>
+<el-col :span="6">
+            <el-form-item class="ser-bg">
+              <el-input v-model="filterForm.Name" placeholder="楼栋、专业、楼层、资源" @blur="onBlur">
+                <i slot="prefix" class="el-input__icon el-icon-search"></i>
+              </el-input>
+            </el-form-item></el-col>
+          </el-form>
+        </el-col>
+        <el-col :span="2">
+          <el-button @click="goto()">返回列表</el-button>
+        </el-col>
+      </el-row>
+      <el-card
+        class="box-card new-box-card"
+        v-for="(item,index) in PurchaseList"
+        :key="index"
+        body-style="display:none;"
+      >
+        <div slot="header" class="clearfix border-bottom" @click.stop="onPosition(item)">
+          <div class="scope-status">
+            <img src="../../../assets/imgs/scope_load.png" v-if="item.WorkStatus==0">
+            <img src="../../../assets/imgs/scope_ing.png" v-if="item.WorkStatus==3">
+            <img src="../../../assets/imgs/scope_done.png" v-if="item.WorkStatus==4">
+          </div>
+          <span>采购批次:{{item.Code}}</span>
+          <el-button
+            style="float: right"
+            type="primary"
+            round
+            @click.stop="toPurchaseDetail(item.ID)"
+          >采购详情</el-button>
+          <div class="text item new-list-item">
+            <el-row>
+              <el-col :span="8">
+                <div class="grid-content bg-purple">申请人:{{item.ApplyPersonName}}</div>
+              </el-col>
+              <el-col :span="8">
+                <div class="grid-content bg-purple-light text-center">发起日期:{{item.dCreateTime}}</div>
+              </el-col>
+              <el-col :span="8">
+                <div class="grid-content bg-purple text-right">需用日期:{{item.DemandTime}}</div>
+              </el-col>
+            </el-row>
+          </div>
+        </div>
+      </el-card>
+      <el-pagination
+        :total="totalNum"
+        @current-change="curChange"
+        :page-size="paging.rows"
+        :current-page.sync="paging.page"
+        background
+        layout="prev, pager, next"
+        class="text-center"
+      ></el-pagination>
+    </div>
+  </div>
+</template>
+<style>
+</style>
+<script>
+import { mapMutations } from "vuex";
+import {
+  GetPurchaseRange,
+  GetBuilding,
+  GetSpecialtybyBuilding,
+  GetFloorbyBuilding
+} from "../../../api/api.js";
+import {
+  dataResetBSF,
+  getBuildList,
+  getSpecialtyList,
+  getFloorList
+} from "./util/scopeList.js";
+import {onHandle,getAllElementID} from '../scope/util/util.js'
+export default {
+  data() {
+    return {
+      allElementId:'',
+      projectid: localStorage.getItem("projectid"),
+      BuildNameList: [], // 楼栋下拉
+      SpecialtyList: [], // 专业下拉
+      FloorbyList: [], // 楼层下拉
+      paging: { page: 1, rows: 5 }, // [采购列表分页]
+      filterForm: {
+        BuildName: "", // 楼栋
+        Specialty: "", // 专业
+        Floor: "", // 楼层
+        Name: "" // 查询内容
+      },
+      PurchaseList: [],
+      totalNum: 0,
+      purchaseDetailId: "" // 采购详情ID
+    };
+  },
+  created() {
+    getAllElementID(this)
+    this.initModel(); //加载模型
+    // 获取采购列表
+    this.getPurchaseList();
+    // 楼栋下拉
+    getBuildList(this, GetBuilding);
+  },
+  methods: {
+    // 联动模型定位
+    onPosition(row) {
+      onHandle(this, {purchaseid:row.ID ,projectid:this.projectid}, 'wz');
+    },
+    /**[获取采购列表] */
+    getPurchaseList() {
+      this.load();
+      GetPurchaseRange({
+        BuildName: this.filterForm.BuildName, // 楼栋
+        Specialty: this.filterForm.Specialty, // 专业
+        Floor: this.filterForm.Floor, // 楼层
+        Name: this.filterForm.Name, // 搜索内容
+        page: this.paging.page, // 第几也页
+        rows: this.paging.rows // 每页行数
+      }).then(res => {
+        this.$toast.clear();
+        if (res.StatusCode == 200) {
+          res.Detiel.forEach(element => {
+            element.dCreateTime = element.dCreateTime
+              ? require("moment")(element.dCreateTime).format("YYYY-MM-DD")
+              : "/";
+            element.DemandTime = element.DemandTime
+              ? require("moment")(element.DemandTime).format("YYYY-MM-DD")
+              : "/";
+          });
+          this.PurchaseList = res.Detiel;
+          this.totalNum = Number(res.Count);
+        }
+      });
+    },
+    // 分页
+    curChange(d) {
+      this.paging.page = d;
+      this.getPurchaseList();
+    },
+    // 输入搜素
+    onBlur() {},
+
+    /**[采购详情] */
+    toPurchaseDetail(id) {
+      this.$router.push({
+        path: "scopeListDetail",
+        query: { purchaseDetailId: id }
+      });
+    },
+    goto() {
+      this.$router.go(-1);
+    },
+    /**
+     * 加载模型
+     */
+    initModel() {
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [34] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    })
+  },
+  watch: {
+    // 搜索
+    "filterForm.Name": {
+      handler(val, oldval) {
+        if (val != "") {
+          this.getPurchaseList();
+        }
+      }
+    },
+    // 楼层
+    "filterForm.Floor": {
+      handler(val, oldval) {
+        if (val != "") {
+          dataResetBSF(this, "Floor");
+          this.getPurchaseList();
+        }
+      }
+    },
+    // 专业
+    "filterForm.Specialty": {
+      handler(val, oldval) {
+        if (val != "") {
+          dataResetBSF(this, "Specialty");
+          getFloorList(this, GetFloorbyBuilding);
+          this.getPurchaseList();
+        }
+      }
+    },
+    // 楼栋
+    "filterForm.BuildName": {
+      handler(val, oldval) {
+        if (val != "") {
+          dataResetBSF(this, "BuildName");
+          getSpecialtyList(this, GetSpecialtybyBuilding);
+          this.getPurchaseList();
+        }
+      }
+    }
+  }
+};
+</script>
+<style  lang='stylus' rel='stylesheet/stylus'>
+.scopeList-container {
+  padding: 15px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  background-color: rgba(245, 246, 251, 1);
+  display: flex;
+  justify-content: space-between;
+
+  .house-model {
+    margin-right: 10px;
+    width: 820px;
+    height: 100%;
+    background-color: #fff;
+  }
+
+  .model-container {
+    width: 98%;
+    height: 100%;
+    padding: 0 !important;
+    z-index: 90;
+  }
+
+  .el-col {
+    text-align: center;
+    color: #333;
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .el-col .el-button--default {
+    background: #FDA143;
+    padding: 0;
+    width: 120px;
+    height: 40px;
+    line-height: 40px;
+    color: #fff;
+    border: none;
+  }
+
+  .filter {
+    padding: 16px 0 0 0;
+    margin-top 18px {
+      .el-select .el-input__inner {
+        border: 1px solid #ecedf1;
+        border-radius: 5px;
+        overflow: hidden;
+      }
+
+      .el-input__suffix {
+        width: 50px;
+        background: #44508a;
+        border-radius: 0 5px 5px 0;
+      }
+
+      .el-input--suffix {
+        overflow: hidden;
+      }
+
+      .el-select .el-input .el-select__caret {
+        color: #fff;
+      }
+    }
+  }
+
+  .table {
+    .title {
+      th {
+        background: #44508a;
+      }
+
+      th .cell {
+        color: #fff;
+      }
+
+      .el-table__body-wrapper {
+        display: none;
+      }
+    }
+
+    .content {
+      .el-collapse-item__content {
+        padding-bottom: 0;
+      }
+
+      .el-table td {
+        border-style: dashed;
+      }
+
+      .el-table tr:last-child td {
+        border: none;
+      }
+
+      .el-table::before {
+        display: none;
+      }
+
+      .el-collapse-item, .el-collapse-item .el-collapse-item__header {
+        text-indent: 18px;
+        background: #F5F6FB;
+      }
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+  }
+
+  .text-right {
+    text-align: right;
+  }
+
+  .text-center {
+    text-align: center;
+  }
+
+  .new-box-card {
+    padding-left: 20px;
+    padding-right: 20px;
+    position: relative;
+  }
+
+  .new-box-card .scope-status {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 10;
+  }
+
+  .new-box-card .scope-status image {
+    width: 89px;
+    height: 89px;
+    display: block;
+  }
+
+  .new-box-card .new-list-item {
+    margin: 20px 0 0;
+    font-size: 16px;
+    color: #333;
+  }
+
+  .new-box-card .el-card__body {
+    padding: 0;
+  }
+
+  .new-box-card .border-bottom {
+    padding: 20px 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  .new-box-card .border-bottom span {
+    font-size: 18px;
+    margin-left: 40px;
+  }
+
+  .new-list-item .bg-purple {
+    font-size: 16px;
+  }
+
+  .new-box-card .border-bottom .el-button span {
+    font-size: 16px;
+    margin-left: 0;
+  }
+
+  .new-box-card .el-card__header {
+    padding: 0;
+    border: none;
+  }
+
+  .el-input__suffix {
+    width: 0.666667rem;
+    background: #44508a;
+    right: 0;
+    border-radius: 0 5px 5px 0;
+  }
+
+  .el-select .el-input .el-select__caret {
+    color: #fff;
+  }
+
+  .el-button--primary {
+    background: #44508a;
+    border-color: #44508a;
+  }
+
+  .el-pagination.is-background .el-pager li {
+    background: #fff;
+  }
+
+  .el-pagination.is-background .el-pager li:not(.disabled).active {
+    background: #44508a;
+  }
+
+  .el-pagination {
+    margin-top: 20px;
+  }
+
+  .new-scope .el-button--primary {
+    background: #4775CA;
+    border-color: #4775CA;
+  }
+
+  .new-scope .el-button {
+    padding: 0;
+    width: 120px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    font-family: SourceHanSansCN-Medium;
+    font-size: 18px;
+  }
+
+  .new-scope .el-button--warning {
+    width: 120px;
+    height: 40px;
+    background: rgba(253, 161, 67, 1);
+    box-shadow: 0px 1px 7px 0px rgba(176, 148, 119, 0.75);
+    border-radius: 4px;
+    font-size: 16px;
+    font-family: SourceHanSansCN-Medium;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 1);
+    line-height: 30px;
+  }
+
+  .new-scope .el-form--inline .el-form-item__content {
+    width: 160px;
+    height: 40px;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0px 1px 7px 0px rgba(216, 223, 238, 0.75);
+    border-radius: 4px;
+    font-size: 18px;
+    font-family: SourceHanSansCN-Normal;
+    font-weight: 400;
+  }
+
+  .new-scope .el-select .el-input__inner::placeholder {
+    color: rgba(51, 51, 51, 1);
+  }
+
+  .new-scope .ser-bg .el-form-item__content {
+    width: 340px;
+    height: 40px;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0px 1px 7px 0px rgba(216, 223, 238, 0.75);
+    border-radius: 20px;
+  }
+
+  .new-scope .ser-bg .el-form-item__content .el-input__inner {
+    border-radius: 20px;
+  }
+
+  .new-scope .el-pagination.is-background .el-pager li:not(.disabled).active {
+    background: rgba(71, 117, 202, 1);
+  }
+
+  .new-scope .el-pagination.is-background .el-pager li {
+    width: 40px;
+    height: 30px;
+    background: rgba(255, 255, 255, 1);
+    border: 1px solid rgba(229, 229, 229, 1);
+    border-radius: 4px;
+  }
+
+  .new-scope .el-pagination {
+    margin-top: 30px;
+  }
+}
+</style>

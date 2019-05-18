@@ -1,0 +1,51 @@
+
+import { GetFiveDSchedulePlanList, GetBuilding } from '../../../api/api';
+
+
+const projectid = localStorage.getItem("projectid");
+
+
+export const getBuil = (that) => {
+    that.load();
+    GetBuilding({ projectid }).then(res => {
+        that.$toast.clear();
+        if (res.StatusCode == 200) {
+            that.modeList = res.Detiel;
+        }
+    })
+}
+
+export const getFiveList = (that, init) => {
+    let par = {
+        ProjectID: projectid,
+        BuildingName: that.fiveList.modelName,
+        BaseStartTime: that.fiveList.date[0],
+        BaseFinishTime: that.fiveList.date[1]
+    }
+    that.load();
+    GetFiveDSchedulePlanList(par).then(res => {
+        that.$toast.clear();
+        let data = [];
+        if (res.StatusCode == 200 && res.Detiel.length > 0) {
+            res.Detiel.forEach((el, index) => {
+                data.push({
+                    id: el.TaskId,
+                    text: el.TaskName,
+                    type: "task",
+                    start_date: el.BaseStartTime,
+                    duration: el.Duration,
+                    parent: el.TaskParentId,
+                    progress: el.PercenTage,
+                    open: false
+                });
+            });
+            init({ data, links: [] })
+        } else {
+            that.$message({
+                type: "error",
+                message: e.Message,
+                center: "true"
+            });
+        }
+    })
+}

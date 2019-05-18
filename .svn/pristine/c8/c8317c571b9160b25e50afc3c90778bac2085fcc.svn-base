@@ -1,0 +1,133 @@
+<!-- el-select饿了么选择下拉 -->
+<template>
+  <div class="container-el-select">
+    <el-form>
+      <el-form-item prop="projectType">
+        <div class="project-type">
+          <el-select v-model="selected" :placeholder="placeholder">
+            <el-option v-for="item in list" :key="item.id" :label="item.text" :value="item.id"></el-option>
+          </el-select>
+        </div>
+      </el-form-item>
+    </el-form>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+export default {
+  props: {
+    isEmpty:{ // 是否清空
+      type:Boolean,
+      default:false
+    },
+    placeholder:{
+      type:String,
+      default:'请选择'
+    },
+    list: {
+      type: Array,
+      default: () => {
+        return [
+          //工程类型数组
+          // {
+          //   id: "",
+          //   text: ""
+          // }
+        ];
+      }
+    },
+  },
+  data() {
+    return {
+      selected: "" //已选择
+    };
+  },
+  
+  watch:{
+    //菜单发生变化，则自动清空
+    list(l){
+      console.log(l)
+      this.selected = ''
+    },
+    selected(id){
+      if(!id) return 
+      let data = this.list.filter(i=>{
+        return i.id == id
+      })
+      this.$emit('selected',data[0].text)
+    },
+    /**
+     * 是否清空
+     */
+    isEmpty(d){
+      console.log(d)
+      if(d){
+        this.selected = ''
+      }
+    }
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-el-select
+  width 100%
+  height 100%
+  .project-type
+    width 100%
+</style>
+<style>
+.container-el-select .el-select {
+  flex: 1;
+  /* height: 40px; */
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+  border-radius: 4px;
+}
+.container-el-select .el-input--suffix .el-input__inner {
+  border: 1px solid #f1f1f1;
+}
+.container-el-select .el-input__suffix {
+  background: rgba(67, 80, 137, 1);
+  border-radius: 0px 4px 4px 0px;
+  right: 0;
+  width: 40px;
+}
+.container-el-select .el-icon-arrow-up:before {
+  /* content: "\e60b"; */
+  content: "\e60c";
+  /* font-size: 20px; */
+  color: rgba(255, 255, 255, 1);
+}
+.container-el-select .center-select {
+  margin: 0 20px;
+}
+.container-el-select .el-form-item{
+  margin-bottom: initial
+}
+.container-el-select .el-select{
+  display:initial;
+}
+</style>
+<style>
+.container-el-select .el-table th > .cell {
+  white-space: nowrap;
+}
+.container-el-select .el-table .cell,
+.el-table th div {
+  overflow: initial;
+  text-overflow: initial;
+}
+.container-el-select .el-table td {
+  border-bottom: initial;
+}
+.container-el-select .el-table .cell, .el-table th div{
+  white-space: nowrap;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+    width: 160px;
+text-align: center;
+}
+.container-el-select .el-checkbox__label{
+  color: white
+}
+</style>

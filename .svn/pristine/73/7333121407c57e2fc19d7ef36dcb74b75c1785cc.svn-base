@@ -1,0 +1,1032 @@
+<!-- 导入成/**
+ * write a component's description
+ */
+功页面 -->
+<template>
+  <div class="container-success">
+    <div class="wrapper">
+      <div class="top">
+        <div class="left" v-if="isCostImport!=2">
+          <!-- <button class="but1" @click="replaceTable">替换当前表单</button>
+          <button class="but2" @click="addTable">新增表单</button> -->
+          <button class="but1" @click="addTable">替换当前表单</button>
+          <button class="but2" @click="addTable">新增表单</button>
+        </div>
+        <div class="left" v-else>
+          <button class="but1" @click="empty">清空表单</button>
+        </div>
+        <div class="right">
+          <div>
+            <!-- 整体模型列表 -->
+            <menu-el-select
+              v-if="isCostImport==2"
+              :list="totalModelList"
+              @selected="totalModeld"
+              :placeholder="totalModel"
+              :isEmpty="isempty"
+            ></menu-el-select>
+          </div>
+          <div>
+            <!-- 专业列表 -->
+            <menu-el-select
+              v-if="isCostImport==2"
+              :list="majorList"
+              @selected="majord"
+              placeholder="专业"
+              :isEmpty="isempty"
+            ></menu-el-select>
+          </div>
+          <div>
+            <!-- 楼栋列表 -->
+            <menu-el-select
+              v-if="isCostImport!=2"
+              :list="BuildingList"
+              @selected="selectBuilding"
+              :placeholder="BuildingList.length>0?BuildingList[0].text:''"
+              :isEmpty="isempty"
+            ></menu-el-select>
+          </div>
+          <div class="menu-1" v-if="isCostImport!=1&&isCostImport!=2">
+            <!-- 类型列表 必须先选择楼栋 -->
+            <menu-el-select
+              :list="types"
+              @selected="selectType"
+              :placeholder="types.length>0?types[0].text:''"
+              :isEmpty="isempty"
+            ></menu-el-select>
+          </div>
+          <div v-if="isCostImport!=1">
+            <!-- 楼层列表 -->
+            <menu-el-select
+              :list="floorLists"
+              @selected="selectFloor"
+              placeholder="请选择楼层"
+              :isEmpty="isempty"
+            ></menu-el-select>
+          </div>
+          <div v-if="isCostImport!=1">
+            <!-- 构件名称列表 -->
+            <menu-el-select
+              :list="BOQElements"
+              @selected="selectBOQElements"
+              placeholder="请选择构件名称"
+              :isEmpty="isempty"
+            ></menu-el-select>
+          </div>
+          <div>
+            <!-- 资源名称列表 -->
+            <menu-el-select
+              v-if="isCostImport==2"
+              :list="resourceList"
+              @selected="resourced"
+              placeholder="资源名称"
+              :isEmpty="isempty"
+            ></menu-el-select>
+          </div>
+          <div class="but-3">
+            <button @click="empty" v-if="isCostImport!=2">清空表单</button>
+            <button @click="exportData" v-else>数据导出</button>
+          </div>
+        </div>
+      </div>
+      <div class="center">
+        <!-- 施工图表格 -->
+        <div>
+          <el-table
+            v-if="isCostImport==0"
+            max-height="800"
+            stripe
+            fit
+            highlight-current-row
+            :header-cell-style="{background:'#435089',color:'#FFFFFF'}"
+            :data="tableData"
+            v-loading="loading0"
+            style="width: 100%"
+          >
+            <el-table-column
+              :prop="item"
+              :label="item"
+              width="180"
+              v-for="item in titles"
+              :key="item.index"
+              
+            ></el-table-column>
+          </el-table>
+          <div v-if="isCostImport==0">
+            <el-pagination
+            background
+            :page-size='tableParams.pageSize'
+            layout="prev, pager, next"
+            :current-page.sync='tableParams.pageIndex'
+            @current-change="tableCurrentChange"
+            :total="tableTotal">
+          </el-pagination>
+          </div>
+        </div>
+        <!-- 全费用表格 -->
+        <div v-if="isCostImport==1" class="ci">
+          <el-table
+            height="720"
+            stripe
+            fit
+            :data="tableData1"
+            style="width: 100%"
+            :header-cell-style="{background:'#435089',color:'#FFFFFF'}"
+          >
+            <el-table-column type="index" label="序号" width="80px"></el-table-column>
+            <el-table-column prop="ProjectCode" label="项目编码" width="130">
+              <template slot-scope="scope">
+                <p v-if="scope.$index!=i">{{scope.row.ProjectCode}}</p>
+                <el-input
+                  v-else
+                  :ref="`focus${scope.column.id}`"
+                  v-model="scope.row.ProjectCode"
+                  :placeholder="scope.row.ProjectCode"
+                ></el-input>
+              </template>
+            </el-table-column>
+            <el-table-column prop="ResorceName" v-if="costTitles.indexOf('ResorceName')!=-1" label="项目名称" width="200px">
+              <template slot-scope="scope">
+                <p v-if="scope.$index!=i">{{scope.row.ResorceName}}</p>
+                <el-input
+                  v-else
+                  :ref="`focus${scope.column.id}`"
+                  v-model="scope.row.ResorceName"
+                  :placeholder="scope.row.ResorceName"
+                ></el-input>
+              </template>
+            </el-table-column>
+            <el-table-column prop="ProjectDescrib" v-if="costTitles.indexOf('ProjectDescrib')!=-1"  label="项目特征描述">
+              <template slot-scope="scope">
+                <p v-if="scope.$index!=i">{{scope.row.ProjectDescrib}}</p>
+                <el-input
+                  v-else
+                  autosize
+                  :ref="`focus${scope.column.id}`"
+                  type="textarea"
+                  v-model="scope.row.ProjectDescrib"
+                  :placeholder="scope.row.ProjectDescrib"
+                ></el-input>
+              </template>
+            </el-table-column>
+            <el-table-column prop="Unit" v-if="costTitles.indexOf('Unit')!=-1"  label="计量单位" width="100">
+              <template slot-scope="scope">
+                <p v-if="scope.$index!=i">{{scope.row.Unit}}</p>
+                <el-input
+                  v-else
+                  :ref="`focus${scope.column.id}`"
+                  v-model="scope.row.Unit"
+                  :placeholder="scope.row.Unit"
+                ></el-input>
+              </template>
+            </el-table-column>
+            <el-table-column prop="BIMBOQ"  v-if="costTitles.indexOf('BIMBOQ')!=-1" label="工程量" width="120">
+              <template slot-scope="scope">
+                <p v-if="scope.$index!=i">{{scope.row.BIMBOQ}}</p>
+                <el-input
+                  v-else
+                  :ref="`focus${scope.column.id}`"
+                  v-model="scope.row.BIMBOQ"
+                  :placeholder="scope.row.BIMBOQ"
+                ></el-input>
+              </template>
+            </el-table-column>
+            <el-table-column label="金额（元）" v-if="(costTitles.indexOf('CompPrice')+costTitles.indexOf('SumPrice')!=-2)">
+              <el-table-column prop="CompPrice"  v-if="costTitles.indexOf('CompPrice')!=-1" label="综合单价" width="120">
+                <template slot-scope="scope">
+                  <p v-if="scope.$index!=i">{{scope.row.CompPrice}}</p>
+                  <el-input
+                    v-else
+                    :ref="`focus${scope.column.id}`"
+                    v-model="scope.row.CompPrice"
+                    :placeholder="scope.row.CompPrice"
+                  ></el-input>
+                </template>
+              </el-table-column>
+              <el-table-column prop="SumPrice"  v-if="costTitles.indexOf('SumPrice')!=-1" label="合价" width="120">
+                <template slot-scope="scope">
+                  <p v-if="scope.$index!=i">{{scope.row.SumPrice}}</p>
+                  <el-input
+                    v-else
+                    :ref="`focus${scope.column.id}`"
+                    v-model="scope.row.SumPrice"
+                    :placeholder="scope.row.SumPrice"
+                  ></el-input>
+                </template>
+              </el-table-column>
+              <el-table-column label="其中" v-if="costTitles.indexOf('JAFee')+costTitles.indexOf('SellAmount')+costTitles.indexOf('AttachAmount')!=-3">
+                <el-table-column prop="JAFee"  v-if="costTitles.indexOf('JAFee')!=-1" label="建安费用" width="120">
+                  <template slot-scope="scope">
+                    <p v-if="scope.$index!=i">{{scope.row.JAFee}}</p>
+                    <el-input
+                      v-else
+                      :ref="`focus${scope.column.id}`"
+                      v-model="scope.row.JAFee"
+                      :placeholder="scope.row.JAFee"
+                    ></el-input>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="SellAmount" v-if="costTitles.indexOf('SellAmount')!=-1"  label="销项税额" width="140">
+                  <template slot-scope="scope">
+                    <p v-if="scope.$index!=i">{{scope.row.SellAmount}}</p>
+                    <el-input
+                      v-else
+                      :ref="`focus${scope.column.id}`"
+                      v-model="scope.row.SellAmount"
+                      :placeholder="scope.row.SellAmount"
+                    ></el-input>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="AttachAmount"  v-if="costTitles.indexOf('AttachAmount')!=-1" label="附加税额" width="120">
+                  <template slot-scope="scope">
+                    <p v-if="scope.$index!=i">{{scope.row.AttachAmount}}</p>
+                    <el-input
+                      v-else
+                      :ref="`focus${scope.column.id}`"
+                      v-model="scope.row.AttachAmount"
+                      :placeholder="scope.row.AttachAmount"
+                    ></el-input>
+                  </template>
+                </el-table-column>
+              </el-table-column>
+            </el-table-column>
+            <el-table-column prop label="编辑" width="100">
+              <template slot-scope="scope">
+                <el-button
+                  type="text"
+                  v-if="scope.$index!=i"
+                  @click.stop="onEditor(scope.$index,scope.row)"
+                  size="small"
+                >编辑</el-button>
+                <el-button type="text" v-else @click.stop="isEnd(scope.row)" size="small">完成</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div>
+            <el-pagination
+            background
+            :page-size='costPageSize'
+            layout="prev, pager, next"
+            :current-page.sync='costPageIndex'
+            @current-change="costCurrentChange"
+            :total="costTotal">
+          </el-pagination>
+          </div>
+        </div>
+        <!-- 构件生成表 -->
+        <div class="element" v-if="isCostImport==2">
+          <el-table :data="tableData2" style="width: 100%"
+          :header-cell-style="{background:'#435089',color:'#FFFFFF'}"
+          stripe
+          fit
+          highlight-current-row>
+            <el-table-column type="index" label="序号" width="80px"></el-table-column>
+            <el-table-column prop="Building" label="楼栋" width="180"></el-table-column>
+            <el-table-column prop="Floor" label="楼层" width="180"></el-table-column>
+            <el-table-column prop="ElementName" label="构件名称"></el-table-column>
+            <el-table-column prop="ResorceName" label="资源名称"></el-table-column>
+            <el-table-column prop="Spec" label="型号规格"></el-table-column>
+            <el-table-column prop="Unit" label="计量单位"></el-table-column>
+            <el-table-column prop="BIMBOQ" label="BIM工程量"></el-table-column>
+          </el-table>
+          <el-pagination
+            v-show="tableData2.length"
+            background
+            :page-size='tableParams.pageSize'
+            layout="prev, pager, next"
+            :current-page.sync='element_currentPage'
+            @current-change="element_current_change"
+            :total="tableData2Count">
+          </el-pagination>
+        </div>
+      </div>
+      <!-- <div class="bottom"> -->
+        <!-- <el-pagination background layout="prev, pager, next" :total="1000"></el-pagination> -->
+      <!-- </div> -->
+    </div>
+    <!-- 表单选择上传弹窗 -->
+    <import-form
+      v-if="isShowBuildingListSelect&&[0,1].indexOf(toPageNum)!=-1"
+      @closeBuildingListSelect="closeBuildingListSelect"
+      @jumpto="jumptos"
+    ></import-form>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+// 组件
+import menuElSelect from "@/common/Selects/elSelect.vue";
+import importForm from "./import_form";
+// 接口
+import {
+  GetContructTypebyBuilding,
+  GetContructFloorbyBuilding,
+  GetConstructElementNamebyBuilding,
+  GetBOQList,
+  GetCostList,
+  GetBuilding,
+  GetAllElementName,
+  GetAllElementResorceName,
+  EditSaveFeeImport,
+  GetConstructElementNamebyBuildingSp,
+  ClearImport,
+  GetAllElementResorceNameByEleName,
+  ExcelElementExport
+} from "@/api/api.js";
+import { getBuildings } from "../modules/interfaces.js";
+import CostImportMethods from "../modules/CostImport.js";
+import getElementImports from "../modules/elementImport.js";
+import elementImportWatchs from "../modules/elementImportWatchs.js";
+import elementEvents from "../modules/elementEvents.js";
+export default {
+  mixins: [CostImportMethods, getElementImports, elementImportWatchs,elementEvents],
+  /**
+   * @description
+   * @returns {any}
+   */
+  data() {
+    const projectid = localStorage.getItem("projectid");
+    return {
+      i: -1, //第几行编辑状态
+      loading0:false,//施工图表加载中
+      isempty: false, //清空
+      toPageNum: 0, //跳转到哪个页面 0 --plan1 , 2 --plan2 ,  3-- plan3
+      isShowBuildingListSelect: false, //是否显示楼栋选择器蒙层弹窗。
+      totalModelList: [], //整体模型列表
+      totalModel: "", //已选择的整体模型
+      majorList: [], //专业列表
+      major: "", //已选择的专业
+      resourceList: [], //资源名称列表
+      resource: "", //已选资源
+      tableData: [], //施工图表
+      tableData1: [], //全费用表
+      costPageIndex:1,//全费用页码
+      costPageSize:10,//全费用页长
+      costTotal:0,//全费用数据总长度
+      costTitles:[],//全费用表头数组
+      tableData2: [], //构件生成表
+      tableData2Count:0,//构件生成分页
+      element_currentPage:8,//构件生成分页第几页
+      floorLists: [], //所有楼层列表
+      floor: "",
+      projectid, //项目ID
+      BOQElements: [], //构件名称列表
+      element: "",
+      BuildingList: [], //楼栋列表
+      building: "",
+      build:'',
+      types: [], //类型列表
+      type: "",
+      tableParams: {
+        // 根据类型 楼层 构件名称 查询实施工图表数据列表 的参数
+        pageSize: 15,
+        pageIndex: 1,
+        projectid: localStorage.getItem("projectid"),
+        buildname: "", //楼栋
+        type: "", //导入类型
+        floor: "", //楼层
+        elementname: "" //构件名称
+      },
+      tableTotal:0,//施工图表总条数
+      titles: [] //表头数组
+    };
+  },
+  /**
+   * @description
+   */
+  created() {
+    this._initData();
+  },
+  computed: {
+    /**
+     * 0为施工图
+     * 1为全费用清单
+     * 2为清单生成
+     */
+    /**
+     * @description
+     * @returns {any}
+     */
+    isCostImport() {
+      return Number(localStorage.getItem("plan"));
+    }
+  },
+  methods: {
+    /**
+     * @description
+     */
+    async _initData() {
+      // this.load()
+
+      console.log(this.isCostImport);
+      if (this.isCostImport == 1) {
+        //如果为全费用清单，则不要构件名称列表
+        let projectid = localStorage.getItem("projectid");
+        this.getCostFloors(projectid).then(res => {
+          this.BuildingList = [];
+          res.Detiel.forEach((i, index) => {
+            this.BuildingList.push({
+              id: index + 1,
+              text: i
+            });
+          });
+          console.log(this.BuildingList);
+          this.selectBuilding(this.BuildingList[0].text)
+        });
+        return;
+      } else if (this.isCostImport == 0) {
+        //施工图导入
+        let res = await getBuildings(this, this.projectid)
+          console.log(res);
+          this.BuildingList = res;
+         //施工图 根据楼栋 类型 获取类型和楼层列表
+        let types = await this.Request( GetContructTypebyBuilding({ projectid: this.projectid, building:this.BuildingList[0].text }) );
+        console.log(types);
+        if (types.StatusCode === 200) {
+          this.types = types.Detiel;
+          this.tableParams.buildname =this.totalModel = this.building = this.BuildingList[0].text
+          this.tableParams.type = types.Detiel[0].text
+          console.log(this.tableParams)
+          this.selectType(types.Detiel[0].text)
+          this.selectFun(this.tableParams)
+        }
+        
+      } else {
+        //构件清单生成
+        let projectid = localStorage.getItem("projectid"),
+          userId = Number(localStorage.getItem("userId"));
+
+        this.getElementInventoryMenuList({ projectid })(GetBuilding).then(async arr => {
+            this.totalModelList = arr;
+            console.log(arr)
+            this.totalModel = arr[0].text
+            let list = await this.getElementLists(this.tableParams.pageIndex,
+                this.tableParams.pageSize,
+                this.tableParams.projectid, arr[0].text, this.major, this.floor,
+                this.tableParams.elementname, this.resource)
+                this.tableData2 = list.Detiel
+                this.tableData2Count = list.Count
+          }
+        );
+
+        // this.getElementInventoryMenuList(projectid)(GetAllElementFloor).then(arr=>{this.floorLists = arr})
+        // this.getElementInventoryMenuList(projectid)(GetAllElementName).then(arr=>{this.BOQElements = arr})
+        // this.getElementInventoryMenuList(projectid)(GetAllElementResorceName).then(arr=>{this.resourceList = arr})
+      }
+    },
+    /**
+     * 选择楼栋
+     */
+    /**
+     * @description
+     * @param {any} building
+     */
+    async selectBuilding(building) {
+      console.log(building);
+      this.costPageIndex = 1
+      this.build = building
+      //如果为全费用清单，则不要构件名称列表
+      if (this.isCostImport == 1) {
+        /**
+         * 根据楼栋 获取全费用清单表数据
+         *
+         */
+        let pas = {
+          pageSize: this.costPageSize,
+          pageIndex: this.costPageIndex,
+          projectid: this.tableParams.projectid,
+          userid: localStorage.getItem("userId"),
+          buildname: building
+        };
+        let types = await this.Request(GetCostList(pas));
+        console.log(types);
+        if (types.StatusCode === 200) {
+          this.tableData1 = types.Result.listCostList;
+          this.costTotal = types.Count
+          this.costTitles = []
+          types.Result.listFild.forEach(i=>{
+            this.costTitles.push(i.FiledEnName)
+          })
+          console.log(this.costTitles)
+        }
+        return;
+      }
+
+      // 清空类型和楼层
+      this.types = [];
+      this.floorLists = [];
+      this.BOQElements=[], //构件名称列表
+      this.element= ""
+      this.building = building;
+      this.tableParams.buildname = building;
+      this.tableParams.floor = ''
+      this.tableParams.elementname = ''
+      this.tableData = []
+      // 分页归0
+			this.tableParams.pageIndex = 1
+			this.element_currentPage = 1
+      // this.selectFun(this.tableParams)
+      /**
+       * 施工图
+       * 根据楼栋 类型 获取类型和楼层列表
+       *
+       */
+      let types = await this.Request(
+        GetContructTypebyBuilding({ projectid: this.projectid, building })
+      );
+      console.log(types);
+      if (types.StatusCode === 200) {
+        this.types = types.Detiel;
+      }
+      
+    },
+    /**
+     * 选择类型
+     */
+    /**
+     * @description
+     * @param {any} type
+     */
+    async selectType(type) {
+      console.log(type);
+      this.type = type;
+      this.tableParams.type = type;
+      this.tableParams.floor = ''
+      this.tableParams.elementname = ''
+      this.selectFun(this.tableParams);
+      /**
+       * 根据楼栋 类型 获取类型和楼层列表
+       *
+       */
+      let floorArr = await this.Request(
+        GetContructFloorbyBuilding({
+          projectid: this.projectid,
+          building: this.building,
+          type
+        })
+      );
+      console.log(floorArr);
+      if (floorArr.StatusCode === 200) {
+        this.floorLists = floorArr.Detiel;
+      }
+    },
+    /**
+     * 选择楼层
+     */
+    /**
+     * @description
+     * @param {any} floor
+     */
+    selectFloor(floor) {
+      console.log(floor);
+      let plan = localStorage.getItem("plan");
+      this.floor = this.tableParams.floor = floor;
+      if(plan!=1){
+        /**
+         * 获取构件名称列表
+         */
+        let BOQElement = this.Request(
+          GetConstructElementNamebyBuildingSp({ projectid: this.projectid ,buildname:this.totalModel,
+          floor})
+        ).then(BOQElement => {
+          console.log(BOQElement);
+          if (BOQElement.StatusCode === 200) {
+            this.BOQElements = BOQElement.Detiel;
+            console.log(this.BOQElements);
+          }
+        });
+      }
+      if (plan == 2) {
+        //获取构件清单列表
+        this.getElementLists(this.tableParams.pageIndex,
+          this.tableParams.pageSize,
+          this.tableParams.projectid,this.totalModel,this.major,this.floor,
+          this.tableParams.elementname, this.resource).then(list=>{
+            this.tableData2 = list.Detiel
+            this.tableData2Count = list.Count
+          })
+      } else {
+        this.tableParams.elementname = ''
+        this.selectFun(this.tableParams);
+        
+      }
+    },
+    /**
+     * 选择构件名称
+     */
+    /**
+     * @description
+     * @param {any} elementname
+     */
+    selectBOQElements(elementname) {
+      console.log(elementname);
+      let plan = localStorage.getItem("plan");
+      this.tableParams.elementname = elementname
+      // this.tableParams.elementname = elementname;
+      // this.selectFun(this.tableParams);
+      if(plan!=1){
+        /**
+         * 获取资源名称列表
+         */
+        let BOQElement = this.Request(
+          GetAllElementResorceNameByEleName({ 
+            projectid: this.projectid ,
+            buildname:this.totalModel,
+          floor:this.floor,
+          specialty:this.major,
+          elename:elementname})
+        ).then(BOQElement => {
+          console.log(BOQElement);
+          if (BOQElement.StatusCode === 200) {
+            this.resourceList = []
+            BOQElement.Detiel.forEach((i,index)=>{
+              this.resourceList.push({
+                id:index,
+                text:i
+              })
+            })
+            
+            // console.log(this.BOQElements);
+          }
+        });
+      }
+      if (plan == 2) {
+        // 分页归0
+			this.tableParams.pageIndex = 1
+			this.element_currentPage = 1
+        //获取构件清单列表
+        this.getElementLists(this.tableParams.pageIndex,
+          this.tableParams.pageSize,
+          this.tableParams.projectid,this.totalModel,this.major,this.floor,
+          this.tableParams.elementname, this.resource).then(list=>{
+            this.tableData2 = list.Detiel
+            this.tableData2Count = list.Count
+          })
+      } else {
+        this.selectFun(this.tableParams);
+        
+      }
+    },
+
+    async	resourced(d) {
+			console.log(d)
+			// 分页归0
+			this.tableParams.pageIndex = 1
+			this.element_currentPage = 1
+			this.resource = d
+			//获取构件清单列表
+			let list = await this.getElementLists(this.tableParams.pageIndex,
+				this.tableParams.pageSize,
+				this.tableParams.projectid, this.totalModel, this.major, this.floor,
+				this.tableParams.elementname, this.resource)
+        this.tableData2 = list.Detiel
+        this.tableData2Count = list.Count
+		},
+    /**
+     * @description
+     */
+    empty() {
+      console.log("清空");
+      this.$confirm("是否确定清空并返回?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+        center: true
+      }).then(() => {
+        let type;
+      switch(this.isCostImport){
+        case 0:
+        type = 1
+        break
+        case 1:
+        type = 2
+        break
+        case 2:
+        type = 3
+        break
+      }
+      this.Request(ClearImport({projectid: localStorage.getItem("projectid"),type})).then(res=>{
+        console.log(res)
+        this.$emit("back");
+        this.isempty = true;
+      this.tableData = [];
+      this.tableData1 = []
+      this.floor = this.type = "";
+      this.tableParams = {
+        // 根据类型 楼层 构件名称 查询实施工图表数据列表 的参数
+        pageSize: 10000,
+        pageIndex: 1,
+        projectid: localStorage.getItem("projectid"),
+        buildname: "", //楼栋
+        type: "", //导入类型
+        floor: "", //楼层
+        elementname: "" //构件名称
+      };
+      })
+      });
+      
+      
+    },
+
+    /**
+     * 条件查询成功导入的施工图表数据
+     */
+    /**
+     * @description
+     * @param {any} tableParams
+     */
+    selectFun(tableParams) {
+      // if (!this.type) {
+      //   this.$message({ type: "error", message: "请选择类型", center: "true" });
+      //   return;
+      // }
+      // this.load();
+      this.loading0 = true
+      this.Request(GetBOQList(tableParams)).then(res => {
+        console.log(res);
+        if (res.StatusCode === 200 && res.Result.length != 0) {
+          this.tableData = res.Result;
+          this.tableTotal = res.Count
+          this.titles = Object.keys(res.Result[0]).filter(i=>["RowId","序号"].indexOf(i)==-1)
+        }
+        // this.$toast.clear();
+        this.loading0 = false
+      });
+    },
+    /**
+     * 返回
+     */
+    /**
+     * @description
+     */
+    replaceTable() {
+      console.log("替换当前表单");
+      this.$confirm("是否确定返回?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+        center: true
+      }).then(() => {
+        this.$emit("back");
+      });
+    },
+    /**
+     * 新增表单
+     *  在导入成功页面新增表单，效果跟首页一样，导入成功后在楼栋，类型，楼层，构件名称的下拉列表中增加新增的列表
+     */
+    /**
+     * @description
+     */
+    addTable() {
+      console.log("新增表单");
+      localStorage.setItem("isAdd", 1); // 从成功页面点击新增表单 为追加表单
+      this.isShowBuildingListSelect = true;
+    },
+    /**
+     * @description
+     * @param {any} toPageNum
+     * @param {any} detiel
+     */
+    jumptos(toPageNum, detiel) {
+      this.$emit("jump", toPageNum, detiel); //关闭入口页面组件,并将解析出的xlsx数据返回父组件
+    },
+    /**
+     * 关闭楼栋选择蒙层
+     */
+    /**
+     * @description
+     */
+    closeBuildingListSelect() {
+      this.isShowBuildingListSelect = false;
+    },
+    /**
+     * 点击编辑
+     */
+    /**
+     * @description
+     * @param {any} index
+     * @param {any} d
+     */
+    onEditor(index, d) {
+      console.log(index, d);
+      this.i = index;
+    },
+    /**
+     * 编辑完成
+     */
+    /**
+     * @description
+     * @param {any} row
+     */
+    isEnd(row){
+      console.log('编辑完成提交',row)
+      // let params = {
+      //   id
+      // }
+      this.Request(EditSaveFeeImport(row)).then(res=>{
+        if(res.StatusCode===200){
+          this.i=-1
+          console.log('上传成功')
+          this.$message({type:'success',message:'上传成功',center:'true'})
+        }
+      })
+    },
+    // 全费用分页
+    /**
+     * @description
+     * @param {any} e
+     */
+    async costCurrentChange(e){
+      console.log(e)
+      this.costPageIndex=e
+      console.log(this.build)
+      /**
+         * 根据楼栋 获取全费用清单表数据
+         *
+         */
+        let pas = {
+          pageSize: this.costPageSize,
+          pageIndex: this.costPageIndex,
+          projectid: this.tableParams.projectid,
+          userid: localStorage.getItem("userId"),
+          buildname: this.build
+        };
+        let types = await this.Request(GetCostList(pas));
+        console.log(types);
+        if (types.StatusCode === 200) {
+          this.tableData1 = types.Result.listCostList;
+        }
+    },
+    /**
+     * 导出数据
+     */
+    /**
+     * @description
+     */
+    exportData(){
+      this.Request(ExcelElementExport({
+        projectid:this.tableParams.projectid,
+        building:this.totalModel,
+        specialty:this.major,
+        floor:this.floor,
+        elementname:this.tableParams.elementname,
+        resorcename:this.resource
+      })).then(res=>{
+        if(res.StatusCode===200){
+          location.href=res.Result
+        }
+      })
+    },
+    /**
+     * 施工图分页
+     */
+    tableCurrentChange(e){
+      console.log(e)
+      this.tableParams.pageIndex = e
+      this.selectFun(this.tableParams);
+    }
+  },
+  components: {
+    menuElSelect,
+    importForm
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+@import '../../../../assets/stylus/variable.styl'
+
+.container-success
+  width 100%
+  height 100%
+  .wrapper
+    width 100%
+    height 100%
+    box-sizing border-box
+    padding 0 20px
+    .top
+      width 100%
+      height 80px
+      box-sizing border-box
+      padding-top 15px
+      display flex
+      justify-content space-between
+      .left
+        .but1
+          height 40px
+          background $font-color-13
+          box-shadow 0px 2px 4px 0px rgba(161, 192, 250, 1)
+          border-radius 4px
+          font-size $font-size-16
+          font-family SourceHanSansCN-Medium
+          font-weight 500
+          color $font-color-03
+          line-height 24px
+          padding 0 30px
+        .but2
+          height 40px
+          background $font-color-14
+          border-radius 4px
+          font-size $font-size-16
+          font-family SourceHanSansCN-Medium
+          font-weight 500
+          color $font-color-03
+          line-height 24px
+          padding 0 30px
+          margin-left 20px
+      .right
+        display flex
+        >div
+          margin-left 20px
+          margin-top 6px
+        .menu-1
+          width 343px
+          height 40px
+          background $font-color-03
+          box-shadow 0px 3px 7px 0px rgba(229, 229, 229, 1)
+          border-radius 4px
+        .but-3
+          margin-top 0
+          button
+            height 40px
+            background $color-but-bg-01
+            box-shadow 0px 2px 4px 0px rgba(176, 148, 119, 0.5)
+            border-radius 4px
+            font-size $font-size-16
+            font-family SourceHanSansCN-Medium
+            font-weight 500
+            color $font-color-03
+            // line-height:24px;
+            padding 0 30px
+    // .center
+    //   width 100%
+    //   height 800px
+    .bottom
+      width 100%
+      height 100px
+</style>
+<style>
+.center .el-table .cell,
+.el-table th div {
+  overflow: initial;
+  text-overflow: initial;
+}
+.center .el-table td {
+  border-bottom: initial;
+}
+.center .el-table .cell,
+.el-table th div {
+  text-align: center;
+}
+.bottom .el-pagination {
+  text-align: center;
+}
+</style>
+<style>
+/* .ci .el-table th > .cell {
+  white-space: nowrap;
+} */
+.ci .el-table .cell,
+.el-table th div {
+  overflow: initial;
+  text-overflow: initial;
+}
+.ci .el-table td {
+  border-bottom: initial;
+}
+.ci .el-table .cell,
+.el-table th div {
+  text-align: center;
+}
+.container-success .el-checkbox__label {
+  color: white;
+}
+.buts .el-button span {
+  padding: 0 30px;
+}
+.ci .el-table__footer-wrapper tbody td {
+  background: #435089;
+  color: #ffffff;
+}
+.ci .el-table--border th,
+.ci .el-table__fixed-right-patch {
+  border-bottom: 0.013333rem solid rgba(255, 255, 255, 0.1);
+}
+.ci .el-table--border th,
+.ci .el-table--border td {
+  border-right: 0.013333rem solid rgba(255, 255, 255, 0.1);
+}
+.ci .el-button--text {
+  color: #4580ff;
+}
+.ci .el-pagination{
+  text-align: center;
+  margin-top:20px;
+}
+.center .el-pagination{
+  text-align: center;
+  margin-top:10px;
+}
+.center .el-pagination.is-background .el-pager li:not(.disabled).active{
+      background-color: #435089;
+}
+</style>

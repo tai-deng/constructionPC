@@ -1,0 +1,107 @@
+.container-time
+  .type
+    el-select(v-model="type")
+      el-option(
+        v-for="item in typeOptions"
+        :key="item.id"
+        :label="item.text"
+        :value="item.id"
+      )
+  .top
+    .left
+      //- 模型box
+      div(class="model-container1" v-loading="loadingModel")
+        .model-container(ref="modelContainer")
+      //- span.title 实际进度
+      div(class='progress-detail')
+        ul
+          li(v-for="item in colorList" :key="item.ID" @click="tabElementByState(item)")
+            div(class="itemColor" :style="handleColor(item)")
+            span(:class="{'blackFont': item.isShow}") {{item.StatesInfo}} 
+  .progress(v-loading="loading")
+    .left
+      p 整体进度：{{allProgress}}
+      p 滞后{{lagging}}天
+      el-button(@click="lookDetail(type)") 查看详情
+      .tips-left
+        span
+    .right-wrapper
+      el-carousel(arrow="always" :autoplay="false" height="216px")
+        el-carousel-item(:index="0")
+          .right
+            .after-title
+              p 计划进度
+              .line
+              p 实际进度
+            el-timeline(:reverse="true")
+              div(class="timeline")
+                ul
+                  li(v-for="item,index in porgressOptions" :class="item.message" :key="index")
+                    div.timeline-top(@click="onEditProgress(item,index)")
+                      p {{item.title}}
+                      p {{item.start_time}}
+                    div.ico-wrapper
+                      span.ico(@click="onEditProgress(item,index)")
+                      span.line
+                    div.timeline-content(v-if="!item.isAdd")
+                    p(v-if="!item.isAdd") {{item.end_time}}
+                    p.container-time-line(v-if="!item.isAdd")
+                    p(v-if="!item.isAdd") {{`完成：${item.progress}%`}}
+                    p(v-if="!item.isAdd") {{`状态：${item.TaskState}`}}                    
+                    .add-line(v-if="item.isAdd")
+                    .add-line-ico(v-if="item.isAdd",@click="onEditProgress(item,index)") +
+        //- el-carousel-item(:index="1")
+        //-   .right
+        //-     .after-title
+        //-       p 计划进度
+        //-       .line
+        //-       p 实际进度
+        //-     el-timeline(:reverse="true")
+        //-       div(class="timeline")
+        //-         ul
+        //-           li(v-for="item,index in porgressOptions" :class="item.message" :key="index")
+        //-             div.timeline-top(@click="onEditProgress(item,index)")
+        //-               p {{item.title}}
+        //-               p {{item.start_time}}
+        //-             div.ico-wrapper
+        //-               span.ico(@click="onEditProgress(item,index)")
+        //-               span.line
+        //-             div.timeline-content(v-if="!item.isAdd")
+        //-             p(v-if="!item.isAdd") {{item.end_time}}
+        //-             p.container-time-line(v-if="!item.isAdd")
+        //-             p(v-if="!item.isAdd") {{`完成：${item.progress}%`}}
+        //-             .add-line(v-if="item.isAdd")
+        //-             .add-line-ico(v-if="item.isAdd",@click="onEditProgress(item,index)") +
+    .progress-detail(v-show="isProgressDetail" :style="progressDetailStyle" )
+      .tit
+        span.el-icon-close(@click="toggleDetail()")
+      el-form(:data="dialogForm" label-width="110px" :disabled="dialogType === 'look'")
+        el-form-item(label="认证时间")
+          el-date-picker(
+            v-model="dialogForm.time"
+            type="date"
+            placeholder="选择日期"
+            value-format="yyyy-MM-dd hh:mm:ss"
+          )
+        el-form-item(label="完成百分比")
+          el-input(v-model="dialogForm.progress" :disabled="dialogForm.progress == '100%'" style="width: 220px;")
+        el-form-item.flex(label="认证凭证")
+          el-upload(
+            ref="uploadImg"
+            action
+            list-type="picture-card"
+            :limit="2"
+            :auto-upload= "false"
+            :on-preview="handlePictureCardPreview"
+            :on-change = "handleAvatarSuccess"
+            :on-remove="handleRemove"
+            :file-list="showImg"
+          )
+            i(class="el-icon-plus")
+          //- el-dialog(:visible.sync="dialogVisible")
+          //-   img(width="100%" :src="dialogImageUrl", alt="")
+        el-form-item.btns
+          el-button(@click="toggleDetail") 取消
+          el-button(@click="submit") 确认
+
+

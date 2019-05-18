@@ -1,0 +1,886 @@
+<!-- time-line -->
+<template lang="html">
+<div class="timeline">
+      <el-form-item label="工作流程:"></el-form-item>
+      <el-form-item>
+        <div class="workflowBox">
+          <div class="workflow1">
+            <el-select v-model="filterForm.Priority" placeholder="优先级">
+              <el-option
+                v-for="item in PriorityList"
+                :key="item"
+                :label="item"
+                :value="item"
+              ></el-option>
+            </el-select>
+          </div>
+          <div class="workflow2">
+            <el-select
+              v-model="filterForm.OrgId.OrgId"
+              placeholder="责任单位"
+              @change="onSelOrgId"
+              v-loading="orgLoading"
+            >
+              <el-option
+                v-for="(item,index) in GetOrgListSel"
+                :label="item.Name"
+                :value="index"
+                :key="index"
+              ></el-option>
+            </el-select>
+          </div>
+          <div class="workflow1">
+            <el-select
+              v-model="filterForm.DepId.DepId"
+              placeholder="岗位部门"
+              @change="onSelDepId"
+              v-loading="depLoading"
+            >
+              <el-option
+                v-for="(item,index) in GetDeptListSel"
+                :label="item.text"
+                :value="index"
+                :key="index"
+              ></el-option>
+            </el-select>
+          </div>
+          <div class="workflow1">
+            <el-select
+              v-model="filterForm.Person.Person"
+              placeholder="人员"
+              @change="onSelPerson"
+              v-loading="personLoading"
+            >
+              <el-option
+                v-for="(item,index) in GetUserListSel"
+                :label="item.text"
+                :value="index"
+                :key="index"
+              ></el-option>
+            </el-select>
+          </div>
+          <span class="add" @click="addData()">
+            <img src="../../assets/imgs/add.png" alt>
+          </span>
+        </div>
+      </el-form-item>
+      <div v-show="isProcedure">
+        <el-form-item>
+          <div class="bg">
+            <div>
+              <span></span>
+            </div>
+            <div>
+              <span></span>
+            </div>
+            <div>
+              <span></span>
+            </div>
+            <div>
+              <span></span>
+            </div>
+          </div>
+          <ul class="dataList">
+            <li v-for="(item,index) in filterForm.flowList" v-bind:key="index">
+              <div class="ordinal">
+                <span>{{index+1}}</span>
+              </div>
+              <div class="dataContent">
+                <span>{{item.OrgId.text}}</span>
+                <span class="unit">{{item.DepId.text}}</span>
+                <span>{{item.Person.text}}</span>
+              </div>
+              <div class="dataBtn">
+                <span :class="item.down" @click="onSortDown(index)"></span>
+                <span :class="item.up" @click="onSortUp(index)"></span>
+                <span class="del" @click="onDel(index)"></span>
+              </div>
+            </li>
+          </ul>
+        </el-form-item>
+      </div>
+      <div class="item" v-show="done">
+        <el-form-item>
+          <el-steps align-center>
+            <el-step title="建设单位" description="工程部"></el-step>
+            <el-step title="设计单位" description="工程部"></el-step>
+            <el-step title="建设单位" description="工程部"></el-step>
+            <el-step title="施工单位" description="工程部"></el-step>
+          </el-steps>
+        </el-form-item>
+      </div>
+</div>
+</template>
+
+
+<script type="textecmascript-6">
+import {
+  GetUserListByDept,
+  GetDeptList,
+  GetOrgList,
+  GetLoginUserInfo
+} from "../../api/api.js";
+export default {
+  components: {},
+  props: {
+    /**是否显示点 */
+    isShowDot: {
+      type: Boolean,
+      default: true
+    },
+    /**按进度计划是否为审核0/1 */
+    isAudit: {
+      type: String,
+      default: "1"
+    }
+  },
+  created() {
+    this.getOrg();
+    this.getLoginUserInfoDate();
+  },
+  mounted() {},
+  data() {
+    return {
+      orgLoading: false,
+      depLoading: false,
+      personLoading: false,
+      userID: localStorage.getItem("userId"), //用户ID
+      projectid: localStorage.getItem("projectid"),
+      isProcedure: true,
+      done: false,
+      GetOrgListSel: [], // 单位
+      GetDeptListSel: [], // 部门
+      GetUserListSel: [], // 人员
+      PriorityList: 1,
+      filterForm: {
+        flowList: [],
+        Priority: 1,
+        OrgId: { id: "", text: "", OrgId: "" }, // 单位
+        DepId: { id: "", text: "", DepId: "" }, // 部门
+        Person: { id: "", text: "", Person: "" } // 人员
+      }
+    };
+  },
+  computed: {},
+  methods: {
+    doAction(item, index) {
+      this.$emit("action", { item, index });
+    },
+
+    restoreSel(flag) {
+      if (flag == "org") {
+        this.GetDeptListSel = [];
+        this.filterForm.DepId.DepId = "";
+        this.filterForm.DepId.id = "";
+        this.filterForm.DepId.text = ""; // 部门
+      }
+      this.GetUserListSel = [];
+      this.filterForm.Person.Person = "";
+      this.filterForm.Person.id = "";
+      this.filterForm.Person.text = ""; // 人员
+    },
+    // sort down
+    onSortDown(i) {
+      if (i == this.filterForm.flowList.length - 1) return false;
+      if (i < this.filterForm.flowList.length - 1) {
+        let item = this.filterForm.flowList[i];
+        this.filterForm.flowList.splice(i, 1);
+        this.filterForm.flowList.splice(i + 1, 0, item);
+      }
+      this.isSort();
+    },
+    // sort up
+    onSortUp(i) {
+      if (i == 0 || i == 1) return false;
+      if (i > 0) {
+        let item = this.filterForm.flowList[i];
+        this.filterForm.flowList.splice(i, 1);
+        this.filterForm.flowList.splice(i - 1, 0, item);
+      }
+      this.isSort();
+    },
+    // sort del
+    onDel(i) {
+      if (i == 0) return false;
+      this.filterForm.flowList.splice(i, 1);
+      this.isSort();
+    },
+    // 人员下拉
+    getUser(deptId) {
+      // this.load();
+      this.personLoading = true;
+      GetUserListByDept({
+        projectId: this.projectid,
+        orgId: this.filterForm.OrgId.id,
+        deptId
+      }).then(
+        res => {
+          // this.$toast.clear();
+          this.personLoading = false;
+          if (res.StatusCode == 200) {
+            this.GetUserListSel = res.Detiel;
+          }
+        },
+        () => {
+          this.personLoading = false;
+        }
+      );
+    },
+    // 部门下拉
+    getDept(orgId) {
+      // this.load();
+      this.depLoading = true;
+      GetDeptList({ orgId }).then(
+        res => {
+          // this.$toast.clear();
+          this.depLoading = false;
+          if (res.StatusCode == 200) {
+            this.GetDeptListSel = res.Detiel;
+          }
+        },
+        () => {
+          this.depLoading = false;
+        }
+      );
+    },
+    // 单位下拉
+    getOrg() {
+      // this.load();
+      this.orgLoading = true;
+      GetOrgList({ projectid: this.projectid }).then(
+        res => {
+          // this.$toast.clear();
+          this.orgLoading = false;
+          if (res.StatusCode == 200) {
+            this.GetOrgListSel = res.Detiel;
+          }
+        },
+        () => {
+          this.orgLoading = false;
+        }
+      );
+    },
+    // 添加流程
+    addData() {
+      if (this.isAudit == 0 && this.filterForm.flowList.length == 4) {
+        this.$message({
+          type: "warning",
+          message: "该流程为4个人",
+          center: "true"
+        });
+        return;
+      }
+      if (!this.filterForm.OrgId.text) {
+        this.$message({
+          type: "warning",
+          message: "单位不能为空!",
+          center: "true"
+        });
+        return;
+      } else if (!this.filterForm.DepId.text) {
+        this.$message({
+          type: "warning",
+          message: "部门不能为空!",
+          center: "true"
+        });
+        return;
+      } else if (!this.filterForm.Person.text) {
+        this.$message({
+          type: "warning",
+          message: "人员不能为空!",
+          center: "true"
+        });
+        return;
+      }
+      let item = {
+        Priority: this.filterForm.Priority, //优先级
+        OrgId: this.filterForm.OrgId, //责任单位
+        DepId: this.filterForm.DepId, //岗位部门
+        Person: this.filterForm.Person, //人员
+        down: "sortDown",
+        up: "sortUp",
+        Status: 0
+      };
+      let i = Number(item.Priority) - 1;
+      if (this.filterForm.Priority > 1) {
+        this.filterForm.flowList.splice(i, 0, item);
+      } else {
+        this.filterForm.flowList.push(item);
+      }
+      this.isSort();
+      this.filterForm.OrgId = { id: "", text: "" };
+      this.filterForm.DepId = { id: "", text: "" };
+      this.filterForm.Person = { id: "", text: "" };
+      this.filterForm.Priority = 2;
+    },
+    // 流程排序
+    isSort() {
+      let len = this.filterForm.flowList.length;
+      this.disflowList = [];
+      if (len == 0) {
+        this.filterForm.flowList[0].down = "sortDown-disabled";
+        this.filterForm.flowList[0].up = "sortUp-disabled";
+        return;
+      }
+      this.filterForm.flowList.forEach((v, i) => {
+        this.disflowList.push({
+          Priority: i + 1,
+          OrgId: v.OrgId.id,
+          DepId: v.DepId.id,
+          Person: v.Person.id,
+          Status: 0
+        });
+        v.Priority = i;
+        if (i == 0) {
+          v.down = "sortDown-disabled";
+          v.up = "sortUp-disabled";
+        } else if (i == 1) {
+          if (i == len - 1) {
+            v.down = "sortDown-disabled";
+            v.up = "sortUp-disabled";
+          } else {
+            v.down = "sortDown";
+            v.up = "sortUp-disabled";
+          }
+        } else if (i == len - 1) {
+          if (i == 1) {
+            v.down = "sortDown-disabled";
+            v.up = "sortUp-disabled";
+          } else {
+            v.down = "sortDown-disabled";
+            v.up = "sortUp";
+          }
+        } else {
+          v.down = "sortDown";
+          v.up = "sortUp";
+        }
+      });
+      this.PriorityList = this.filterForm.flowList.length + 1;
+      this.$emit("getFlowList", this.filterForm.flowList);
+    },
+    // 流程 change 事件
+    onSelOrgId(i) {
+      this.filterForm.OrgId["text"] = this.GetOrgListSel[i].Name;
+      this.filterForm.OrgId["id"] = this.GetOrgListSel[i].ID;
+    },
+    onSelDepId(i) {
+      this.filterForm.DepId["text"] = this.GetDeptListSel[i].text;
+      this.filterForm.DepId["id"] = this.GetDeptListSel[i].id;
+    },
+    onSelPerson(i) {
+      this.filterForm.Person["text"] = this.GetUserListSel[i].text;
+      this.filterForm.Person["id"] = this.GetUserListSel[i].id;
+    },
+    /**
+     * 获取当前登录用户详情
+     */
+    getLoginUserInfoDate() {
+      this.load();
+      GetLoginUserInfo({ curUserId: this.userID }).then(data => {
+        this.$toast.clear();
+        if (data.StatusCode === 200) {
+          let item = data.Detiel[0].loginUserInfo;
+          this.filterForm.flowList.push({
+            OrgId: { text: item.WeChatNo, id: item.iSys_Company_ID },
+            DepId: { text: item.cDepName, id: item.iSys_Dep_ID },
+            Person: { text: item.cName, id: item.ID },
+            down: "sortDown-disabled",
+            up: "sortUp-disabled",
+            Status: 4
+          });
+          console.log(this.filterForm.flowList);
+          this.filterForm.StartPerson = item.cName;
+          this.UserInfo = item;
+          this.isSort();
+        }
+      });
+    }
+  },
+  watch: {
+    // 部门
+    "filterForm.DepId.id": {
+      handler(val, oldval) {
+        if (val.trim()) {
+          this.restoreSel("dept");
+          this.getUser(val);
+        }
+      }
+    },
+    // 单位
+    "filterForm.OrgId.id": {
+      handler(val, oldval) {
+        if (typeof val == "number") {
+          this.restoreSel("org");
+          this.getDept(val);
+        }
+      }
+    }
+  }
+};
+</script>
+<style scoped>
+.timeline {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.timeline .dataList {
+  background: #eff3ff;
+  display: flex;
+  flex-flow: column;
+  margin: -30px 0 0 -100px;
+  padding: 20px;
+}
+
+.timeline .bg {
+  height: 40px;
+  margin-left: -80px;
+  display: flex;
+}
+
+.timeline .bg div {
+  width: 25%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-flow: row;
+}
+
+.timeline .bg div span {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #eff3ff;
+}
+
+.timeline .changeType {
+  width: 100%;
+}
+
+.timeline .changeType .el-select {
+  width: 100%;
+}
+
+.timeline .el-date-editor--date .el-input__prefix {
+  left: calc(100% - 30px) !important;
+}
+
+.timeline .dataList li {
+  display: flex;
+  flex-flow: row;
+  justify-content: flex-end;
+  align-content: center;
+  margin-left: 14%;
+  height: 40px;
+  margin-bottom: 20px;
+}
+
+.timeline .dataList li:last-child {
+  margin-bottom: 0px;
+}
+
+.timeline .dataList li .ordinal {
+  display: flex;
+  align-items: center;
+  margin-right: 20px;
+  position: relative;
+}
+
+.timeline .dataList li .ordinal span {
+  background: #4775c9;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-align: center;
+}
+
+.timeline .dataList li .ordinal span:before {
+  content: "";
+  position: absolute;
+  top: 31px;
+  background: #435089;
+  width: 1px;
+  height: 38px;
+}
+
+.timeline .dataList li:last-child .ordinal span:before {
+  content: "";
+  position: absolute;
+  top: 31px;
+  background: none;
+  width: 0;
+  height: 0;
+}
+
+.timeline .add {
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+}
+
+.timeline .add img {
+  width: 100%;
+  height: 100%;
+}
+
+.timeline .dataList li .dataContent {
+  background: #ffffff;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: 18px;
+}
+
+.timeline .dataList li .dataContent span {
+  background: #ffffff;
+  width: 33.33%;
+  text-align: center;
+  margin: 5px 0;
+  height: 30px;
+  line-height: 30px;
+}
+
+.timeline .dataList li .dataContent .unit {
+  border-left: 1px dashed #979797;
+  border-right: 1px dashed #979797;
+}
+
+.timeline .dataBtn {
+  width: auto;
+  display: flex;
+  justify-content: flex-end;
+  margin-left: 10px;
+}
+
+.timeline .dataBtn span {
+  width: 40px;
+  height: 40px;
+  display: inline-block;
+  margin-left: 10px;
+  background-size: 100% 100%;
+  cursor: pointer;
+}
+
+.timeline .sortDown-disabled {
+  background: url("../../assets/imgs/down.jpg") no-repeat center center;
+  background-size: 100% 100%;
+}
+
+.timeline .sortDown {
+  background: url("../../assets/imgs/up.jpg") no-repeat center center;
+  background-size: 100% 100%;
+}
+
+.timeline .sortUp-disabled {
+  background: url("../../assets/imgs/down.jpg") no-repeat center center;
+  background-size: 100% 100%;
+  transform: rotate(180deg);
+}
+
+.timeline .sortUp {
+  background: url("../../assets/imgs/up.jpg") no-repeat center center;
+  background-size: 100% 100%;
+  transform: rotate(180deg);
+}
+
+.timeline .del {
+  background: url("../../assets/imgs/del_model.png") no-repeat center center;
+}
+
+.timeline .el-form-item {
+  width: 100%;
+  height: auto !important;
+}
+
+.timeline .avatar-uploader .el-upload {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.timeline .el-upload--picture-card {
+  background: #f8f8f8 !important;
+  width: 132px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline .avatar-uploader .el-upload:hover {
+  border-color: #409eff;
+}
+
+.timeline .el-form-item__content .tip {
+  color: #999999;
+  font-size: 18px;
+  padding-left: 10px;
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+.timeline .upload {
+  display: inline-block;
+}
+
+.timeline .originator,
+.timeline .wrap {
+  float: left;
+}
+
+.timeline .workflowBox {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  float: left;
+  margin: -20px 0 0 -90px;
+}
+
+.timeline .changeflowBox {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  float: left;
+  width: 100%;
+}
+
+.timeline .changeflowBox .workflow1 {
+  margin-right: 20px;
+  width: 100%;
+}
+
+.timeline .changeflowBox .workflow1:last-child {
+  margin-right: 0;
+}
+
+.timeline .changeflowBox .workflow1 .el-select {
+  width: 100%;
+}
+
+.timeline .workflowBox .workflow1 {
+  width: 22%;
+  margin-right: 9px;
+}
+
+.timeline .workflowBox .workflow2 {
+  width: 34%;
+  margin-right: 9px;
+}
+
+.timeline .el-select .el-input__suffix {
+  width: 0.666667rem;
+  background: #435089;
+  border-radius: 0 0.066667rem 0.066667rem 0;
+  right: 0 !important;
+}
+
+.timeline .el-select input {
+  background: #fff !important;
+}
+
+.timeline .el-step.is-horizontal .el-step__line {
+  top: 0.25rem;
+  background: #e5e5e5;
+  height: 1px;
+}
+
+.timeline .el-steps--horizontal {
+  margin: 0 0 0 -100px;
+}
+
+.timeline .relevance {
+  width: 64px;
+  height: 40px;
+  border: 1px solid #e5e5e5;
+  background: #f8f8f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline .btn {
+  margin: 20px 0 20px -80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline .relevance {
+  color: #435089;
+  font-size: 18px;
+}
+
+.timeline .el-step__icon.is-text {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e5e5e5;
+  background: #f8f8f8;
+}
+
+.timeline .el-step__icon-inner {
+  color: #333;
+  font-size: 20px;
+}
+
+.timeline .el-step.is-center .el-step__line {
+  left: 70%;
+  right: -30%;
+}
+
+.timeline .el-step__main div {
+  color: #333 !important;
+}
+
+.timeline .el-button {
+  width: 100px;
+  color: #fff;
+}
+
+.timeline .el-button--default {
+  background: #999999;
+}
+
+.timeline .el-button--default:focus,
+.timeline .el-button--default:hover {
+  background: #999999;
+  color: #fff;
+}
+
+.timeline .el-button--primary {
+  background: #4775ca;
+}
+
+.timeline .el-button--primary:focus,
+.el-button--primary:hover {
+  background: #4775ca;
+  color: #fff;
+}
+
+.timeline .timeline .icon {
+  color: #ffa147;
+}
+
+.timeline .titleBg {
+  background: #44508a;
+}
+
+.timeline .dayManagement {
+  margin-bottom: 26px;
+}
+
+.timeline .el-row .el-col-24 {
+  font-size: 22px;
+  color: #28292b;
+}
+
+.timeline .dayManagement .el-row .el-col-24 {
+  margin: 20px 0px 0px 0px;
+}
+
+.timeline .notice {
+  color: #fff;
+  font-size: 20px;
+  height: 40px;
+  line-height: 40px;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.timeline .notice i {
+  font-size: 20px;
+  position: absolute;
+  right: 15px;
+  line-height: 40px;
+  cursor: pointer;
+}
+
+.timeline .el-form {
+  padding: 0 20px;
+}
+
+.timeline .el-input input,
+.timeline .el-textarea .el-textarea__inner {
+  background: #f8f8f8;
+  color: #666;
+  font-size: 16px;
+}
+
+.timeline .el-select .el-input__inner {
+  color: #333;
+}
+
+.timeline .el-input--prefix .el-input__inner {
+  padding-left: 15px !important;
+  padding-right: 15px !important;
+}
+
+.timeline .el-textarea .el-textarea__inner {
+  min-height: 80px !important;
+}
+
+.timeline .el-form-item__label {
+  color: #333333;
+  font-size: 18px;
+}
+
+.timeline .leftBox,
+.timeline .rightBox {
+  width: 50%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  background: #f5f6fa;
+}
+
+.timeline .leftBox {
+  left: 0;
+}
+
+.timeline .rightBox {
+  right: 0;
+  width: 800px !important;
+}
+
+.timeline .leftBox .box-card {
+  width: calc(100% - 30px);
+  height: calc(100% - 60px);
+  margin: 20px 10px 10px 20px;
+}
+
+.timeline .rightBox .box-card {
+  width: 800px;
+  height: calc(100% - 45px);
+  padding: 0px 0px 0px 0px;
+  margin: 20px 0px 0px 0px;
+  background: #f5f6fa;
+  border: none;
+  box-shadow: none;
+  background: #fff;
+  overflow-y: auto;
+}
+
+/* 滚动条的宽度 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background-color: transparent;
+}
+
+/* 滚动条的滑块 */
+::-webkit-scrollbar-thumb {
+  background-color: #a1a3a9;
+  border-radius: 6px;
+}
+</style>

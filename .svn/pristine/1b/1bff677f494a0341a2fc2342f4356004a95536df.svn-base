@@ -1,0 +1,501 @@
+<!-- project -->
+<template>
+  <div class="container-project">
+    <div class="project_head">
+      <el-button class="add_btn_head" @click="addProject()">
+        <i class="icon_add">
+          <img src="../../../assets/imgs/add_model.png" alt>
+        </i>
+        新增项目
+      </el-button>
+      <el-input placeholder="请输入内容" v-model="projectListParams.keyword" class="search_byHead">
+        <el-button
+          slot="append"
+          style="border-radius:0px 4px 4px 0px;position:relative;top:2px;background-color:#435089; "
+          @click="searchBtn()"
+        >
+          <img src="../../../assets/imgs/search_grass.png" style="position:relative;top:-3px;" alt>
+        </el-button>
+      </el-input>
+      <el-button class="project_right_btn" @click="jumpToPeople()">项目人员管理</el-button>
+    </div>
+    <div class="project_body_list">
+      <ul>
+        <li v-for="(item , index) in projectList" v-bind:key="index" @click="showSingelModel(item)">
+          <div class="project_body_list_left">
+            <img :src="item.ImgPath" alt>
+          </div>
+          <div class="project_body_list_right">
+            <div class="project_body_list_right_title">{{item.Name}}</div>
+            <div class="project_body_list_context">
+              <el-row>
+                <el-col :span="1">
+                  <img src="../../../assets/imgs/peoject_man.png" alt>
+                </el-col>
+                <el-col :span="21" :offset="1">项目经理：{{item.ProjMgrName}}</el-col>
+              </el-row>
+              <el-row class="project_body_list_context_padding">
+                <el-col :span="1">
+                  <img src="../../../assets/imgs/project_context.png" alt>
+                </el-col>
+                <el-col
+                  :span="21"
+                  :offset="1"
+                  class="project_body_list_context_text"
+                >{{item.Description}}</el-col>
+              </el-row>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div class="page_padding">
+      <pageList v-if="page.alltotal>=projectListParams.pageSize" :page="page" @changPage="changPage"></pageList>
+    </div>
+
+    <!-- 单个项目弹框 -->
+    <div v-if="showModel" class="model_toget_all">
+      <div class="model_toget_div">
+        <div class="model_toget_div_title">
+          新增项目
+          <i>
+            <img
+              class="model_show_time_img"
+              src="../../../assets/imgs/close_model.png"
+              alt="关闭模态框"
+              @click="closeShowModel()"
+            >
+          </i>
+        </div>
+        <div class="model_padding_form">
+          <el-form
+            label-position="right"
+            style="width:50%;margin-left:25%;padding-top:65px;font-size:18px;"
+            :model="workForm"
+            :rules="workFormRules"
+            ref="workForm"
+            label-width="100px"
+            class="demo-ruleForm"
+            :hide-required-asterisk="false"
+          >
+            <el-form-item label="项目名称" prop="name">
+              <el-input v-model="workForm.name" placeholder="请输入项目名称"></el-input>
+            </el-form-item>
+            <el-form-item label="项目经理" prop="prjMgr">
+              <el-select v-model="workForm.prjMgr" placeholder="请选择" style="width:100%;">
+                <el-option
+                  v-for="item in selectPeopleList"
+                  :key="item.id"
+                  :label="item.text"
+                  :value="Number(item.id)"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="项目副经理" prop="deputyPrjMgr">
+              <el-select v-model="workForm.deputyPrjMgr" placeholder="请选择" style="width:100%;">
+                <el-option
+                  v-for="item in selectmanList"
+                  :key="item.id"
+                  :label="item.text"
+                  :value="Number(item.id)"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="描述" prop="desc">
+              <el-input type="textarea" placeholder="请输入描述" v-model="workForm.desc"></el-input>
+            </el-form-item>
+            <el-form-item class="el-form-item-box" label="上传图片">
+              <el-upload
+                action=""
+                list-type="picture-card"
+                :on-change="handlePictureCardSuccess"
+                :multiple="false"
+                :limit='1'
+                :on-preview="handlePictureCardPreview"
+                :on-remove="handleRemove"
+              >
+                <i class="el-icon-plus"></i>
+              </el-upload>
+            </el-form-item>
+            <el-form-item style="margin-top:60px;">
+              <el-button class="model_return_btn" @click="resetForm('workForm')">取消</el-button>
+              <el-button class="model_submit_btn" @click="onSubmit('workForm')">确认</el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import pageList from "./components/pageList";
+import { GetProjectList, GetAllUserList,AddProject,UploadImages} from '@/api/api.js'
+import {infaces} from './modules/interfaces.js'
+export default {
+  components: { pageList },
+  data() {
+    return {
+      projectListParams:{
+        keyword: "", //搜索词
+        pageIndex:1,
+        pageSize:9
+      },
+      showModel: false, //模态框是否显示
+      //项目列表
+      projectList: [],
+      //新增项目表单
+      workForm: {
+        name: "", //项目名称
+        prjMgr: '', //项目经理
+        deputyPrjMgr: '', //项目副经理
+        desc: "", //项目描述
+        imgPath:''
+      },
+      //表单正则
+      workFormRules: {
+        title: [{ required: true, message: "请输入项目名称", trigger: "blur" }],
+        people: [
+          { required: true, message: "请选择项目经理", trigger: "change" }
+        ],
+        man: [
+          { required: true, message: "请选择项目副经理", trigger: "change" }
+        ],
+        desc: [
+          { required: true, message: "请简单描述项目相关内容", trigger: "blur" }
+        ]
+      },
+      //项目经理
+      selectPeopleList: [],
+      //项目副经理
+      selectmanList: [],
+
+      page: {
+        //父组件的值要传到子组件
+        first: "上一页",
+        last: "下一页",
+        alltotal: 0, //数据总条数
+        currentPage: 1 //当前页码
+      },
+    };
+  },
+  created(){this._initData()},
+  methods: {
+    _initData(){
+      this.getPro()
+      infaces(this,GetAllUserList,{projectId:localStorage.getItem('projectid')}).then(res=>{
+        console.log(res)
+        this.selectmanList = this.selectPeopleList = res.Detiel
+      })
+    },
+
+  
+    //点击新增项目
+    addProject() {
+      this.showModel = true;
+    },
+    //点击搜索按钮
+     searchBtn() {
+      console.log('搜索')
+      this.getPro()
+    },
+    async getPro(){
+      this.load()
+       let list = await infaces(this,GetProjectList,this.projectListParams)
+        console.log(list)
+        this.projectList = list.Detiel
+        this.page.alltotal = Number(list.Count)
+        this.$toast.clear()
+        
+    },
+    //点击-单个项目---显示弹框
+    showSingelModel(item) {
+      console.log(item);
+    },
+    //点击-弹框上的关闭按钮
+    closeShowModel() {
+      this.showModel = false;
+      this.workForm={
+              name: "", //项目名称
+              prjMgr: '', //项目经理
+              deputyPrjMgr: '', //项目副经理
+              desc: "", //项目描述
+              imgPath:''
+            }
+    },
+    //文件上传的两个属性-----未处理
+    handleRemove(file, fileList) {
+      console.log(file, fileList);
+    },
+    //点击文件列表中已上传的文件时的钩子
+    handlePictureCardPreview(file) {
+      this.dialogImageUrl = file.url;
+      this.dialogVisible = false;
+    },
+    //表单重置按钮
+    resetForm(formName) {
+      this.$refs[formName].resetFields();
+    },
+    //表单提交按钮
+    onSubmit(formName) {
+      if(!this.workForm.name){
+        this.$message({type:'error',message:'请输入项目名称',center:'true'})
+        return
+      }
+      if(!this.workForm.prjMgr){
+        this.$message({type:'error',message:'请选择项目经理',center:'true'})
+        return
+      }
+      if(!this.workForm.deputyPrjMgr){
+        this.$message({type:'error',message:'请选择项目副经理',center:'true'})
+        return
+      }
+      if(!this.workForm.desc){
+        this.$message({type:'error',message:'请输入项目描述',center:'true'})
+        return
+      }
+      if(!this.workForm.imgPath){
+        this.$message({type:'error',message:'请上传图片',center:'true'})
+        return
+      }
+
+      console.log(this.workForm)
+      this.$refs[formName].validate(valid => {
+        if (valid) {
+          // alert("submit!");
+          console.log('提交')
+          infaces(this,AddProject,this.workForm).then(res=>{
+            console.log(res)
+            this.showModel = false;
+            this.getPro()
+            this.workForm={
+              name: "", //项目名称
+              prjMgr: '', //项目经理
+              deputyPrjMgr: '', //项目副经理
+              desc: "", //项目描述
+              imgPath:''
+            }
+          })
+        } else {
+          console.log("error submit!!");
+          return false;
+        }
+      });
+    },
+    //分页查询
+    changPage(page) {
+      console.log(page);
+    },
+
+    //跳转到--项目人员管理
+    jumpToPeople() {
+      this.$router.push({ path: "./components/projectMan" });
+    },
+    /**
+     * 上传图片
+     */
+    //文件列表中上传成功时的钩子
+    async handlePictureCardSuccess(res,file) {
+      let prams = [{
+        key: 'files', value: res.raw
+      }]
+      //上传图片
+      let upload_images = await this.Request(UploadImages(prams))
+      if(upload_images.StatusCode == 200){
+        this.workForm.imgPath = upload_images.Detiel[0].TokenUrL+upload_images.Detiel[0].URL
+      }else{
+        this.$message({type:'error',message:upload_images.message?upload_images.message:'后台异常',center:'true'})
+      }
+    },
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-project
+  width 100%
+  height 100%
+  font-size 16px
+  box-sizing border-box
+  background-color #F5F6FA
+  padding 20px
+  .project_head
+    width 100%
+  .add_btn_head
+    color #ffffff
+    background-color #4775CA
+    border-radius 5px
+    height 40px
+    vertical-align middle
+    font-size 20px
+    padding 0px 28px
+    border 0
+    line-height 40px
+    .icon_add
+      margin-right 10px
+      display inline-block
+      width 22px
+      height 22px
+      position relative
+      top -1px
+  .search_byHead
+    width 300px
+    margin-left 20px
+    overflow hidden
+  .project_right_btn
+    background-color #FDA143
+    color #ffffff
+    border 0
+    padding 12px
+    float right
+    box-shadow 0px 2px 4px 0px rgba(176, 148, 119, 0.5)
+    border-radius 4px
+  .project_body_list
+    width 100%
+    box-sizing border-box
+    height 750px
+  .project_body_list li
+    width 32%
+    height 210px
+    border 1px solid #F5F6FA
+    border-radius 4px
+    box-shadow 0px 3px 7px 0px rgba(229, 229, 229, 1)
+    background-color #ffffff
+    display inline-block
+    float left
+    margin-right 2%
+    margin-top 30px
+    box-sizing border-box
+    padding 10px
+  .project_body_list li:hover
+    border 1px solid #4775CA
+  .project_body_list ul>li:nth-child(3n+3)
+    margin-right 0
+  .project_body_list_left
+    width 33%
+    height 100%
+    box-sizing border-box
+    display inline-block
+    float left
+  .project_body_list_left img
+    width 100%
+    height 100%
+  .project_body_list_right
+    width 67%
+    height 100%
+    box-sizing border-box
+    display inline-block
+    float left
+    padding-left 15px
+  .project_body_list_right_title
+    font-size 20px
+    width 100%
+    margin-top 10px
+    height 60px
+    word-wrap break-word
+    word-break normal
+    text-overflow -o-ellipsis-lastline
+    overflow hidden
+    text-overflow ellipsis
+    display -webkit-box
+    -webkit-line-clamp 2
+    -webkit-box-orient vertical
+    display -webkit-box
+    font-weight 600
+    line-height 30px
+    box-sizing border-box
+  .project_body_list_context
+    height 130px
+    width 100%
+    box-sizing border-box
+    padding-top 10px
+    font-size 16px
+    color #656565
+  .project_body_list_context_padding
+    padding-top 10px
+  .project_body_list_context_text
+    word-wrap break-word
+    word-break normal
+    text-overflow -o-ellipsis-lastline
+    overflow hidden
+    text-overflow ellipsis
+    display -webkit-box
+    -webkit-line-clamp 2
+    -webkit-box-orient vertical
+    display -webkit-box
+    line-height 30px
+  .project_body_list_context img
+    width 19px
+    height 19px
+    position relative
+    top 3px
+  .model_toget_all
+    position fixed
+    top 0
+    left 0
+    width 100%
+    height 100%
+    z-index 20
+    background rgba(121, 121, 121, 0.4)
+  .model_toget_div
+    background-color #fff
+    width 50%
+    height 740px
+    margin-left 25%
+    margin-top 10%
+    border-radius 6px
+  .model_toget_div_title
+    width 100%
+    height 40px
+    background linear-gradient(225deg, rgba(105, 86, 255, 1) 0%, rgba(84, 138, 255, 1) 100%)
+    color #ffffff
+    text-align center
+    font-size 18px
+    font-family SourceHanSansCN-Medium
+    font-weight 600
+    line-height 40px
+  .model_show_time_img
+    float right
+    display inline-block
+    width 18px
+    height 18px
+    margin-right 25px
+    margin-top 10px
+    cursor pointer
+  .model_padding_form
+    height 630px
+    width 100%
+  .model_return_btn
+    color #ffffff
+    background-color #999999
+    border-radius 5px
+    height 48px
+    vertical-align middle
+    font-size 18px
+    padding 0px 44px
+    margin-left 9%
+  .model_submit_btn
+    color #ffffff
+    background-color #4775CA
+    border-radius 5px
+    height 48px
+    vertical-align middle
+    font-size 18px
+    padding 0px 44px
+    margin-left 30px
+  .page_padding
+    text-align center
+</style>
+
+<style>
+.container-project .model_toget_all .el-input__suffix {
+  background: rgba(67, 80, 137, 1);
+  border-radius: 0px 4px 4px 0px;
+  right: 0;
+  width: 40px;
+}
+
+.container-project .model_toget_all .el-icon-arrow-up:before {
+  content: "\e60c";
+  color: rgba(255, 255, 255, 1);
+}
+</style>

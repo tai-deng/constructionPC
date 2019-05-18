@@ -1,0 +1,117 @@
+.container-time
+  .top
+    .type
+      el-select(v-model="type")
+        el-option(
+          v-for="item in typeOptions"
+          :key="item.id"
+          :label="item.text"
+          :value="item.id"
+        )
+    .left
+      //- 模型box
+      div(class="model-container1")
+        .model-container(ref="modelContainer")
+      span.title 实际进度
+    .right
+      //- 模型box
+      div(class="model-container1")
+        .model-container(ref="modelContainer2")
+      span.title 计划进度
+  .progress
+    .left
+      p 整体进度：{{allProgress}}
+      p 滞后{{lagging}}天
+      el-button(@click="lookDetail(type)") 查看详情
+      .tips-left
+        span
+    .right-wrapper
+      el-carousel(arrow="always" :autoplay="false" height="180px")
+        el-carousel-item(:index="0")
+          .right
+            .after-title
+              p 计划进度
+              .line
+              p 实际进度
+            el-timeline(:reverse="true")
+              div(class="timeline")
+                ul
+                  li(v-for="item,index in porgressOptions" :class="item.message" :key="index")
+                    div.timeline-top(@click="onEditProgress(item,index)")
+                      p {{item.title}}
+                      p {{item.start_time}}
+                    div.ico-wrapper
+                      span.ico(@click="onEditProgress(item,index)")
+                      span.line
+                    div.timeline-content(v-if="!item.isAdd")
+                    p(v-if="!item.isAdd") {{item.end_time}}
+                    p.container-time-line(v-if="!item.isAdd")
+                    p(v-if="!item.isAdd") {{`完成：${item.progress}`}}
+                    .add-line(v-if="item.isAdd")
+                    .add-line-ico(v-if="item.isAdd" @click="onEditProgress(item,index)") +
+        el-carousel-item(:index="1")
+          .right
+            .after-title
+              p 计划进度
+              .line
+              p 实际进度
+            el-timeline(:reverse="true")
+              div(class="timeline")
+                ul
+                  li(v-for="item,index in porgressOptions" :class="item.message" :key="index")
+                    div.timeline-top(@click="onEditProgress(item,index)")
+                      p {{item.title}}
+                      p {{item.start_time}}
+                    div.ico-wrapper
+                      span.ico(@click="onEditProgress(item,index)")
+                      span.line
+                    div.timeline-content(v-if="!item.isAdd")
+                    p(v-if="!item.isAdd") {{item.end_time}}
+                    p.container-time-line(v-if="!item.isAdd")
+                    p(v-if="!item.isAdd") {{`完成：${item.progress}`}}
+                    .add-line(v-if="item.isAdd")
+                    .add-line-ico(v-if="item.isAdd" @click="onEditProgress(item,index)") +
+    .progress-detail(v-show="isProgressDetail" :style="progressDetailStyle" @click.stop)
+      .tit
+        span.el-icon-close(@click="toggleDetail()")
+      el-form(:data="dialogForm" label-width="110px" :disabled="dialogType === 'look'")
+        el-form-item(label="认证时间")
+          el-date-picker(
+            v-model="dialogForm.time"
+            type="date"
+            placeholder="选择日期"
+            value-format="yyyy-MM-dd hh:mm:ss"
+          )
+        el-form-item(label="上传人")
+          el-input(v-model="dialogForm.name")
+        el-form-item(label="完成百分比")
+          el-input(v-model="dialogForm.progress" :disabled="dialogForm.progress == '100%'")
+        el-form-item.flex(label="认证凭证")
+          el-upload(
+            :limit="2"
+            action
+            :auto-upload= "false"
+            list-type="picture-card"
+            :on-preview="handlePictureCardPreview"
+            :on-change = "handleAvatarSuccess"
+            :on-remove="handleRemove"
+            :file-list="imgList1"
+          )
+            i(class="el-icon-plus")
+          //- el-upload(
+          //-   :class="{ 'hide-ico': imgList2.length }"
+          //-   :limit="1"
+          //-   :multiple="false"
+          //-   action
+          //-   :auto-upload= "false"
+          //-   list-type="picture-card"
+          //-   :on-preview="handlePictureCardPreview"
+          //-   :on-remove="handleRemove"
+          //-   :file-list="imgList2"
+          //- )
+          //-   i(class="el-icon-plus")
+        el-form-item.btns
+          el-button(@click="toggleDetail") 取消
+          el-button(@click="submit") 确认
+
+

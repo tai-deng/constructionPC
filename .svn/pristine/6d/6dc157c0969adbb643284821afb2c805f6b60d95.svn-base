@@ -1,0 +1,344 @@
+<!-- 范围管理-采购列表 scope -->
+<template lang="pug" src="./index.pug"></template>
+<style lang="stylus" src="./index.styl" scope></style>
+
+<script type='textecmascript-6'>
+import CommonDialog from "@/common/common-dialog/index";
+import ScopeChangeList from "./components/scope-change-list/index";
+import ScopeChangeDetail from "./components/scope-change-detail/index";
+import ScopeDetail from "./components/scope-detail/index";
+import { mapMutations } from "vuex";
+
+import {
+  GetPurchaseRange,
+  GetBuilding,
+  GetSpecialtybyBuilding,
+  GetFloorbyBuilding
+} from "../../../../api/api.js";
+
+export default {
+  components: {
+    ScopeChangeList,
+    ScopeChangeDetail,
+    CommonDialog,
+    ScopeDetail
+  },
+  created() {
+    // this.initModel(); //加载模型
+    // 获取列表
+    if (this.activeTab) {
+    // 获取采购列表
+      this.getPurchaseList();
+    } else {
+      this.getChangeList();
+    }
+    // 楼栋下拉
+    this.getBuildingSel();
+  },
+  mounted() {},
+  data() {
+    return {
+      projectid: localStorage.getItem("projectid"),
+      BuildNameList: [], // 楼栋下拉
+      SpecialtyList: [], // 专业下拉
+      FloorbyList: [], // 楼层下拉
+      paging: { page: 1, rows: 5 }, // [采购列表分页]
+      filterForm: {
+        BuildName: "", // 楼栋
+        Specialty: "", // 专业
+        Floor: "", // 楼层
+        Name: "" // 查询内容
+      },
+      PurchaseList: [],
+      totalNum: 0,
+      purchaseDetailId:'',  // 采购详情ID
+
+      /**[弹框类型] 可选项
+       *  @change         发起变更
+       *  @purchaseDetail 采购详情
+       */
+      dialogTypeOptions: {
+        changeDetail: "changeDetail",
+        purchaseDetail: "purchaseDetail"
+      },
+      /**[弹框类型] */
+      dialogType: "purchaseDetail",
+      /**[当前选项卡]
+       *  @ture   采购列表
+       *  @false  变更列表
+       */
+      activeTab: true,
+      /**[当前折叠面板] */
+      nowCollapse: ["1", "2", "3"],
+      /**[楼栋1] 可选项 */
+      house1Options: [{ label: "AAA", value: 1 }, { label: "BBB", value: 2 }],
+      /**[楼栋1] 可选项 */
+      house2Options: [{ label: "CCC", value: 3 }, { label: "DDD", value: 4 }],
+      /**[楼栋1] 可选项 */
+      house3Options: [{ label: "EEE", value: 5 }, { label: "FFF", value: 6 }],
+      /**[筛选表单] */
+      filterForm: {},
+      /**[筛选表单规则] */
+      filterRules: {},
+      /**[进行中] */
+      dataIng: [
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        },
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        }
+      ],
+      /**[处理中] */
+      dataHandle: [
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        },
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        }
+      ],
+      /**[已处理] */
+      dataOver: [
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        },
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        }
+      ]
+    };
+  },
+  computed: {
+    /**[弹框标题] */
+    dialogTitle() {
+      let tit = "变更详情";
+
+      if (this.dialogType === this.dialogTypeOptions.purchaseDetail) {
+        tit = "采购详情";
+      }
+
+      return tit;
+    }
+  },
+  methods: {
+    /**[获取采购列表] */
+    getPurchaseList() {
+      GetPurchaseRange({
+        BuildName: this.filterForm.BuildName, // 楼栋
+        Specialty: this.filterForm.Specialty, // 专业
+        Floor: this.filterForm.Floor, // 楼层
+        Name: this.filterForm.Name, // 搜索内容
+        page: this.paging.page, // 第几也页
+        rows: this.paging.rows // 每页行数
+      }).then(res => {
+        if (res.StatusCode == 200) {
+          this.PurchaseList = res.Detiel;
+          this.totalNum = Number(res.Count)
+        }
+      });
+    },
+    // 楼层下拉
+    getFloorbySel(building, Specialty) {
+      GetFloorbyBuilding({
+        projectid: this.projectid,
+        building,
+        Specialty
+      }).then(res => {
+        if (res.StatusCode == 200) {
+          this.FloorbyList = res.Detiel;
+        }
+      });
+    },
+    // 专业下拉
+    getSpecialtySel(building) {
+      GetSpecialtybyBuilding({ projectid: this.projectid, building }).then(
+        res => {
+          if (res.StatusCode == 200) {
+            this.SpecialtyList = res.Detiel;
+          }
+        }
+      );
+    },
+    // 楼栋下拉
+    getBuildingSel() {
+      GetBuilding({ projectid: this.projectid }).then(res => {
+        if (res.StatusCode == 200) {
+          this.BuildNameList = res.Detiel;
+        }
+      });
+    },
+    // 分页
+    curChange(d) {
+      this.paging.page = d;
+      this.getPurchaseList();
+    },
+    // 输入搜素
+    onBlur() {},
+    /**[获取变更列表] */
+    getChangeList() {
+      let page = this.changePage.page;
+      let rows = this.changePage.rows;
+      GetChangeRange({
+        building: "", // 楼栋
+        specialty: "", // 专业
+        floor: "", // 楼层
+        name: "", // 搜索内容
+        page, // 第几也页
+        rows, // 每页行数
+        start: "", // 开始行,自动计算
+        end: "" // 结束行,自动计算
+      }).then(res => {
+        console.log("获取变更列表", res);
+      });
+    },
+
+    /**[采购详情] */
+    toPurchaseDetail(id) {
+      this.dialogType = this.dialogTypeOptions.purchaseDetail;
+      this.purchaseDetailId = id;
+      this.$refs.dialogRef.show();
+    },
+    /**[弹框确定] */
+    dialogOk() {
+      this.$refs.dialogRef.hide();
+    },
+    /**[弹框取消] */
+    dialogClose() {
+      this.$refs.dialogRef.hide();
+    },
+    /**[采购列表按钮] */
+    onPurchaseBtn() {
+      this.activeTab = !this.activeTab;
+      this.getPurchaseList();
+    },
+    /**[变更列表按钮] */
+    onChangeBtn() {
+      this.activeTab = !this.activeTab;
+      this.getChangeList();
+    },
+    /**[发起变更 or 发起采购]
+     *  @true 发起采购
+     *  @false 发起变更
+     */
+    startChange() {
+      if (this.activeTab) {
+        /**[发起采购] */
+        this.$router.push({
+          path: "material-need"
+        });
+      } else {
+        /**[发起变更] */
+        this.$router.push({
+          path: "InitiateChange"
+        });
+      }
+    },
+    /**[表格处理]
+     *  @row  当前行的数据
+     */
+    onHandle(row) {
+      console.log(row);
+    },
+    /**[显示变更详情] */
+    showChangeDetail(row) {
+      this.$router.push({
+        path: "ChangeDetail"
+      });
+      // this.dialogType = this.dialogTypeOptions.changeDetail;
+      // this.$refs.dialogRef.show();
+    },
+    /**
+     * 加载模型
+     */
+    initModel() {
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          console.log(res);
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    })
+  },
+  watch: {
+    filterForm: {
+      handler(val, oldval) {
+        // 获取采购列表
+        this.getPurchaseList();
+      },
+      deep: true
+    },
+    // 专业
+    "filterForm.Specialty": {
+      handler(val, oldval) {
+        this.getFloorbySel(this.filterForm.BuildName, val);
+      }
+    },
+    // 楼栋
+    "filterForm.BuildName": {
+      handler(val, oldval) {
+        this.getSpecialtySel(val);
+      }
+    }
+  }
+};
+</script>
+<style scoped>
+.model-container {
+  width: 98%;
+  height: 100%;
+  padding: 0 !important;
+  z-index: 90;
+}
+</style>

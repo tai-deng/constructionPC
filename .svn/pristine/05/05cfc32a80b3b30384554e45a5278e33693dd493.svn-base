@@ -1,0 +1,337 @@
+<!-- 发起采购 -->
+<template>
+  <div class="material-need-container flex-between material-structure material-speed">
+    <div class="model-wrapper">
+      <div class="model-container">
+        <div ref="modelContainer" class="model-container"></div>
+      </div>
+    </div>
+    <div class="form-wrapper">
+      <div class="title">
+        物资需求
+        <span class="hiden-material el-icon-close" @click="closeMaterial"></span>
+      </div>
+      <div class="content">
+        <el-form :model="form" label-width="100px">
+          <el-form-item label-width="40px" class="radio-color">
+            <el-radio-group v-model="type">
+              <el-radio label="progress">按进度计划</el-radio>
+              <el-radio label="model"  v-if="billsType!==0 || billsType!==1 || billsType!==2">按模型构件</el-radio>
+              <el-radio label="form"  v-if="billsType!==0 || billsType!==3">按清单</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <!-- 按模型购件 -->
+          <template v-if="type === typeOptions.model">
+            <structure ref="structure"></structure>
+          </template>
+          <!-- 按进度计划 -->
+          <template :listtype="billsType" v-if="type === typeOptions.progress">
+            <MaterialNeed ref="MaterialNeed"></MaterialNeed>
+          </template>
+          <!-- 按清单 -->
+          <template v-if="type === typeOptions.form">
+            <hr>
+            <div class="flex">
+              <el-form-item label="楼栋">
+                <div class="originator">
+                  <el-select v-model="buildname">
+                    <el-option v-for="(item,index) in BuildNameList" :key="index" :label="item.text" :value="item.text"></el-option>
+                  </el-select>
+                </div>
+              </el-form-item>
+
+              <el-form-item :label="labelText">
+                <div class="originator">
+                  <el-select v-model="projectname">
+                    <el-option v-for="(item,index) in projectNameList" :label="item.text" :value="item.text" :key="index"></el-option>
+                  </el-select>
+                </div>
+              </el-form-item>
+                  <el-button
+                    @click="getData"
+                    style="border: 0;padding-top: 0;padding-bottom: 0;vertical-align: -7px;width:40px;height:40px;"
+                  >
+                    <img src="../../../../assets/imgs/add.png" alt width="20" height="20">
+                  </el-button>
+            </div>
+
+            <hr>
+            <el-form-item label-width="40px">
+              <div class="teble-wrapper table-input">
+                <el-table :data="listItems" border>
+                  <el-table-column label="楼栋" prop="BuildName"></el-table-column>
+                  <el-table-column label="规格" prop="Spec"></el-table-column>
+                  <el-table-column :label="labelText" prop="ResourceName" width="180"></el-table-column>
+                  <el-table-column label="预算量" prop="AdjustBOQ"></el-table-column>
+                  <el-table-column label="已采购量" prop="PurchaseNum"></el-table-column>
+                  <el-table-column label="本次采购量">
+                    <template slot-scope="scope">
+                      <el-input type="number" v-model="listItems[scope.$index].ThisPurchaseNum"  :placeholder="listItems[scope.$index].Unit"></el-input>
+                    </template>
+                  </el-table-column>
+                  <el-table-column align="center" label="选择" width="50px">
+                    <template slot-scope="scope">
+                      <el-checkbox class="table-checkbox" size="medium" v-model="listItems[scope.$index].isSel"></el-checkbox>
+                    </template>
+                  </el-table-column>
+                </el-table>
+                <el-pagination :total="totalNum" @current-change="curChange" :page-size="paging.rows" :current-page.sync='paging.page' background layout="prev, pager, next" class="text-center"></el-pagination>
+              </div>
+            </el-form-item>
+            <el-form-item label="需求时间">
+              <el-date-picker v-model="form.DemandTime" type="date" placeholder="选择日期"></el-date-picker>
+            </el-form-item>
+          <Timeline v-model="listFlow" @getFlowList="getFlowList"/>
+          </template>
+          <el-form-item style="text-align: center">
+            <el-button type="success" @click="onSubmit">提交</el-button>
+            <el-button type="info" @click="closeMaterial">取消</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </div>
+  </div>
+</template>
+<style lang="stylus" src="./index.styl"></style>
+<style lang="stylus" scoped>
+.radio-color {
+  >>> {
+    .is-checked {
+      .el-radio__original, .el-radio__label {
+        color: #FDA143;
+      }
+
+      .el-radio__inner {
+        border-color: #FDA143;
+        background: #FDA143;
+      }
+    }
+  }
+}
+</style>
+
+
+<script type='textecmascript-6'>
+import MaterialNeed from "./components/material-need/index";
+import structure from "./components/material-structure/material-structure";
+import Timeline from "@/common/timeline/index";
+import { SaveRangeInfo,GetCurrentListType,GetBuilding,QueryPurchaseInfo,GetProjectName } from "../../../../api/api.js";
+import {initPurchase,getBuildList,getProjectNames} from '../util/util.js'
+import { mapMutations } from "vuex";
+
+export default {
+  components: {
+    Timeline,
+    MaterialNeed,
+    structure
+  },
+  data() {
+    return {
+      totalNum: 0,
+      paging: { page: 1, rows: 5 }, // [采购列表分页]
+      projectid: localStorage.getItem("projectid"),
+      buildname:'',
+      projectname:'',
+      labelText:'',
+      BuildNameList:[],
+      projectNameList:[],
+
+      billsType:2,
+      /**[表单类型]
+       *  @progress   按进度计划
+       *  @model      按模型购件
+       *  @form       按清单
+       */
+      typeOptions: {
+        progress: "progress",
+        model: "model",
+        form: "form"
+      },
+      type: "progress",
+      /**[表单] */
+      form: {
+        Type: "3",
+        check: "-1",
+        starttime:'',
+        EndTime:'',
+        DemandTime:'',
+      },
+      filterForm:{
+        starttime:'',
+        endtime:'',
+      },
+      /**[采购审核] */
+      listFlow: [
+        {
+          bottom: [{ text: "发起" }],
+          icoClassName: "hideIco"
+        },
+        {
+          bottom: [{ text: "审核" }]
+        },
+        {
+          bottom: [{ text: "审批" }]
+        },
+        {
+          bottom: [{ text: "采购" }]
+        }
+      ],
+      /**[时间快捷选项] */
+      pickerOptions2: {
+        shortcuts: [
+          {
+            text: "最近一周",
+            onClick(picker) {
+              const end = new Date();
+              const start = new Date();
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+              picker.$emit("pick", [start, end]);
+            }
+          },
+          {
+            text: "最近一个月",
+            onClick(picker) {
+              const end = new Date();
+              const start = new Date();
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+              picker.$emit("pick", [start, end]);
+            }
+          },
+          {
+            text: "最近三个月",
+            onClick(picker) {
+              const end = new Date();
+              const start = new Date();
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+              picker.$emit("pick", [start, end]);
+            }
+          }
+        ]
+      },
+      /**[表格数据]
+       *  @mergeTwoRow  {合并第二列}
+       */
+      listItems: [],
+      dataList: false,
+      dataStep: true
+    };
+  },
+  methods: {
+    _initData() {
+      /**
+       * 模型状态管理
+       */
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    // 获取清单类型
+    GetCurrentListType(){
+      GetCurrentListType({projectid:this.projectid}).then(res=>{
+        if(res.StatusCode==200){
+          this.billsType =res.Result;
+          if(res.Result==1){
+            this.labelText='资源名称';
+          }else{
+            this.labelText="项目名称"
+          }
+        }
+      })
+    },
+    // 分页
+    curChange(d) {
+      this.paging.page = d;
+      this.getData();
+    },
+    // 获取采购信息
+    getData(){
+      if(!this.buildname){
+        this.$message({
+          type: "warning",
+          message: "楼栋不能为空！",
+          center: "true"
+        });
+        return
+      }
+      if(!this.projectname){
+        this.$message({
+          type: "warning",
+          message: `${this.labelText}不能为空！`,
+          center: "true"
+        });
+        return 
+      }
+      let par={
+        projectid:this.projectid,
+        listtype:this.billsType,
+        querytype:'3',
+        buildname:this.buildname,
+        projectname:this.projectname,
+        page: this.paging.page, // 第几也页
+        rows: this.paging.rows // 每页行数
+      }
+      QueryPurchaseInfo(par).then(res=>{
+        if(res.StatusCode==200){
+          this.listItems=res.Detiel.map(item=>{
+            return Object.assign(item,{
+              ThisPurchaseNum:'',
+              // BuildName:this.buildname,
+              // projectname:this.projectname,
+              ProjectID:this.projectid,
+              isSel:false,
+            })
+          })
+          this.totalNum = Number(res.Count);
+        }
+      })
+    },
+    // 流程数据
+    getFlowList(d){
+      this.listFlow=d;
+    },
+    // 提交
+    onSubmit() {
+      if(this.type === this.typeOptions.model){   // 按模型购件
+        this.$refs.structure.onSubmit();
+      }else if(this.type === this.typeOptions.progress){    //  按进度计划
+        this.$refs.MaterialNeed.onSubmit();
+      }else if(this.type === this.typeOptions.form){   // 按清单
+        initPurchase(this,SaveRangeInfo);
+      }
+    },
+    /**关闭 物资需求 */
+    closeMaterial() {
+      this.$router.back(-1);
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    })
+  },
+  created(){
+    // 获取清单类型
+    this.GetCurrentListType();
+    this._initData();
+    // 获取楼栋
+    getBuildList(this,GetBuilding)
+  },
+  watch:{
+    buildname(val,oldval){
+      if(val!='')getProjectNames(this,GetProjectName);
+    }
+  }
+};
+</script>

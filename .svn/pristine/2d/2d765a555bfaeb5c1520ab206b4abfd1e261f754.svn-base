@@ -1,0 +1,162 @@
+.container-quality
+    .house-model(:span="12" class="house-model-left")
+        .model-container
+            .model-container(ref="modelContainer")
+    .filter-wrapper
+        .filter
+            el-form(
+            ref="filterFormRef"
+                :model="filterForm"
+                    :rules="filterRules"
+                    :inline="true"
+                    :validate-on-rule-change="false"
+            )
+                el-form-item
+                    el-select(v-model="filterForm.house1" placeholder="楼栋" @focus="getBuildingData" @change="onSelectedBuilding($event, filterForm.house1)")
+                        el-option(
+                        v-for="item in house1Options"
+                            :key="item.value"
+                                :label="item.label"
+                                :value="item.value"
+                        )
+                el-form-item
+                    el-select(v-model="filterForm.house2" placeholder="专业" @focus="getSpecialtybyBuildingData" @change="onSelectedMajor($event, filterForm.house2)")
+                        el-option(
+                        v-for="item in house2Options"
+                            :key="item.value"
+                                :label="item.label"
+                                :value="item.value"
+                        )
+                el-form-item
+                    el-select(v-model="filterForm.house3" placeholder="楼层" @focus="getFloorbyBuildingData" @change="onSelectedFloor($event, filterForm.house3)")
+                        el-option(
+                        v-for="item in house3Options"
+                            :key="item.value"
+                                :label="item.label"
+                                :value="item.value"
+                        )
+                el-form-item
+                    el-select(v-model="filterForm.house4" placeholder="构建类别" @focus="getElementTypebyBuildingData" @change="onSelectedConstructionCategory($event, filterForm.house4)")
+                        el-option(
+                        v-for="item in house4Options"
+                            :key="item.value"
+                                :label="item.label"
+                                :value="item.value"
+                        )
+                el-form-item(class="ser-bg")
+                    el-input(v-model="filterForm.custom" placeholder="楼栋、专业、楼层、资源" v-debounce="searchTxt")  //@input="searchTxt"
+                        i(slot="prefix" class="el-input__icon el-icon-search")
+        el-row
+            el-col(:span="12" style="padding-right: 10px;width: 500px;")
+                div(class="grid-content bg-purple new-quality-detail tableBox")
+                    div(class="titleBg notice") {{filterForm.house1 == "" ? '所有' : filterForm.house1}}栋进度计划
+                    .table
+                        el-table(:data="statisticDatas" :row-class-name="rowClassNameHandler" stripe @row-click="openDetail")
+                            el-table-column(label="序号")
+                                template(slot-scope="scope")
+                                    span(:style="{marginLeft: scope.row.level * 5 + 'px'}")
+                                    i(v-if="scope.row.showChildren" :class="{'fa fa-folder-open':scope.row.showChildren, 'fa fa-file-o':!scope.row.hasChildren}" @click.stop="onExpand(scope.row)" :style="{cursor:scope.row.hasChildren ? 'pointer' : 'normal'}") {{scope.row.index}}
+                                    i(v-else :class="{'fa fa-folder':scope.row.hasChildren, 'fa fa-file-o':!scope.row.hasChildren}" @click.stop="onExpand(scope.row)" :style="{cursor:scope.row.hasChildren ? 'pointer' : 'normal'}") {{scope.row.index}}
+                                    span(:data-level="scope.row.level")
+                            el-table-column(prop="TaskName" label="任务名称")
+                            el-table-column(prop="BaseFinishTime" :formatter="formatterTime" label="计划结束时间" )
+                            el-table-column(prop="Duration" label="工期")
+                            el-table-column(prop="count" :formatter="formatterLevel" label="状态")
+                        //- .title
+                        //-     el-table
+                        //-         el-table-column(label="序号")
+                        //-         el-table-column(label="任务名称")
+                        //-             template(slot-scope="scope") 任务名称
+                        //-         el-table-column(label="结束时间")
+                        //-         el-table-column(label="工期" class="center")
+                        //-         el-table-column(label="状态" class="center")
+                        //- .content
+                        //-     el-collapse(v-model="nowCollapse")
+                        //-         el-collapse-item(:title="`1`" name="1")
+                        //-             el-table(:data="dataIng" :show-header="false")
+                        //-                 el-table-column(prop="code")
+                        //-                 el-table-column(prop="building")
+                        //-                 el-table-column(prop="major")
+                        //-                 el-table-column(prop="floor")
+                        //-                 el-table-column(prop="change_them")
+
+                        //-         el-collapse-item(:title="`2`" name="2")
+                        //-             el-table(:data="dataHandle" :show-header="false")
+                        //-                 el-table-column(prop="code")
+                        //-                 el-table-column(prop="building")
+                        //-                 el-table-column(prop="major")
+                        //-                 el-table-column(prop="floor")
+                        //-                 el-table-column(prop="change_them")
+
+
+            el-col(:span="12" style="padding-right: 0px;width: 440px;margin-left:20px;")
+                div(class="grid-content bg-purple-light control-detail new-input-box")
+                    div(class="titleBg notice2 text-center")
+                        .text-center 管控详情
+                    el-form(:inline="true" class="demo-form-inline")
+                        div(class="margin-bottom fz14") ①施工方案：
+                        div(v-if="constructionPlan.length")
+                            div(class="margin-bottom gk-detail" v-for="(item, index) in constructionPlan")
+                                el-button(size="mini" class="text-ellipsis" :class="{'bgnone':!item.Uploader}" type="primary") {{item.SchemeName}}
+                                //- el-upload(action :on-change="uploadFile" :data-schemeType="item.SchemeType" :show-file-list="false" :auto-upload="false")
+                                //-     el-button(size="mini" class="text-ellipsis" :class="{'bgnone':!item.Uploader}" type="primary") {{item.SchemeName}}
+                                //- input(type="file" @change="uploadFile" :data-schemeType="item.SchemeType" style="display:none")
+                                i(class="el-icon-search" :class="{'colnone':!item.Uploader}")
+                                i(class="el-icon-download" :class="{'colnone':!item.Uploader}")
+                                i(class="el-icon-delete" :class="{'colnone':!item.Uploader}")
+                                span(class="scr text-ellipsis") 上传人：{{item.Uploader}}
+                                span(class="rzsj text-ellipsis") 认证时间：{{item.ConfirmDate | filterDate}}
+                                span(style="display:none" ref="schemeType") {{item.SchemeType}}
+                        div(v-else class="not-data") 暂无数据!
+                        //- div(class="margin-bottom")
+                        //-     el-button(size="mini" type="primary") 承重墙浇筑施工方案
+                        //-     i(class="el-icon-search")
+                        //-     i(class="el-icon-download")
+                        //-     i(class="el-icon-delete")
+                        //- div(class="margin-bottom")
+                        //-     el-button(size="mini" type="primary" class="bgnone") 承重墙浇筑施工方案
+                        //-     i(class="el-icon-search colnone" )
+                        //-     i(class="el-icon-download colnone")
+                        //-     i(class="el-icon-delete colnone")
+                        //- div(class="q1-form-input")
+                        //-     el-form-item(label="上传人")
+                        //-         el-input(placeholder="刘老板")
+                        //-     el-form-item(label="认证时间" style="margin-left: 50px;")
+                        //-         el-input(placeholder="2019-01-01")
+                    el-form(:inline="true" class="demo-form-inline")
+                        div(class="margin-bottom fz14") ②技术交底：
+                        div(v-if="technicalDisclosure.length")
+                            div(class="margin-bottom gk-detail" v-for="(item, index) in technicalDisclosure")
+                                el-button(size="mini" class="text-ellipsis" :class="{'bgnone':!item.Uploader}" type="primary") {{item.SchemeName}}
+                                i(class="el-icon-search" :class="{'colnone':!item.Uploader}")
+                                i(class="el-icon-download" :class="{'colnone':!item.Uploader}")
+                                i(class="el-icon-delete" :class="{'colnone':!item.Uploader}")
+                                span(class="scr text-ellipsis") 上传人：{{item.Uploader}}
+                                span(class="rzsj text-ellipsis") 认证时间：{{item.ConfirmDate | filterDate}}
+                        div(v-else class="not-data") 暂无数据!
+                    el-form(:inline="true" class="demo-form-inline")
+                        div(class="margin-bottom fz14") ③工序验收：
+                        div(v-if="processAcceptance.length")
+                            div(class="margin-bottom gk-detail" v-for="(item, index) in processAcceptance")
+                                el-button(size="mini" class="text-ellipsis" :class="{'bgnone':!item.Uploader}" type="primary") {{item.SchemeName}}
+                                i(class="el-icon-search" :class="{'colnone':!item.Uploader}")
+                                i(class="el-icon-download" :class="{'colnone':!item.Uploader}")
+                                i(class="el-icon-delete" :class="{'colnone':!item.Uploader}")
+                                span(class="scr text-ellipsis") 上传人：{{item.Uploader}}
+                                span(class="rzsj text-ellipsis") 认证时间：{{item.ConfirmDate | filterDate}}
+                        div(v-else class="not-data") 暂无数据!
+                        //- div(class="margin-bottom")
+                        //-     el-button(size="mini" type="primary") 1f承重浇筑验收确认单
+                        //-     i(class="el-icon-search")
+                        //-     i(class="el-icon-download")
+                        //-     i(class="el-icon-delete")
+                        //- div(class="margin-bottom")
+                        //-     el-button(size="mini" type="primary") 1f承重浇筑验收确认单
+                        //-     i(class="el-icon-search")
+                        //-     i(class="el-icon-download")
+                        //-     i(class="el-icon-delete")
+                        //- div(class="q1-form-input")
+                        //-     el-form-item(label="上传人")
+                        //-         el-input(placeholder="刘老板")
+                        //-     el-form-item(label="验收时间" style="margin-left: 50px;")
+                        //-         el-input(placeholder="2019-01-01")

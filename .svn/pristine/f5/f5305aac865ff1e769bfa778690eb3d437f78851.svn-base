@@ -1,0 +1,34 @@
+/**
+ * model.vue侦听器
+ */
+export default {
+  watch: {
+    /**
+     * 
+     * @param {侦听模型加载完成} isViewAdded 
+     */
+    isViewAdded(isViewAdded) {
+      if (isViewAdded) {
+        console.log('模型加载完成：', isViewAdded)
+        this.viewer3D.resize(this.widthAndHeight.width, this.widthAndHeight.height)
+        this.reFunctionNumber(this.functionNumber)
+      }
+    },
+    /**
+     * 侦听模型容器宽高变化，动太改变模型宽高
+     */
+    widthAndHeight(widthAndHeight) {
+      this.viewer3D.resize(widthAndHeight.width, widthAndHeight.height)
+    },
+    /**
+     * 侦听传入的序号以调用函数
+     */
+    functionNumber(arr) {
+      console.log(arr)
+      if(!this.isViewAdded) return // 模型未加载完成
+      console.log('侦听传入的序号以调用函数', arr)  
+      this.reFunctionNumber(arr)
+      
+    }
+  }
+}

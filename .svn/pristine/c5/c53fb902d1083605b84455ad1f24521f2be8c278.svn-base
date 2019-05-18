@@ -1,0 +1,1939 @@
+<!-- 认证设定SetAuthentication -->
+<template>
+  <div class="container_set_authentication">
+    <!-- 左边 -->
+    <div class="authent_left">
+      <div class="authent_left_head">
+        <el-select
+          class="authent_left_head_select"
+          @change="changeBuilding"
+          v-model="allSelect"
+          placeholder="选择建筑单体"
+        >
+          <el-option
+            v-for="item in authentSelect"
+            :key="item.id"
+            :label="item.text"
+            :value="item.id"
+          ></el-option>
+        </el-select>
+        <el-button class="authent_left_head_btn" :disabled="btnDis" @click="timeToShow()">认证设定</el-button>
+      </div>
+      <div class="authent_left_body">
+
+        <el-table
+          ref="multipleTable"
+          :data="tableData3"
+          tooltip-effect="dark"
+          style="width: 100%;min-height:400px;"
+          v-loading="tableLoading"
+          id="my_table_set"
+          @selection-change="handleSelectionChange"
+          :row-class-name="tableRowClassName"
+          :header-cell-style="{'background-color':'#435089','color':'#ffffff','font-size':'18px'}" >
+          <!--:default-expand-all="true"-->
+
+          <el-table-column type="expand" >
+            <template slot-scope="scope">
+              <el-table
+                :data="scope.row.children"
+                style="width:100%;"
+                :show-header="false"
+                @selection-change="changeOne"
+                @row-click="rowClick">
+
+                <!-- 测试  -->
+                <el-table-column type="expand"  v-show="scope.row.children==null?false:true">
+                  <template slot-scope="scope"  >
+                    <el-table  :data="scope.row.children" 
+                      style="width:100%;"
+                      :show-header="false">
+
+                        <el-table-column type="expand"  v-show="scope.row.children==null?false:true">
+                          <template slot-scope="scope" >
+                            <el-table  :data="scope.row.children"
+                              style="width:100%;padding-left:60px;"
+                              :show-header="false">
+
+                              <el-table-column type="selection" prop="TaskId" :selectable="checkboxInit"></el-table-column>
+                              <el-table-column prop="num" width="60">
+                                <template slot-scope="scope">
+                                  <div>{{scope.row.num}}</div>
+                                </template>
+                              </el-table-column>
+
+
+                              <el-table-column prop="TaskName" :show-overflow-tooltip="true">
+                                <template slot-scope="scope">
+                                  <div :class="scope.row.IsAuthen==1?'setAuthenDiv':''">{{scope.row.TaskName}}</div>
+                                </template>
+                              </el-table-column>
+                              <el-table-column prop="BaseFinishTime">
+                                <template slot-scope="scope">
+                                  <div :class="scope.row.IsAuthen==1?'setAuthenDiv':''" >{{ scope.row.BaseFinishTime}}</div>
+                                </template>
+                              </el-table-column>
+                              <el-table-column prop="Duration">
+                                <template slot-scope="scope">
+                                  <div  :class="scope.row.IsAuthen==1?'setAuthenDiv':''">{{scope.row.Duration}}</div>
+                                </template>
+                              </el-table-column>
+
+                           </el-table>
+                          </template>
+                        </el-table-column>
+
+                      <el-table-column type="selection" prop="TaskId" :selectable="checkboxInit"></el-table-column>
+                      <el-table-column prop="num" width="60">
+                        <template slot-scope="scope">
+                          <div>{{scope.row.num}}</div>
+                        </template>
+                      </el-table-column>
+                      <el-table-column prop="TaskName" :show-overflow-tooltip="true">
+                        <template slot-scope="scope">
+                          <div :class="scope.row.IsAuthen==1?'setAuthenDiv':''">{{scope.row.TaskName}}</div>
+                        </template>
+                      </el-table-column>
+                      <el-table-column prop="BaseFinishTime">
+                        <template slot-scope="scope">
+                          <div :class="scope.row.IsAuthen==1?'setAuthenDiv':''">{{ scope.row.BaseFinishTime}}</div>
+                        </template>
+                      </el-table-column>
+                      <el-table-column prop="Duration">
+                        <template slot-scope="scope">
+                          <div  :class="scope.row.IsAuthen==1?'setAuthenDiv':''">{{scope.row.Duration}}</div>
+                        </template>
+                      </el-table-column>
+
+                    </el-table>
+                  </template>
+                </el-table-column>
+
+
+
+
+                <el-table-column type="selection" prop="TaskId" :selectable="checkboxInit"></el-table-column>
+                <!-- <el-table-column >
+                  <template slot-scope="scope">
+                    <div>
+                      <el-checkbox v-model="selectPeople" @change="changeAll(scope.row,scope.row.TaskId)"
+                          :value=""></el-checkbox>
+                    </div>
+                  </template>
+                </el-table-column>       -->
+                
+                <el-table-column prop="num" width="60">
+                  <template slot-scope="scope">
+                    <div>{{scope.row.num}}</div>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="TaskName" :show-overflow-tooltip="true">
+                  <template slot-scope="scope">
+                    <div :class="scope.row.IsAuthen==1?'setAuthenDiv':''">{{scope.row.TaskName}}</div>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="BaseFinishTime">
+                  <template slot-scope="scope">
+                    <div :class="scope.row.IsAuthen==1?'setAuthenDiv':''"  style="padding-left:10px;">{{ scope.row.BaseFinishTime}}</div>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="Duration">
+                  <template slot-scope="scope">
+                    <div :class="scope.row.IsAuthen==1?'setAuthenDiv':''"  style="padding-left:20px;">{{ scope.row.Duration}}</div>
+                  </template>
+                </el-table-column>
+                
+
+              </el-table>
+            </template>
+          </el-table-column>
+          <el-table-column type="selection"></el-table-column>
+          
+
+          <el-table-column label="序号" type="index" :index="indexMethod" width="60"></el-table-column>
+          <el-table-column prop="TaskName" label="任务名称" sortable></el-table-column>
+          <el-table-column prop="BaseFinishTime" label="计划结束时间"></el-table-column>
+          <el-table-column prop="Duration" label="工期"></el-table-column>
+        </el-table>
+
+
+
+        <!-- <div class="table-title">
+          <div class="table-chack table-center" style="width:40px">
+            <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="handleCheckAllChange"></el-checkbox>
+          </div>
+          <div class="table-allSel table-center" style="width:60px">序号</div>
+          <div class="table-taskName table-center table-flex1">任务名称</div>
+          <div class="table-planDate table-center" style="width:148px">计划结束时间</div>
+          <div class="table-stage table-center" style="width:60px">工期</div>
+        </div>
+        <div class="table-content">
+          <el-collapse v-model="activeName" accordion>
+            <div class="fw" v-for="(item,index) in tableData3" :key="index">
+              <div :class="['table-content-item',{'table-item-border':index!=tableData3.length-1}]">
+                <div class="table-chack table-center" style="width:40px">
+                  <el-checkbox :label="item.num" @change="checkChange"></el-checkbox>
+                </div>
+                <div class="table-clickWarp table-flex1" @click.stop="selNum=item.num">
+                  <div class="table-allSel" style="width:60px;text-align:left;line-height:60px;">{{item.num}}</div>
+                  <div class="table-taskName table-center table-flex1">{{item.TaskName}}</div>
+                  <div class="table-planDate table-center" style="width:148px">{{item.BaseFinishTime}}</div>
+                  <div class="table-stage table-center" style="width:60px">{{item.Duration}}</div>
+                </div>
+              </div>
+              <template  v-if="selNum==item.num">
+                <div :class="['table-content-item','table-item-bgc']" v-for="(it,i) in item.children" :key="i">
+                  <div class="table-chack table-center" style="width:40px;padding-left:10px;">
+                    <el-checkbox :label="it.num" @change="checkChange"></el-checkbox>
+                  </div>
+                  <div class="table-clickWarp table-flex1" @click.stop="selNum=item.num">
+                    <div class="table-allSel" style="width:60px;text-align:left;line-height:60px;">{{it.num}}</div>
+                    <div class="table-taskName table-center table-flex1">{{it.TaskName}}</div>
+                    <div class="table-planDate table-center" style="width:148px">{{it.BaseFinishTime}}</div>
+                    <div class="table-stage table-center" style="width:60px">{{it.Duration}}</div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </el-collapse>
+        </div> -->
+
+
+
+        <!-- <el-tree
+          :data="tableData3"
+          show-checkbox
+          :props="defaultProps">
+        </el-tree> -->
+
+
+       
+
+
+
+      </div>
+    </div>
+
+    <!-- 中间----模型 -->
+    <div class="authent_middle">
+      <div class="model-container">
+        <div ref="modelContainer" class="model-container"></div>
+      </div>
+    </div>
+
+    <!-- 右边--弹出框 -->
+    <div v-show="authentRight" class="authent_right" id="authent_right1">
+      <div class="authent_right_title">
+        认证设定
+        <span class="authent_right_span" @click="timeToClose()">取消</span>
+        <!-- <span class="authent_right_span" @click="showResetDtn">编辑</span> -->
+      </div>
+      <div class="authent_right_body">
+        <!-- 施工方案（可以增减的部分）-->
+        <div class="authent_right_div" v-for="(list,index) in addbuildType" v-bind:key="list.index">
+          <div class="authent_right_div_title">
+            <span
+              v-show="index==0?true:false"
+              style="position:relative;top:-7px;font-weight:600;"
+            >施工方案</span>
+            <i v-show="index==0?true:false" class="authent_right_div_img" @click="addBuild()">
+              <img src="../../../assets/imgs/model_add.svg" alt>
+            </i>
+            <i
+              v-show="index==0?false:true "
+              class="draw_image"
+              v-on:click="addbuildType.splice(index, 1)"
+            >-</i>
+          </div>
+          <div class="authent_right_div_box">
+            <div class="list_div">
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">方案名称:</span>
+                </el-col>
+                <el-col :span="18">
+                  <el-input v-model="list.SchemeName"></el-input>
+                </el-col>
+              </el-row>
+
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">方案类型:</span>
+                </el-col>
+                <el-col :span="18">
+                  <el-select class="box_select" v-model="list.SchemeType" placeholder="上传的文件类型">
+                    <el-option
+                      v-for="item in fileType"
+                      :key="item.id"
+                      :label="item.text"
+                      :value="item.id"
+                    ></el-option>
+                  </el-select>
+                </el-col>
+              </el-row>
+
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">认证时间:</span>
+                </el-col>
+                <el-col :span="8">
+                  <el-date-picker
+                    class="box_select_day"
+                    v-model="list.SetTime"
+                    type="date"
+                    placeholder="选择日期"
+                  ></el-date-picker>
+                </el-col>
+                <el-col :span="5" class="box_right">
+                  <span class="box_span">逾期提醒:</span>
+                </el-col>
+                <el-col :span="5">
+                  <el-input v-model="list.BeOverdue" type="number" min="0">
+                    <i slot="suffix" class="box_input_day">天</i>
+                  </el-input>
+                </el-col>
+              </el-row>
+
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">模型关联:</span>
+                </el-col>
+                <el-col :span="18">
+                  <i class="box_relative_img" v-if="!list.IsModel" @click="addModel(list)">
+                    <img src="../../../assets/imgs/unRelation.png" alt>
+                  </i>
+                  <i class="box_relative_img" v-if="list.IsModel" @click="removeModel(list)">
+                    <img src="../../../assets/imgs/allRelation.png" alt>
+                  </i>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </div>
+        <!-- 技术交底（可以增减的部分） -->
+        <div
+          class="authent_right_div"
+          v-for="(list,index) in addtechnology"
+          v-bind:key="list.index">
+          <div class="authent_right_div_title">
+            <span
+              v-show="index==0?true:false"
+              style="position:relative;top:-7px;font-weight:600;"
+            >技术交底</span>
+            <i v-show="index==0?true:false" class="authent_right_div_img" @click="addTech()">
+              <img src="../../../assets/imgs/model_add.svg" alt>
+            </i>
+            <i
+              v-show="index==0?false:true"
+              class="draw_image"
+              v-on:click="addtechnology.splice(index, 1)"
+            >-</i>
+          </div>
+          <div class="authent_right_div_box">
+            <div class="list_div">
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">方案名称:</span>
+                </el-col>
+                <el-col :span="18">
+                  <el-input v-model="list.SchemeName"></el-input>
+                </el-col>
+              </el-row>
+
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">方案类型:</span>
+                </el-col>
+                <el-col :span="18">
+                  <el-select class="box_select" v-model="list.SchemeType" placeholder="上传的文件类型">
+                    <el-option
+                      v-for="item in fileType"
+                      :key="item.id"
+                      :label="item.text"
+                      :value="item.id"
+                    ></el-option>
+                  </el-select>
+                </el-col>
+              </el-row>
+
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">认证时间:</span>
+                </el-col>
+                <el-col :span="8">
+                  <el-date-picker
+                    class="box_select_day"
+                    v-model="list.SetTime"
+                    type="date"
+                    placeholder="选择日期"
+                  ></el-date-picker>
+                </el-col>
+                <el-col :span="5" class="box_right">
+                  <span class="box_span">逾期提醒:</span>
+                </el-col>
+                <el-col :span="5">
+                  <el-input v-model="list.BeOverdue" type="number" min="0">
+                    <i slot="suffix" class="box_input_day">天</i>
+                  </el-input>
+                </el-col>
+              </el-row>
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">模型关联:</span>
+                </el-col>
+                <el-col :span="18">
+                  <i class="box_relative_img" v-if="!list.IsModel" @click="addModel(list)">
+                    <img src="../../../assets/imgs/unRelation.png" alt>
+                  </i>
+                  <i class="box_relative_img" v-if="list.IsModel" @click="removeModel(list)">
+                    <img src="../../../assets/imgs/allRelation.png" alt>
+                  </i>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </div>
+        <!-- 工序验收（可以增减的部分） -->
+        <div class="authent_right_div" v-for="(list,index) in addprocess" v-bind:key="list.index">
+          <div class="authent_right_div_title">
+            <span
+              v-show="index==0?true:false"
+              style="position:relative;top:-7px;font-weight:600;"
+            >工序验收</span>
+            <i v-show="index==0?true:false" class="authent_right_div_img" @click="addpro()">
+              <img src="../../../assets/imgs/model_add.svg" alt>
+            </i>
+            <i
+              v-show="index==0?false:true"
+              class="draw_image"
+              v-on:click="addprocess.splice(index, 1)"
+            >-</i>
+          </div>
+          <div class="authent_right_div_box">
+            <div class="list_div">
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">方案名称:</span>
+                </el-col>
+                <el-col :span="18">
+                  <el-input v-model="list.SchemeName"></el-input>
+                </el-col>
+              </el-row>
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">方案类型:</span>
+                </el-col>
+                <el-col :span="18">
+                  <el-select class="box_select" v-model="list.SchemeType" placeholder="上传的文件类型">
+                    <el-option
+                      v-for="item in fileType"
+                      :key="item.id"
+                      :label="item.text"
+                      :value="item.id"
+                    ></el-option>
+                  </el-select>
+                </el-col>
+              </el-row>
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">认证时间:</span>
+                </el-col>
+                <el-col :span="8">
+                  <!-- :picker-options="pickerTime" 认证时间-->
+                  <el-date-picker
+                    class="box_select_day"
+                    v-model="list.SetTime"
+                    type="date"
+                    placeholder="选择日期"
+                  ></el-date-picker>
+                </el-col>
+                <el-col :span="5" class="box_right">
+                  <span class="box_span">逾期提醒:</span>
+                </el-col>
+                <el-col :span="5">
+                  <el-input v-model="list.BeOverdue" type="number" min="0">
+                    <i slot="suffix" class="box_input_day">天</i>
+                  </el-input>
+                </el-col>
+              </el-row>
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">模型关联:</span>
+                </el-col>
+                <el-col :span="18">
+                  <i class="box_relative_img" v-if="!list.IsModel" @click="addModel(list)">
+                    <img src="../../../assets/imgs/unRelation.png" alt>
+                  </i>
+                  <i class="box_relative_img" v-if="list.IsModel" @click="removeModel(list)">
+                    <img src="../../../assets/imgs/allRelation.png" alt>
+                  </i>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </div>
+        <!-- 物资采购 （可以增减的部分-->
+        <div class="authent_right_div" v-for="(list,index) in addSupplies" v-bind:key="list.index">
+          <div class="authent_right_div_title">
+            <span
+              v-show="index==0?true:false"
+              style="position:relative;top:-7px;font-weight:600;"
+            >物资采购</span>
+            <i v-show="index==0?true:false" class="authent_right_div_img" @click="addSup()">
+              <img src="../../../assets/imgs/model_add.svg" alt>
+            </i>
+            <i
+              v-show="index==0?false:true"
+              class="draw_image"
+              v-on:click="addSupplies.splice(index, 1)"
+            >-</i>
+          </div>
+          <div class="authent_right_div_box">
+            <div class="list_div">
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">采购时间:</span>
+                </el-col>
+                <el-col :span="18">
+                  <el-date-picker
+                    class="box_select_day"
+                    v-model="list.SetTime"
+                    type="date"
+                    placeholder="选择日期"
+                  ></el-date-picker>
+                </el-col>
+              </el-row>
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">模型关联:</span>
+                </el-col>
+                <el-col :span="8">
+                  <i class="box_relative_img" v-if="!list.IsModel" @click="addModel(list)">
+                    <img src="../../../assets/imgs/unRelation.png" alt>
+                  </i>
+                  <i class="box_relative_img" v-if="list.IsModel" @click="removeModel(list)">
+                    <img src="../../../assets/imgs/allRelation.png" alt>
+                  </i>
+                </el-col>
+                <el-col :span="5" class="box_right">
+                  <span class="box_span">逾期提醒:</span>
+                </el-col>
+                <el-col :span="5">
+                  <el-input v-model="list.BeOverdue" type="number" min="0">
+                    <i slot="suffix" class="box_input_day">天</i>
+                  </el-input>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </div>
+        <!-- 认证对比（可以增减的部分）addLastChange -->
+        <div
+          class="authent_right_div"
+          v-for="(list,index) in addLastChange"
+          v-bind:key="list.index">
+          <div class="authent_right_div_title">
+            <span
+              v-show="index==0?true:false"
+              style="position:relative;top:-7px;font-weight:600;"
+            >认证对比</span>
+            <i v-show="index==0?true:false" class="authent_right_div_img" @click="addLast()">
+              <img src="../../../assets/imgs/model_add.svg" alt>
+            </i>
+            <i
+              v-show="index==0?false:true"
+              class="draw_image"
+              v-on:click="addLastChange.splice(index, 1)"
+            >-</i>
+          </div>
+          <div class="authent_right_div_box">
+            <div class="list_div">
+              <el-row>
+                <el-col :span="5" :offset="1">
+                  <span class="box_span">对比时间:</span>
+                </el-col>
+                <el-col :span="18">
+                  <el-date-picker
+                    class="box_select_day"
+                    v-model="list.SetTime"
+                    type="date"
+                    placeholder="选择日期"
+                  ></el-date-picker>
+                </el-col>
+              </el-row>
+              <el-row>
+                <el-col :span="5" :offset="14" class="box_right">
+                  <span class="box_span">逾期提醒:</span>
+                </el-col>
+                <el-col :span="5">
+                  <el-input v-model="list.BeOverdue" type="number" min="0">
+                    <i slot="suffix" class="box_input_day">天</i>
+                  </el-input>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </div>
+        <div v-show="showRest" class="authent_right_footer">
+          <el-button class="box_footer_btn_none" @click="timeToClose()">取消</el-button>
+          <el-button class="box_footer_btn" @click="submitAll()">保存</el-button>
+        </div>
+        <div v-show="!showRest" class="authent_right_footer">
+          <el-button class="box_footer_btn_none" @click="timeToClose()">取消</el-button>
+          <el-button class="box_footer_btn" @click="resetAll()">修改</el-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import {
+  SchemeTypeList,
+  ToSetNodeList,
+  SetGetBuilding,
+  GetAuthenSetTaskList,
+  GetAutSetListByTaskId,
+  AddModelAuthenticationSettings,
+  EditModelAuthenticationSettings,
+  GetElementListByTaskId
+} from "@/api/api.js";
+import { mapMutations, mapGetters } from "vuex";
+export default {
+  data() {
+    return {
+      checkAll: false, // 全选
+      isIndeterminate: true,
+      activeName: 1,
+      selNum:'',
+      allSels:[],
+
+      authentSelect: [],
+      allSelect: "", //选择建筑下拉
+      // 表格数据
+      tableData3: [],
+      multipleSelection: [],
+      btnDis: true, //认证设定--按钮
+      //是否显示编辑按钮/保存
+      showRest: true,
+      //未设定的时候  设定按钮就显示true, 未设定的时候显示false
+      disShow: false,
+      authentRight: true, //右侧板块是否显示
+      //右边悬浮窗口-施工方案（增减部分）
+      addbuildType: [
+        {
+          SchemeName: "",
+          SchemeType: "",
+          BeOverdue: "",
+          SetTime: "",
+          IsModel: false,
+          Mode: "0",
+          ElementID: ""
+        }
+      ],
+      //右边悬浮窗口-技术交底（增减部分）
+      addtechnology: [
+        {
+          SchemeName: "",
+          SchemeType: "",
+          BeOverdue: "",
+          SetTime: "",
+          IsModel: false,
+          Mode: "1",
+          ElementID: ""
+        }
+      ],
+      //右边悬浮窗口-工序验收（增减部分）
+      addprocess: [
+        {
+          SchemeName: "",
+          SchemeType: "",
+          BeOverdue: "",
+          SetTime: "",
+          IsModel: false,
+          Mode: "2",
+          ElementID: ""
+        }
+      ],
+      //右边悬浮窗口-物资采购（增减部分）
+      addSupplies: [
+        {
+          SchemeName: "",
+          SchemeType: "",
+          BeOverdue: "",
+          SetTime: "",
+          IsModel: false,
+          Mode: "3",
+          ElementID: ""
+        }
+      ],
+      //右边悬浮窗口-认证对比（增减部分）
+      addLastChange: [
+        {
+          SchemeName: "",
+          SchemeType: "",
+          BeOverdue: "",
+          SetTime: "",
+          IsModel: false,
+          Mode: "4",
+          ElementID: ""
+        }
+      ],
+      //右边悬浮窗口-上传的方案类型
+      fileType: [],
+      //小表格中已经勾选的数据的taskId
+      allTaskId: [],
+      elementIdS: [],
+      changeNumber: "", //修改的数据ID
+      highLightElementIDs: [], //根据任务id  获取的构件id 并使模型高亮的地方
+      tableLoading: false,
+
+      //树形控件 BaseFinishTime TaskName
+      defaultProps: {
+        children: 'children',
+        label: 'TaskName',
+      },
+      selectPeople:[],
+    };
+  },
+
+  //加载列表数据的时候把children中的数据保存到tableData中，并在折叠的时候分别显示
+  created() {
+    //获取方案类型的列表
+    this.Request(SchemeTypeList()).then(res => {
+      if (res.StatusCode === 200) {
+        this.fileType = res.Detiel;
+      } else {
+        this.$message({ type: "error", message: res.Message, center: "true" });
+      }
+    });
+    //获取节点接口 ToSetNodeList
+    // this.Request(ToSetNodeList()).then(res=>{
+
+    // })
+
+    //获取-建筑单体-列表 SetGetBuilding
+    this.Request(
+      SetGetBuilding({ projectid: localStorage.getItem("projectid") })
+    ).then(res => {
+      if (res.StatusCode === 200) {
+        if (res.Detiel.length > 0) {
+          console.log(res.Detiel);
+          this.authentSelect = [
+            { code: null, id: "", sate: null, text: "全部" }
+          ];
+          res.Detiel.forEach(element => {
+            this.authentSelect.push(element);
+          });
+
+          this.allSelect = this.authentSelect[0].id;
+          this.changeBuilding();
+        } else {
+          this.$message({
+            type: "success",
+            message: "没有建筑单体，故查询不到具体数据！",
+            center: "true"
+          });
+        }
+      } else {
+        this.$message({ type: "error", message: res.Message, center: "true" });
+      }
+    });
+
+    this.$nextTick(() => {
+      this.$util.getDomLocation(this, "modelContainer").then(res => {
+        console.log(res);
+        this.modelBox({
+          isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+          isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+          top: res.top, //距离顶部距离‘px'
+          left: res.left, //距离左边距离‘px'
+          width: res.width, //模型宽‘px'
+          height: res.height, //模型高 ‘px'
+          zIndex: 100, //模型层级
+          background: "",
+          ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+          highLightElementIDs: [], // 高亮显示的构件
+          functionNumber: [42] // 需要模型调用的函数编号数组
+        });
+      });
+    });
+
+    console.log(this.allTaskId);
+  },
+  mounted(){
+    if(this.getIsViewAdded){
+      document.getElementsByClassName('bf-toolbar-bottom')[0].style.display = 'none'
+      document.getElementsByClassName('bf-tree-toolbar')[0].style.display = 'block'
+    }
+  },
+  methods: {
+    changeAll(row,taskId){
+      console.log(row);
+      console.log(taskId);
+      console.log(this.selectPeople);
+    },
+    checkChange(e) {
+      console.log(e);
+    },
+    // tab
+    handleCheckAllChange(val) {
+      this.checkedCities = val ? allSels : [];
+      this.isIndeterminate = false;
+    },
+    handleCheckedCitiesChange(value) {
+      let checkedCount = value.length;
+      this.checkAll = checkedCount === this.cities.length;
+      this.isIndeterminate =
+        checkedCount > 0 && checkedCount < this.cities.length;
+    },
+
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    }),
+    //判断表格中的复选框是否禁用
+    checkboxInit(row, index) {
+      if (row.IsAuthen == "1") {
+        return false;
+      } else {
+        return true;
+      }
+    },
+    //点击模型关联图标（锁）--清空值
+    removeModel(list) {
+      list.ElementID = "";
+      this.elementIdS = [];
+      list.IsModel = false;
+      this.$message({
+        type: "success",
+        message: "已清空关联的模型ID",
+        center: "true"
+      });
+      console.log("list.ElementID", list.ElementID);
+    },
+    //点击模型关联图标（未锁）--保存（点击模型上村的值）
+    addModel(list) {
+      list.ElementID = this.elementIdS.join(",");
+      this.$message({
+        type: "success",
+        message: "已关联模型ID：" + list.ElementID,
+        center: "true"
+      });
+      list.IsModel = true;
+      this.elementIdS = [];
+      console.log("保存关联后的值构件id");
+      list.ElementID.forEach(i => {
+        if (this.highLightElementIDs.indexOf(i) > -1) {
+          console.log("存在该值的时候，删掉！");
+          this.highLightElementIDs.splice(i, 1);
+        }
+      });
+      this.modelBox({
+        isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+        isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+        zIndex: 100, //模型层级
+        background: "",
+        ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+        highLightElementIDs: this.highLightElementIDs, // 高亮显示的构件
+        functionNumber: [42] // 需要模型调用的函数编号数组
+      });
+    },
+
+    //表格
+    toggleSelection(rows) {
+      if (rows) {
+        rows.forEach(row => {
+          this.$refs.multipleTable.toggleRowSelection(row);
+        });
+      } else {
+        this.$refs.multipleTable.clearSelection();
+      }
+    },
+    //点击外面的表格获取这一行及前面的数据
+    handleSelectionChange(val) {
+      this.multipleSelection = val;
+      this.multipleSelection.length == "0" && this.allTaskId.length == "0"
+        ? (this.btnDis = true)
+        : (this.btnDis = false);
+    },
+    //表格序号
+    indexMethod(index) {
+      return index + 1;
+    },
+    //折叠中表格的序号---无法获取最外曾表格的序号
+    indexChildMethod(index) {
+      return index + 1;
+    },
+    tableRowClassName({ row, rowIndex }) {
+      row.index = rowIndex;
+    },
+
+    // singleClick(row){
+    //   // console.log(selection);
+    //   console.log(row);
+    // },
+
+    //单击表格中的一行的时候-获取已经勾选的数据
+    changeOne(e) {
+      this.allTaskId = [];
+      if (this.multipleSelection.length == "0") {
+        if (e.length == "0") {
+          this.btnDis = true;
+        } else {
+          this.btnDis = false;
+          for (var i = 0; i < e.length; i++) {
+            this.allTaskId.push(e[i].TaskId);
+          }
+        }
+      } else {
+        this.btnDis = false;
+        if (e.length != "0") {
+          this.btnDis = false;
+          for (var x = 0; x < e.length; x++) {
+            this.allTaskId.push(e[x].TaskId);
+          }
+        }
+      }
+    },
+
+    changecheckBox() {
+      console.log("110");
+    },
+
+    //点击表格中折叠的小表格中的一行时候----只能是编辑/不能新增
+    rowClick(row, event, column) {
+      if (row.IsAuthen != "1") {
+        //只能编辑
+        this.authentRight = false;
+        return false;
+      }
+      // this.load();
+      this.Request(GetAutSetListByTaskId({ TaskId: row.TaskId })).then(res => {
+        console.log("认证设定结果", res);
+        if (res.StatusCode === 200) {
+          if (res.Detiel.length != "0") {
+            this.addbuildType = [];
+            this.addtechnology = [];
+            this.addprocess = [];
+            this.addSupplies = [];
+            this.addLastChange = [];
+          } else {
+            this.addbuildType = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "0",
+                ElementID: ""
+              }
+            ];
+            this.addtechnology = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "1",
+                ElementID: ""
+              }
+            ];
+            this.addprocess = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "2",
+                ElementID: ""
+              }
+            ];
+            this.addSupplies = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "3",
+                ElementID: ""
+              }
+            ];
+            this.addLastChange = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "4",
+                ElementID: ""
+              }
+            ];
+          }
+          res.Detiel.forEach(element => {
+            element.SetTime = element.SetTime == null ? "" : element.SetTime;
+            element.BeOverdue =
+              element.BeOverdue == null ? "" : element.BeOverdue;
+            element.ElementID =
+              element.ElementID == null ? "" : element.ElementID;
+            element.SchemeName =
+              element.SchemeName == null ? "" : element.SchemeName;
+            element.SchemeType =
+              element.SchemeType == null ? "" : element.SchemeType.toString();
+            if (element.Mode == "0") {
+              this.addbuildType.push(element);
+            } else if (element.Mode == "1") {
+              this.addtechnology.push(element);
+            } else if (element.Mode == "2") {
+              this.addprocess.push(element);
+            } else if (element.Mode == "3") {
+              this.addSupplies.push(element);
+            } else if (element.Mode == "4") {
+              this.addLastChange.push(element);
+            }
+          });
+          this.changeNumber = row.TaskId;
+          this.authentRight = true;
+          this.showRest = false; //显示编辑按钮
+        } else {
+          if (res.StatusCode === 300 && res.Message == "暂无数据") {
+            //没有任何数据的时候
+            this.addbuildType = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "0",
+                ElementID: ""
+              }
+            ];
+            this.addtechnology = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "1",
+                ElementID: ""
+              }
+            ];
+            this.addprocess = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "2",
+                ElementID: ""
+              }
+            ];
+            this.addSupplies = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "3",
+                ElementID: ""
+              }
+            ];
+            this.addLastChange = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "4",
+                ElementID: ""
+              }
+            ];
+            this.authentRight = true;
+          } else {
+            this.$message({
+              type: "error",
+              message: res.Message,
+              center: "true"
+            });
+          }
+        }
+        this.GetElementListByTaskId(row);
+        // this.$toast.clear();
+      });
+    },
+    //根据任务的id获取模型的构件id，并显示到模型上
+    GetElementListByTaskId(row) {
+      //点击表格中的数据的时候，模型发生相应变化
+      this.Request(GetElementListByTaskId({ TaskId: row.TaskId })).then(res => {
+        console.log("获取构件id", res);
+        if (res.StatusCode == "200") {
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: res.Detiel, // 高亮显示的构件
+            functionNumber: [42] // 需要模型调用的函数编号数组
+          });
+          this.highLightElementIDs = res.Detiel;
+          this.$message({
+            type: "success",
+            message: "获取任务的构件成功",
+            center: "true"
+          });
+        } else {
+          this.$message({
+            type: "error",
+            message: res.Message,
+            center: "true"
+          });
+        }
+      });
+    },
+    //点击认证设定按钮--查看详情/打开新增--新增的时候
+    timeToShow() {
+      //allTaskId
+      console.log(this.allTaskId);
+      if (this.allTaskId.length == "0") {
+        this.$message({
+          type: "error",
+          message: "请勾选要认证设定的任务！",
+          center: "true"
+        });
+        return false;
+      }
+      this.$notify({
+        title: "成功",
+        message:
+          "已经勾选了" +
+          this.allTaskId.length +
+          "条任务！（只能同时勾选同级任务下的子任务）",
+        type: "success"
+      });
+      var TaskId = "";
+      TaskId = this.allTaskId.join(",");
+      // this.load();
+      this.Request(GetAutSetListByTaskId({ TaskId: TaskId })).then(res => {
+        if (res.StatusCode === 200) {
+          if (res.Detiel.length != "0") {
+            this.addbuildType = [];
+            this.addtechnology = [];
+            this.addprocess = [];
+            this.addSupplies = [];
+            this.addLastChange = [];
+          } else {
+            this.addbuildType = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "0"
+              }
+            ];
+            this.addtechnology = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "1"
+              }
+            ];
+            this.addprocess = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "2"
+              }
+            ];
+            this.addSupplies = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "3"
+              }
+            ];
+            this.addLastChange = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "4"
+              }
+            ];
+          }
+          for (var i = 0; i < res.Detiel.length; i++) {
+            res.Detiel[i].SchemeType = res.Detiel[i].SchemeType.toString();
+            if (res.Detiel[i].Mode == "0") {
+              //施工方案
+              this.addbuildType.push(res.Detiel[i]);
+            } else if (res.Detiel[i].Mode == "1") {
+              //技术交底
+              this.addtechnology.push(res.Detiel[i]);
+            } else if (res.Detiel[i].Mode == "2") {
+              //工序验收
+              this.addprocess.push(res.Detiel[i]);
+            } else if (res.Detiel[i].Mode == "3") {
+              //物资采购
+              this.addSupplies.push(res.Detiel[i]);
+            } else if (res.Detiel[i].Mode == "4") {
+              //认证对比
+              this.addLastChange.push(res.Detiel[i]);
+            }
+          }
+          this.authentRight = true;
+          this.showRest = true; //显示保存按钮
+        } else {
+          if (res.StatusCode === 300 && res.Message == "暂无数据") {
+            //没有任何数据的时候
+            this.addbuildType = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "0",
+                ElementID: ""
+              }
+            ];
+            this.addtechnology = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "1",
+                ElementID: ""
+              }
+            ];
+            this.addprocess = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "2",
+                ElementID: ""
+              }
+            ];
+            this.addSupplies = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "3",
+                ElementID: ""
+              }
+            ];
+            this.addLastChange = [
+              {
+                SchemeName: "",
+                SchemeType: "",
+                BeOverdue: "",
+                SetTime: "",
+                IsModel: false,
+                Mode: "4",
+                ElementID: ""
+              }
+            ];
+            this.authentRight = true;
+            this.authentRight = true;
+            this.showRest = true; //显示保存按钮
+          } else {
+            console.log("151515");
+            this.$message({
+              type: "error",
+              message: res.Message,
+              center: "true"
+            });
+          }
+        }
+        // this.$toast.clear();
+      });
+    },
+    //点击取消/关闭
+    timeToClose: function() {
+      this.authentRight = false;
+      this.addbuildType = [];
+      this.addtechnology = [];
+      this.addprocess = [];
+      this.addSupplies = [];
+      this.addLastChange = [];
+    },
+    //点击保存-新增的时候 AddModelAuthenticationSettings
+    submitAll() {
+      if (sessionStorage.getItem("menuType") !== "2") {
+        this.$message({
+          type: "warning",
+          message: "您没有权限操作",
+          center: "true"
+        });
+        return;
+      }
+      //TaskIds---所有的id用','隔开
+      if (this.allTaskId.length == "0") {
+        this.$message({
+          type: "error",
+          message: "请勾选要认证设定的任务！",
+          center: "true"
+        });
+        return false;
+      }
+      var TaskIds = "";
+      TaskIds = this.allTaskId.join(",");
+      var post = [];
+      //addbuildType-施工方案，addtechnology-技术交底，addprocess-工序验收，addSupplies-物资采购，addLastChange-认证对比
+      for (var x = 0; x < this.addbuildType.length; x++) {
+        post.push(this.addbuildType[x]);
+      }
+      for (var y = 0; y < this.addtechnology.length; y++) {
+        post.push(this.addtechnology[y]);
+      }
+      for (var z = 0; z < this.addprocess.length; z++) {
+        post.push(this.addprocess[z]);
+      }
+      for (var c = 0; c < this.addSupplies.length; c++) {
+        post.push(this.addSupplies[c]);
+      }
+      for (var v = 0; v < this.addLastChange.length; v++) {
+        post.push(this.addLastChange[v]);
+      }
+      // this.load();
+      console.log("post", post);
+      this.Request(
+        AddModelAuthenticationSettings({ TaskIds: TaskIds }, post)
+      ).then(res => {
+        if (res.StatusCode === 200) {
+          this.changeBuilding();
+          this.$message({
+            type: "success",
+            message: res.Message,
+            center: "true"
+          });
+        } else {
+          this.$message({
+            type: "error",
+            message: res.Message,
+            center: "true"
+          });
+        }
+        // this.$toast.clear();
+      });
+    },
+    //添加新的施工方案
+    addBuild: function() {
+      var arr = {
+        SchemeName: "", //方案名称
+        SchemeType: "", //方案类型
+        BeOverdue: "", //逾期天数
+        SetTime: "",
+        IsModel: false,
+        Mode: "0"
+      };
+      this.addbuildType.push(arr);
+    },
+    //添加新的技术交底
+    addTech: function() {
+      var arr = {
+        SchemeName: "", //方案名称
+        SchemeType: "", //方案类型
+        BeOverdue: "", //逾期天数
+        SetTime: "",
+        Mode: "1",
+        IsModel: false
+      };
+      this.addtechnology.push(arr);
+    },
+    //添加新的工序验收
+    addpro: function() {
+      var arr = {
+        SchemeName: "", //方案名称
+        SchemeType: "", //方案类型
+        BeOverdue: "", //逾期天数
+        SetTime: "",
+        Mode: "2",
+        IsModel: false
+      };
+      this.addprocess.push(arr);
+    },
+    //添加新的物资采购
+    addSup: function() {
+      var arr = {
+        SchemeName: "", //方案名称
+        SchemeType: "", //方案类型
+        BeOverdue: "", //逾期天数
+        SetTime: "",
+        Mode: "3",
+        IsModel: false
+      };
+      this.addSupplies.push(arr);
+    },
+    //添加新的认证对比
+    addLast: function() {
+      var arr = {
+        SchemeName: "", //方案名称
+        SchemeType: "", //方案类型
+        BeOverdue: "", //逾期天数
+        SetTime: "",
+        Mode: "4",
+        IsModel: false
+      };
+      this.addLastChange.push(arr);
+    },
+    //切换建筑单体的时候--更换列表-----未对接完--后台传的是名字并非id BuildingName  IsAuthen
+    changeBuilding() {
+      this.tableLoading = true;
+      this.Request(
+        GetAuthenSetTaskList({
+          ProjectID: localStorage.getItem("projectid"),
+          BuildingName: this.allSelect
+        })
+      ).then(res => {
+        if (res.StatusCode === 200) {
+          let arr = [];
+
+          if(res.Detiel.length>0){
+            for (var i = 0; i < res.Detiel.length; i++) {
+              res.Detiel[i].BaseFinishTime = res.Detiel[i].BaseFinishTime.split("T")[0];
+              res.Detiel[i].num = i + 1+'';
+              arr.push(res.Detiel[i].num)
+              if(res.Detiel[i].children.length>0){
+                for (var x = 0;x < res.Detiel[i].children.length;x++) {
+                  res.Detiel[i].children[x].BaseFinishTime = res.Detiel[i].children[x].BaseFinishTime.split("T")[0];
+                  res.Detiel[i].children[x].num = (i+1)+'.'+(x+1);
+                  arr.push(res.Detiel[i].children[x].num)      
+                  if(res.Detiel[i].children[x].children!=null){
+
+                    for (var j = 0;j < res.Detiel[i].children[x].children.length;j++) {
+                      res.Detiel[i].children[x].children[j].BaseFinishTime = res.Detiel[i].children[x].children[j].BaseFinishTime.split("T")[0];
+                      res.Detiel[i].children[x].children[j].num = (i+1)+'.'+(x+1)+'.'+(j+1);
+                      this.$forceUpdate();
+                      arr.push(res.Detiel[i].children[x].children[j].num)
+                    }
+
+
+                  }
+                }
+
+              }
+            }
+          }
+          this.tableData3 = res.Detiel;
+          console.log('arr',arr)
+          this.allSels = arr => [...new Set(arr)];
+          console.log(this.tableData3);
+          console.log('点击',this.allSels);
+        } else {
+          this.$message({
+            type: "error",
+            message: res.Message,
+            center: "true"
+          });
+        }
+        this.tableLoading = false;
+      });
+    },
+    //点击编辑的时候，只能对一条数据进行编辑
+    showResetDtn() {
+      this.showRest = !this.showRest;
+      if (this.showRest == false) {
+        //如果是编辑的时候，那么只能勾选择一条，只提示 allTaskId multipleSelection
+        var length = this.allTaskId.length + this.multipleSelection.length;
+        if (length > 1) {
+          this.$message({
+            type: "error",
+            message: "每次只能编辑修改一条数据(表格中只能勾选一个)",
+            center: "true"
+          });
+        }
+      }
+    },
+    //编辑修改一条数据
+    resetAll() {
+      if (sessionStorage.getItem("menuType") !== "2") {
+        this.$message({
+          type: "warning",
+          message: "您没有权限操作",
+          center: "true"
+        });
+        return;
+      }
+      console.log(this.changeNumber);
+      var length = this.allTaskId.length + this.multipleSelection.length; //TaskId
+      if (this.changeNumber == "") {
+        this.$message({
+          type: "error",
+          message: "请重新点击你想要修改的任务！",
+          center: "true"
+        });
+        return false;
+      }
+
+      var post = [];
+      for (var x = 0; x < this.addbuildType.length; x++) {
+        post.push(this.addbuildType[x]);
+      }
+      for (var y = 0; y < this.addtechnology.length; y++) {
+        post.push(this.addtechnology[y]);
+      }
+      for (var z = 0; z < this.addprocess.length; z++) {
+        post.push(this.addprocess[z]);
+      }
+      for (var c = 0; c < this.addSupplies.length; c++) {
+        post.push(this.addSupplies[c]);
+      }
+      for (var v = 0; v < this.addLastChange.length; v++) {
+        post.push(this.addLastChange[v]);
+      }
+      this.Request(
+        EditModelAuthenticationSettings({ TaskId: this.changeNumber }, post)
+      ).then(res => {
+        console.log(res);
+        if (res.StatusCode === 200) {
+          this.$message({
+            type: "success",
+            message: res.Message,
+            center: "true"
+          });
+          this.changeBuilding();
+        } else {
+          this.$message({
+            type: "error",
+            message: res.Message,
+            center: "true"
+          });
+        }
+      });
+    }
+  },
+  computed: {
+    ...mapGetters(['getIsViewAdded']),
+    getViewer3d() {
+      return this.$store.getters.getViewer3d;
+    }
+  },
+  watch: {
+    getViewer3d(val) {
+      console.log(val);
+      this.elementIdS.push(val.elementId);
+      console.log(this.elementIdS);
+    },
+    getIsViewAdded(val){
+      if(val){
+        document.getElementsByClassName('bf-toolbar-bottom')[0].style.display = 'none'
+        document.getElementsByClassName('bf-tree-toolbar')[0].style.display = 'block'
+      }
+    }
+  }
+};
+</script>
+<style scoped>
+.container_set_authentication .table-title {
+  display: flex;
+  width: 100%;
+  min-height: 50px;
+  background-color: #435089;
+  color: #ffffff;
+  font-size: 18px;
+  align-items: center;
+}
+.container_set_authentication .table-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.container_set_authentication .table-flex1 {
+  flex: 1;
+}
+.container_set_authentication .table-content-item {
+  display: flex;
+  width: 100%;
+  min-height: 50px;
+  background-color: #fff;
+  color: #333333;
+  font-size: 18px;
+  align-items: center;
+}
+.container_set_authentication .table-clickWarp {
+  display: flex;
+  width: 100%;
+  min-height: 50px;
+}
+.container_set_authentication .table-item-border{
+  border-bottom: 1px solid #EBEEF5;
+}
+.container_set_authentication .table-item-bgc {
+  background:rgba(244,246,255,1);
+}
+</style>
+<style>
+.container_set_authentication .table-content-item .el-checkbox__label {
+  display: none;
+}
+</style>
+
+
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container_set_authentication {
+  width: 100%;
+  height: 100%;
+  background-color: #F5F6FA;
+  padding: 10px 20px;
+  box-sizing: border-box;
+  font-family: SourceHanSansCN-Normal;
+  float: left;
+
+  .select_data_img_i {
+    background-img: url('../../../assets/imgs/data_time.png') no-repeat;
+    background-color: #435089;
+  }
+
+  .authent_left {
+    width: 600px;
+    height: 14.5rem;
+    float: left;
+    box-sizing: border-box;
+    display: inline-block;
+
+    .authent_left_head {
+      .authent_left_head_select {
+        margin-right: 30px;
+        width: 320px;
+      }
+
+      .authent_left_head_btn {
+        color: #ffffff;
+        background-color: #FDA143;
+        border-radius: 5px;
+        height: 48px;
+        width: 120px;
+        vertical-align: middle;
+        font-size: 20px;
+        float: right;
+      }
+
+      .authent_left_head_btn:hover, .authent_left_head_btn:focus {
+        border: 1px solid #FDA143;
+      }
+
+      .authent_left_head_btn[disabled] {
+        background-color: #DDDDDD;
+      }
+    }
+
+    .authent_left_body {
+      margin-top: 20px;
+      background-color: #ffffff;
+      height: 14.2rem;
+      box-sizing: border-box;
+      border: 1px solid #EEEEF1;
+      overflow-x: hidden;
+      overflow-y: auto;
+
+      #my_table_set .el-table th {
+        background-color: #435089 !important;
+        font-size: 18px;
+        color: #ffffff;
+      }
+    }
+  }
+
+  // 中间的模型位置
+  .authent_middle {
+    width: 600px;
+    height: 770px;
+    box-sizing: border-box;
+    display: inline-block;
+    margin-top: 60px;
+    text-align: center;
+
+    .model-container {
+      width: 98%;
+      height: 770px;
+      padding: 0 !important;
+      z-index: 99;
+    }
+  }
+
+  .authent_right {
+    width: 525px;
+    height: 900px;
+    border: 1px solid #EEEEF1;
+    position: fixed;
+    right: 0;
+    top: 1rem;
+    box-sizing: border-box;
+    background-color: #ffffff;
+    font-size: 18px;
+
+    .authent_right_title {
+      background-color: #435089;
+      color: #ffffff;
+      padding-left: 20px;
+      width: 100%;
+      height: 50px;
+      line-height: 50px;
+
+      .authent_right_span {
+        color: #F59D45;
+        cursor: pointer;
+        display: inline-block;
+        width: 50px;
+        height: 50px;
+        margin-right: 20px;
+        float: right;
+        text-align: center;
+      }
+    }
+
+    .authent_right_body {
+      width: 100%;
+      height: 850px;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      box-sizing: border-box;
+      padding-left: 8px;
+      padding-right: 8px;
+      padding-bottom: 8px;
+      font-size: 18px;
+      font-family: SourceHanSansCN-Normal;
+
+      .authent_right_div {
+        border-bottom: 2px solid #F4F4F4;
+        padding-top: 20px;
+
+        .authent_right_div_title {
+          font-weight: bolder;
+          font-size: 18px;
+          height: 50px;
+          line-height: 50px;
+          padding-left: 10px;
+          box-sizing: border-box;
+
+          .authent_right_div_img {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            margin-left: 30px;
+            cursor: pointer;
+            float: right;
+            margin-right: 60%;
+          }
+
+          .draw_image {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            margin-left: 30px;
+            cursor: pointer;
+            float: right;
+            margin-right: 58%;
+            border: 2px solid #435089;
+            line-height: 24px;
+            margin-top: 5px;
+            text-align: center;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 25px;
+          }
+        }
+
+        .authent_right_div_box {
+          padding-bottom: 20px;
+          height: 100%;
+
+          .list_div>div {
+            padding-top: 10px;
+
+            .box_right {
+              text-align: right;
+            }
+
+            .box_span {
+              position: relative;
+              top: 8px;
+              font-family: SourceHanSansCN-Normal;
+            }
+
+            .box_select {
+              width: 100%;
+            }
+
+            .box_select_day {
+              width: 100%;
+            }
+
+            .box_relative_img {
+              border: 1px solid #E6E6E6;
+              display: inline-block;
+              width: 40px;
+              height: 40px;
+              padding: 9px;
+              box-sizing: border-box;
+              background-color: #F8F8F8;
+              cursor: pointer;
+              text-align: center;
+            }
+
+            .box_input_day {
+              background-color: #435089;
+              color: #ffffff;
+              font-style: normal;
+              line-height: 40px;
+              border-radius: 0px 4px 4px 0px;
+              padding: 10px;
+              position: relative;
+              left: 5px;
+            }
+          }
+        }
+      }
+
+      .authent_right_footer {
+        width: 100%;
+        height: 80px;
+        padding: 20px;
+        text-align: center;
+
+        .box_footer_btn {
+          color: #ffffff;
+          background-color: #4775CA;
+          border-radius: 5px;
+          font-size: 18px;
+          padding: 10px 20px;
+        }
+
+        .box_footer_btn_none {
+          color: #ffffff;
+          background-color: #999999;
+          border-radius: 5px;
+          font-size: 18px;
+          padding: 10px 20px;
+        }
+      }
+    }
+  }
+}
+</style>
+<style>
+/* 隐藏模型部分工具条 */
+/* .bf-button.gld-bf-zoomrect,
+.bf-button.gld-bf-measure,
+.bf-button.bf-toolbar-button.gld-bf-sectionbox,
+.bf-button.gld-bf-map,
+.bf-button.gld-bf-properties,
+.bf-button.gld-bf-settings,
+.bf-button.gld-bf-information,
+.bf-button.gld-bf-maximize,
+.bf-toolbar.bf-toolbar.bf-tree-toolbar {
+  display: none;
+}
+.bf-button.gld-bf-home:hover,
+.bf-button.gld-bf-firstperson:hover {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+.bf-toolbar.bf-toolbar-bottom {
+  left: initial !important;
+  right: 0 !important;
+  transform: initial !important;
+  background-color: rgba(0, 0, 0, 0.4);
+  border: none;
+} */
+.box_select .el-input__suffix,
+.authent_left_head .el-input__suffix {
+  background: rgba(67, 80, 137, 1);
+  border-radius: 0px 4px 4px 0px;
+  right: 0;
+  width: 40px;
+}
+
+.box_select .el-icon-arrow-up:before,
+.authent_left_head .el-icon-arrow-up:before {
+  content: "\e60c";
+  color: rgba(255, 255, 255, 1);
+}
+/* .box_select_day  e921 事件选择器的样式*/
+/* .box_select_day .el-icon-arrow-up:before {
+      content: "\e921";
+      color: rgba(255, 255, 255, 1);
+    }
+    .box_select_day .el-input__suffix {
+      background: rgba(67, 80, 137, 1);
+      border-radius: 0px 4px 4px 0px;
+      right: 0;
+      width: 40px;
+    } */
+.box_select {
+  vertical-align: text-top;
+}
+.authent_right_body::-webkit-scrollbar {
+  /*滚动条整体样式*/
+  width: 6px; /*高宽分别对应横竖滚动条的尺寸*/
+  height: 1px;
+}
+.authent_right_body::-webkit-scrollbar-thumb {
+  /*滚动条里面小方块*/
+  border-radius: 10px;
+  width: 5px;
+  -webkit-box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.1);
+  background: #ccc;
+}
+.authent_right_body::-webkit-scrollbar-track {
+  /*滚动条里面轨道*/
+  -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background: #ededed;
+}
+
+.authent_left_body::-webkit-scrollbar {
+  /*滚动条整体样式*/
+  width: 6px; /*高宽分别对应横竖滚动条的尺寸*/
+  height: 1px;
+}
+.authent_left_body::-webkit-scrollbar-thumb {
+  /*滚动条里面小方块*/
+  border-radius: 10px;
+  width: 5px;
+  -webkit-box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.1);
+  background: #ccc;
+}
+.authent_left_body::-webkit-scrollbar-track {
+  /*滚动条里面轨道*/
+  -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background: #ededed;
+}
+.setAuthenDiv {
+  color: #BBBDC2;
+}
+.el-table__body-wrapper .el-table__expanded-cell {
+  padding: 0;
+}  
+
+</style>

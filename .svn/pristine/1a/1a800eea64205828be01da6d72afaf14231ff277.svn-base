@@ -1,0 +1,292 @@
+<!-- 人员 personnel -->
+<template>
+  <div class="personnel-container">
+    <div class="p-title flex-row">
+      <div class="p-title-text">人员</div>
+      <div class="p-title-btn el-icon-menu" @click="onPopup('')"></div>
+    </div>
+    <div v-loading="loading">
+      <div class="p-set-content-warp" v-if="personnel_s.length>0">
+        <div
+          class="p-set-content"
+          @click.stop="onChoose(index)"
+          v-for="(item,index) in personnel_s"
+          :key="index"
+          :class="[i==index?'selClick':'']"
+        >
+          <div class="p-set flex-between">
+            <div class="p-set-l flex-between">
+              <div class="p-set-name">{{item.text}}</div>
+              <div class="p-set-phone">{{item.code}}</div>
+            </div>
+            <div class="p-set-r flex-end">
+              <div
+                class="p-set-reset"
+                :class="{'hidden':item.sate=='true'?true:false}"
+                @click.stop="onReset(item.id)"
+              >重置密码</div>
+              <div
+                class="p-set-reset"
+                :class="{'hidden':item.sate=='true'?true:false}"
+                @click.stop="onPopup(item)"
+              >编辑</div>
+              <div class="p-set-disabled" v-if="item.sate=='True'" @click.stop="clickDisabled(item.id)">启用</div>
+              <div class="p-set-disabled" v-else @click.stop="onDisabled(item.id)">禁用</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="is-notsaying" v-else>
+        暂无人员信息
+      </div>
+    </div>
+
+  </div>
+
+</template>
+<script>
+import {GetUserListByDept,ResetPassword,EnableUserByIds} from '@/api/api.js'
+import {infaces} from '../module/interfaces.js'
+export default {
+  name: "personnels",
+  props:['department_sel','refreshUserList'],
+  data() {
+    return {
+      data: null,
+      personnel_s: [],
+      i: 0,
+      personnel_sel: null,
+      isCreated:true,//是否是第一次加载
+      loading:true,//人员加载蒙层
+      
+        // dialogFormVisible: false,
+        form: {
+          name: '',
+          region: '',
+          date1: '',
+          date2: '',
+          delivery: false,
+          type: [],
+          resource: '',
+          desc: ''
+        },
+        formLabelWidth: '120px'
+      
+    };
+  },
+
+  watch: {
+    /**
+     * 根据项目ID和单位ID以及部门ID获取人员列表
+     */
+    department_sel(c) {
+      console.log(c)
+      this.onSelPersonnel(c);
+    },
+    
+    // 选中的人员
+    personnel_sel(id, o) {
+      this.$emit("get_personnel_sel", id);
+    },
+    //通知人员子组件刷新列表
+    refreshUserList(){
+      this.onSelPersonnel(this.department_sel);
+    }
+  },
+  methods: {
+    // 弹窗
+    onPopup(item) {
+      console.log(typeof item)
+      // if(typeof item!= 'string'){
+      //   console.log('编辑人员')
+      //   //
+      // }
+      this.$emit("onPopup", "personnel",item);
+    },
+
+    // 选中
+    onChoose(index) {
+      this.i = index;
+      this.personnel_sel = this.personnel_s[index].id;
+    },
+    // 重置密码
+    onReset(ids) {
+      console.log('重置密码',ids);
+      this.$confirm('是否确定重置密码？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          // 调用重置密码接口
+          infaces(this,ResetPassword,{ids}).then(res=>{
+            console.log(res)
+            this.$message({
+              type: 'success',
+              message: '重置密码成功!'
+            });
+          })
+        })
+    },
+    closeReset(){
+      
+    },
+    // 编辑
+    onEdit(e) {
+      console.log(e);
+    },
+    // 禁用
+    onDisabled(e) {
+      console.log(e);
+      this.$emit("onPopup", "onDisabled",e);
+    },
+    // 获取部门人员列表
+    onSelPersonnel(param) {
+      infaces(this,GetUserListByDept,param).then(res=>{
+        console.log(res)
+        this.personnel_s = res.Detiel
+        this.loading = false
+        if(this.isCreated&&res.Detiel.length>0){ //如果是第一次加载，则取第一个人为默认选中
+        console.log(res.Detiel[0])
+           this.$emit("get_personnel_sel", res.Detiel[0].id);
+           this.isCreated = false
+        }
+      })
+    },
+    
+    /**启用用户 */
+    clickDisabled(ids){
+      console.log('启用',ids)
+      this.$confirm("是否启用该用户？", "启用提示", {
+          distinguishCancelAndClose: true,
+          confirmButtonText: "启用",
+          cancelButtonText: "取消"
+        }).then(() => {
+          console.log("启用");
+          infaces(this, EnableUserByIds, {ids}).then(res => {
+            console.log(res);
+            this.onSelPersonnel(this.department_sel);
+            this.$message({
+              type: "success",
+              message: "禁用成功",
+              center: "true"
+            });
+          });
+        })
+    }
+  },
+  computed: {}
+};
+</script>
+
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.personnel-container {
+  width: 24.44%;
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+  background-color: #fff;
+  position: relative;
+
+  .p-set-content {
+    padding: 0 20px;
+
+    .p-set {
+      height: 40px;
+      border-bottom: 1px solid #E5E5E5;
+
+      .p-set-l {
+        flex: 1;
+        font-size: 16px;
+        font-family: SourceHanSansCN-Normal;
+        font-weight: 400;
+        color: rgba(51, 51, 51, 1);
+
+        .p-set-l-name {
+          flex: 1;
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+
+        .p-set-phone {
+          width: 110px;
+        }
+      }
+
+      .p-set-r {
+        font-size: 18px;
+        font-family: SourceHanSansCN-Medium;
+        font-weight: 500;
+        width: 185px;
+
+        .p-set-reset {
+          color: rgba(69, 128, 255, 1);
+          margin-right: 15px;
+          font-size 18px
+        }
+
+        .p-set-disabled {
+          color: rgba(252, 96, 92, 1);
+        }
+      }
+    }
+  }
+
+  .p-set-content-warp {
+    box-sizing border-box 
+    padding-top: 50px;
+    height: 100%;
+    overflow-y: auto;
+  }
+  .is-notsaying{
+    box-sizing border-box
+    width 100%
+    height 100%
+    text-align center
+    font-size 18px
+    color #666
+    display inline-block
+    padding 80px 0 0 20px
+    background-color #f1f1f1  
+  }
+
+  .p-title {
+    width: 100%;
+    height: 50px;
+    background: rgba(67, 80, 137, 1);
+    font-size: 20px;
+    font-family: SourceHanSansCN-Medium;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 1);
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+
+    .p-title-btn {
+      position: absolute;
+      top: 0;
+      right: 21px;
+      line-height: 50px;
+    }
+  }
+}
+</style>
+<style>
+.p-set-content-warp::-webkit-scrollbar{
+  /*滚动条整体样式*/
+  width: 8px !important; /*高宽分别对应横竖滚动条的尺寸*/
+  height: 1px;
+}
+.p-set-content-warp::-webkit-scrollbar-thumb{
+  /*滚动条里面小方块*/
+  border-radius: 0;
+  width: 5px;
+  -webkit-box-shadow: inset 0 0 3px rgba(49, 49, 49, 0.1) !important;
+  background: #ccc;
+}
+.p-set-content-warp::-webkit-scrollbar-track{
+  /*滚动条里面轨道*/
+  -webkit-box-shadow: inset 0 0 5px rgba(49, 49, 49, 0.1) !important;
+  border-radius: 0;
+  background: #ededed;
+}
+</style>

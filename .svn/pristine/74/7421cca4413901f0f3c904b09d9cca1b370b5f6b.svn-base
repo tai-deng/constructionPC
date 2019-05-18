@@ -1,0 +1,1285 @@
+<!-- 范围管理  发起变更 -->
+<template>
+  <div class="initiateChange">
+    <div class="leftBox">
+      <div class="box-card">
+        <div class="title">
+          <i class="el-icon-menu icon"></i>
+        </div>
+        <!-- 模型box -->
+        <div class="model-container">
+          <div ref="modelContainer" class="model-container"></div>
+        </div>
+      </div>
+    </div>
+    <div class="rightBox">
+      <div class="box-card">
+        <!-- 日常管理 -->
+        <div class="dayManagement" v-show="alteration">
+          <div class="titleBg notice">
+            发起变更
+            <i class="el-icon-close" @click="close()"></i>
+          </div>
+          <el-row>
+            <el-col :span="24">
+              <el-form ref="form" :model="filterForm" label-width="130px">
+                <!-- <el-form-item label="编码:">
+                  <el-input v-model="filterForm.Code"></el-input>
+                </el-form-item>-->
+                <el-form-item label="主题:">
+                  <el-input v-model="filterForm.Theme" placeholder="请输入主题(最多30个字)"></el-input>
+                </el-form-item>
+                <el-form-item label="变更类型:">
+                  <el-select style="width:100%;" v-model="filterForm.Type" placeholder="请选择变更类型">
+                    <el-option
+                      v-for="(item,index) in workFormSelect"
+                      :key="index"
+                      :label="item.cDIName"
+                      :value="item.cDIValue"
+                    ></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="选择:">
+                  <div class="changeflowBox">
+                    <div class="workflow1">
+                      <el-select v-model="filterForm.BuildName" placeholder="选择楼栋">
+                        <el-option
+                          v-for="item in BuildNameList"
+                          :key="item.id"
+                          :label="item.text"
+                          :value="item.text"
+                        ></el-option>
+                      </el-select>
+                    </div>
+                    <div class="workflow1">
+                      <el-select v-model="filterForm.Specialty" placeholder="选择专业">
+                        <el-option
+                          v-for="item in SpecialtyList"
+                          :key="item.id"
+                          :label="item.text"
+                          :value="item.text"
+                        ></el-option>
+                      </el-select>
+                    </div>
+                    <div class="workflow1">
+                      <el-select v-model="filterForm.Floor" placeholder="选择楼层">
+                        <el-option
+                          v-for="item in FloorbyList"
+                          :key="item.id"
+                          :label="item.text"
+                          :value="item.text"
+                        ></el-option>
+                      </el-select>
+                    </div>
+                  </div>
+                </el-form-item>
+                <el-form-item label="详细位置:">
+                  <el-input type="textarea" v-model="filterForm.DetailPoint"></el-input>
+                </el-form-item>
+                <el-form-item label="发起时间">
+                  <el-date-picker
+                    type="date"
+                    placeholder="选择日期"
+                    v-model="filterForm.StartTime"
+                    style="width: 100%;"
+                  ></el-date-picker>
+                </el-form-item>
+                <el-form-item label="发起人:">
+                  <el-input v-model="filterForm.StartPerson" disabled></el-input>
+                </el-form-item>
+                <el-form-item label="变更内容:">
+                  <el-input type="textarea" v-model="filterForm.Content"></el-input>
+                </el-form-item>
+                <el-form-item label="模型视点:">
+                  <div class="viewpoint" v-for="(item,index) in viewPointList" :key="index">
+                    <img
+                      class="modePic"
+                      @click="onRemove(index)"
+                      :src="item.TokenUrL+item.smallPhotoURL"
+                      alt
+                    >
+                  </div>
+                  <div class="viewpoint" @click="createViewPoint" v-show="viewPointList.length!==3">
+                    <img class="camera" src="../../../assets/imgs/camera.png" alt>
+                  </div>
+                  <span class="tipa">(最多关联3张)</span>
+                </el-form-item>
+                <el-form-item label="现场照片:">
+                  <div class="wrap">
+                    <div class="upload">
+                      <el-upload
+                        action
+                        list-type="picture-card"
+                        :on-preview="handlePictureCardPreview2"
+                        :on-remove="handleRemove2"
+                        multiple
+                        :limit="6"
+                        :on-change="uploadPicture"
+                        :auto-upload="false"
+                      >
+                        <i class="el-icon-plus"></i>
+                      </el-upload>
+                    </div>
+                    <el-dialog :modal="false" :visible.sync="dialogVisible2">
+                      <img width="100%" :src="dialogImageUrl2" alt>
+                    </el-dialog>
+                    <span class="tip">(最多上传6张)</span>
+                  </div>
+                </el-form-item>
+                <el-form-item label="构件关联:">
+                  <span class="relevance" @click="onRelevance">
+                    <img src="../../../assets/imgs/unlock.png" v-if="isRelevance">
+                    <img src="../../../assets/imgs/allRelation.png" v-else>
+                  </span>
+                </el-form-item>
+                <el-form-item label="工作流程:"></el-form-item>
+                <el-form-item>
+                  <div class="workflowBox">
+                    <div class="workflow1">
+                      <el-select v-model="filterForm.Priority" placeholder="优先级">
+                        <el-option
+                          v-for="item in PriorityList"
+                          :key="item"
+                          :label="item"
+                          :value="item"
+                        ></el-option>
+                      </el-select>
+                    </div>
+                    <div class="workflow2">
+                      <el-select
+                        v-model="filterForm.OrgId.OrgId"
+                        placeholder="责任单位"
+                        @change="onSelOrgId"
+                      >
+                        <el-option
+                          v-for="(item,index) in GetOrgListSel"
+                          :label="item.Name"
+                          :value="index"
+                          :key="index"
+                        ></el-option>
+                      </el-select>
+                    </div>
+                    <div class="workflow1">
+                      <el-select
+                        v-model="filterForm.DepId.DepId"
+                        placeholder="岗位部门"
+                        @change="onSelDepId"
+                      >
+                        <el-option
+                          v-for="(item,index) in GetDeptListSel"
+                          :label="item.text"
+                          :value="index"
+                          :key="index"
+                        ></el-option>
+                      </el-select>
+                    </div>
+                    <div class="workflow1">
+                      <el-select
+                        v-model="filterForm.Person.Person"
+                        placeholder="人员"
+                        @change="onSelPerson"
+                      >
+                        <el-option
+                          v-for="(item,index) in GetUserListSel"
+                          :label="item.text"
+                          :value="index"
+                          :key="index"
+                        ></el-option>
+                      </el-select>
+                    </div>
+                    <span class="add" @click="addData()">
+                      <img src="../../../assets/imgs/add.png" alt>
+                    </span>
+                  </div>
+                </el-form-item>
+                <div v-show="dataList">
+                  <el-form-item>
+                    <div class="bg">
+                      <div>
+                        <span></span>
+                      </div>
+                      <div>
+                        <span></span>
+                      </div>
+                      <div>
+                        <span></span>
+                      </div>
+                      <div>
+                        <span></span>
+                      </div>
+                    </div>
+                    <ul class="dataList">
+                      <li v-for="(item,index) in filterForm.flowList" v-bind:key="index">
+                        <div class="ordinal">
+                          <span>{{index+1}}</span>
+                        </div>
+                        <div class="dataContent">
+                          <span>{{item.OrgId.text}}</span>
+                          <span class="unit">{{item.DepId.text}}</span>
+                          <span>{{item.Person.text}}</span>
+                        </div>
+                        <div class="dataBtn">
+                          <span :class="item.down" @click="onSortDown(index)"></span>
+                          <span :class="item.up" @click="onSortUp(index)"></span>
+                          <span class="del" @click="onDel(index)"></span>
+                        </div>
+                      </li>
+                    </ul>
+                  </el-form-item>
+                </div>
+                <div class="item" v-show="dataStep">
+                  <el-form-item>
+                    <el-steps align-center>
+                      <el-step title="建设单位" description="工程部"></el-step>
+                      <el-step title="设计单位" description="工程部"></el-step>
+                      <el-step title="建设单位" description="工程部"></el-step>
+                      <el-step title="施工单位" description="工程部"></el-step>
+                    </el-steps>
+                  </el-form-item>
+                </div>
+                <el-form-item>
+                  <div class="btn">
+                    <el-button>取消</el-button>
+                    <el-button type="primary" @click="onSubmit">提交</el-button>
+                  </div>
+                </el-form-item>
+              </el-form>
+            </el-col>
+          </el-row>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script type='textecmascript-6'>
+import { mapMutations } from "vuex";
+import {
+  GetBuilding,
+  GetSpecialtybyBuilding,
+  GetFloorbyBuilding,
+  GetOrgList,
+  GetDeptList,
+  GetUserListByDept,
+  SaveChange,
+  GetLoginUserInfo,
+  GetDictInfoList,
+  UploadBase64Img,
+  UploadImages
+} from "../../../api/api.js";
+import {
+  dataResetBSF,
+  getBuildList,
+  getSpecialtyList,
+  getFloorList
+} from "./util/util.js";
+
+export default {
+  data() {
+    return {
+      isRelevance: true, //   开启关联
+      UserInfo: "",
+      view_point: sessionStorage.getItem("e"), //视点路径
+      stateStr: sessionStorage.getItem("stateStr"), //视点快照图路径
+      fileext: "", //图片格式
+      upload_base64_img: [], //图片详情
+      viewPointList: [], //视点列表
+
+      projectid: localStorage.getItem("projectid"),
+      userID: localStorage.getItem("userId"), //用户ID
+      eids: [],
+      BuildNameList: [], // 楼栋下拉
+      SpecialtyList: [], // 专业下拉
+      FloorbyList: [], // 楼层下拉
+      GetOrgListSel: [], // 单位
+      GetDeptListSel: [], // 部门
+      GetUserListSel: [], // 人员
+      workFormSelect: [], // 变更类型
+      PriorityList: 1,
+      filterForm: {
+        Code: "",
+        Theme: "",
+        Type: "",
+        BuildName: "", // 楼栋
+        Specialty: "", // 专业
+        Floor: "", // 楼层
+        DetailPoint: "",
+        StartTime: "",
+        StartPerson: "",
+        Content: "",
+        flowList: [],
+        Priority: 1,
+        OrgId: { OrgId: "" }, // 单位
+        DepId: { DepId: "" }, // 部门
+        Person: { Person: "" } // 人员
+      },
+      disflowList: [],
+
+      data: "",
+      alteration: true, //变更弹框
+      dataList: true,
+      dataStep: false,
+      photoList: [], //现场照片
+      dialogImageUrl1: "", //视点图片
+      dialogImageUrl2: "", //上传凭证
+      dialogVisible2: false //上传凭证图片列表
+    };
+  },
+  methods: {
+    _initData() {
+      /**
+       * 模型状态管理
+       */
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    // sort down
+    onSortDown(i) {
+      if (i == this.filterForm.flowList.length - 1) return false;
+      if (i < this.filterForm.flowList.length - 1) {
+        let item = this.filterForm.flowList[i];
+        this.filterForm.flowList.splice(i, 1);
+        this.filterForm.flowList.splice(i + 1, 0, item);
+      }
+      this.isSort();
+    },
+    // sort up
+    onSortUp(i) {
+      if (i == 0 || i == 1) return false;
+      if (i > 0) {
+        let item = this.filterForm.flowList[i];
+        this.filterForm.flowList.splice(i, 1);
+        this.filterForm.flowList.splice(i - 1, 0, item);
+      }
+      this.isSort();
+    },
+    // sort del
+    onDel(i) {
+      if (i == 0) return false;
+      this.filterForm.flowList.splice(i, 1);
+      this.isSort();
+    },
+    //工程变更--提交
+    async onSubmit() {
+      let prams = {
+        // ID: 1, //ID
+        Code: this.filterForm.Code, //编码
+        ProjectId: this.projectid, //项目ID
+        Theme: this.filterForm.Theme, //主题
+        Type: this.filterForm.Type, //类型
+        Building: this.filterForm.Building, //楼栋
+        Specialty: this.filterForm.Specialty, //专业
+        Floor: this.filterForm.Floor, //楼层
+        DetailPoint: this.filterForm.DetailPoint, //详细地址
+        StartTime: require("moment")(this.filterForm.StartTime).format(
+          "YYYY-MM-DD"
+        ), //启动时间
+        StartPerson: this.filterForm.StartPerson, //启动人
+        Content: this.filterForm.Content, //内容
+        iCreator: this.userID, //创建人
+
+        listFlow: this.disflowList, //工作流列表
+        listFile: this.photoList, //现场照片, //上传凭证照片列表
+        listViewPoint: this.viewPointList, //视点列表
+
+        RelationModel: this.eids.join(','), //关联构件（多个构件ID用英文逗号分隔）
+        dCreateTime: require("moment")().format("YYYY-MM-DD"), //创建时间
+        dUpdateTime: require("moment")().format("YYYY-MM-DD"), //修改时间
+        iUpdator: this.userID //修改人
+      };
+      this.load();
+      console.log(prams);
+      let save_change = await this.Request(SaveChange(prams));
+      this.$toast.clear();
+      if (save_change.StatusCode == 200) {
+        this.$message({
+          type: "success",
+          message: save_change.Message,
+          center: "true"
+        });
+      } else {
+        this.$message({
+          type: "error",
+          message: save_change.Message ? save_change.message : "后台异常",
+          center: "true"
+        });
+      }
+    },
+    // 工程类型下拉
+    getProjectList() {
+      this.load();
+      GetDictInfoList({ DICode: "工程类型" }).then(res => {
+        if (res.StatusCode == 200) {
+          this.$toast.clear();
+          this.workFormSelect = res.Detiel;
+        }
+      });
+    },
+    // 人员下拉
+    getUser(deptId) {
+      this.load();
+      GetUserListByDept({
+        projectId: this.projectId,
+        orgId: this.filterForm.orgId,
+        deptId
+      }).then(res => {
+        if (res.StatusCode == 200) {
+          this.GetUserListSel = res.Detiel;
+        }
+        this.$toast.clear();
+      });
+    },
+    // 部门下拉
+    getDept(orgId) {
+      this.load();
+      GetDeptList({ orgId }).then(res => {
+        if (res.StatusCode == 200) {
+          this.GetDeptListSel = res.Detiel;
+        }
+        this.$toast.clear();
+      });
+    },
+    // 单位下拉
+    getOrg() {
+      this.load();
+      GetOrgList({ projectid: this.projectid }).then(res => {
+        if (res.StatusCode == 200) {
+          this.GetOrgListSel = res.Detiel;
+        }
+        this.$toast.clear();
+      });
+    },
+    // 添加流程
+    addData() {
+      let item = {
+        Priority: this.filterForm.Priority, //优先级
+        OrgId: this.filterForm.OrgId, //责任单位
+        DepId: this.filterForm.DepId, //岗位部门
+        Person: this.filterForm.Person, //人员
+        down: "sortDown",
+        up: "sortUp"
+      };
+      let i = Number(item.Priority) - 1;
+      if (this.filterForm.Priority > 1) {
+        this.filterForm.flowList.splice(i, 0, item);
+      } else {
+        this.filterForm.flowList.push(item);
+      }
+      this.isSort();
+      this.PriorityList = this.filterForm.flowList.length + 1;
+      this.filterForm.OrgId = { OrgId: "" };
+      this.filterForm.DepId = { DepId: "" };
+      this.filterForm.Person = { Person: "" };
+      this.filterForm.Priority = 2;
+    },
+    // 流程排序
+    isSort() {
+      let len = this.filterForm.flowList.length;
+      this.disflowList = [];
+      if (len == 0) {
+        this.filterForm.flowList[0].down = "sortDown-disabled";
+        this.filterForm.flowList[0].up = "sortUp-disabled";
+        return;
+      }
+      this.filterForm.flowList.forEach((v, i) => {
+        console.log(v);
+        this.disflowList.push({
+          Priority: i,
+          OrgId: v.OrgId.id,
+          DepId: v.DepId.id,
+          Person: v.Person.text
+        });
+        v.Priority = i;
+        if (i == 0) {
+          v.down = "sortDown-disabled";
+          v.up = "sortUp-disabled";
+        } else if (i == 1) {
+          if (i == len - 1) {
+            v.down = "sortDown-disabled";
+            v.up = "sortUp-disabled";
+          } else {
+            v.down = "sortDown";
+            v.up = "sortUp-disabled";
+          }
+        } else if (i == len - 1) {
+          if (i == 1) {
+            v.down = "sortDown-disabled";
+            v.up = "sortUp-disabled";
+          } else {
+            v.down = "sortDown-disabled";
+            v.up = "sortUp";
+          }
+        } else {
+          v.down = "sortDown";
+          v.up = "sortUp";
+        }
+      });
+    },
+    // 流程 change 事件
+    onSelOrgId(i) {
+      this.filterForm.OrgId["text"] = this.GetOrgListSel[i].Name;
+      this.filterForm.OrgId["id"] = this.GetOrgListSel[i].OrgTypeID;
+    },
+    onSelDepId(i) {
+      this.filterForm.DepId["text"] = this.GetDeptListSel[i].text;
+      this.filterForm.DepId["id"] = this.GetDeptListSel[i].id;
+    },
+    onSelPerson(i) {
+      this.filterForm.Person["text"] = this.GetUserListSel[i].text;
+      this.filterForm.Person["id"] = this.GetUserListSel[i].id;
+    },
+    //关闭变更
+    close() {
+      this.$router.go(-1);
+    },
+    /**
+     * 获取当前登录用户详情
+     */
+    getLoginUserInfoDate() {
+      this.load();
+      GetLoginUserInfo({ curUserId: this.userID }).then(data => {
+        this.$toast.clear();
+        if (data.StatusCode === 200) {
+          let item = data.Detiel[0].loginUserInfo;
+          this.filterForm.flowList.push({
+            OrgId: { text: item.WeChatNo ,id:item.iSys_Company_ID},
+            DepId: { text: item.cDepName ,id:item.iSys_Dep_ID},
+            Person: { text: item.cName },
+            down: "sortDown-disabled",
+            up: "sortUp-disabled"
+          });
+          this.filterForm.StartPerson = item.cName;
+          this.UserInfo = item;
+          this.isSort()
+        }
+      });
+    },
+    // 视点
+    onRemove(index) {
+      this.$alert("是否确认删除？", "提示！", {
+        confirmButtonText: "确定",
+        callback: action => {
+          if (action == "confirm") {
+            this.viewPointList.splice(index, 1);
+          }
+        }
+      });
+    },
+    // 删除图片
+    handleRemove2(file, fileList) {
+      this.photoList = fileList;
+    },
+    handlePictureCardPreview2(file) {
+      //点击文件列表中已上传的文件
+      this.dialogImageUrl2 = file.url;
+      this.dialogVisible2 = true;
+    },
+    // 关闭关联
+    onRelevance() {
+      this.isRelevance = !this.isRelevance;
+    },
+    // 收集构件ID 并让选中的高亮
+    onModeHighlight(val) {
+      if (this.isRelevance) {
+        this.eids.push(val.elementId);
+        this.eids = Array.from(new Set(this.eids));
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          console.log(res)
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示 false:隐藏模型
+            isLoadModel: true, //是否加载模型 true：加载模型，如果已经加载，不会重新加载， false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: this.eids, // 高亮显示的构件
+            functionNumber: [32] // 需要模型调用的函数编号数组
+          });
+        });
+      }
+    },
+    /**
+     * 创建视点
+     */
+    createViewPoint() {
+      this.load();
+      this.$util.getDomLocation(this, "modelContainer").then(res => {
+        this.modelBox({
+          isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示 false:隐藏模型
+          isLoadModel: true, //是否加载模型 true：加载模型，如果已经加载，不会重新加载， false:卸载模型
+          top: res.top, //距离顶部距离‘px'
+          left: res.left, //距离左边距离‘px'
+          width: res.width, //模型宽‘px'
+          height: res.height, //模型高 ‘px'
+          zIndex: 100, //模型层级
+          background: "",
+          ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+          highLightElementIDs: [], // 高亮显示的构件
+          functionNumber: [35] // 需要模型调用的函数编号数组
+        });
+      });
+      setTimeout(() => {
+        this.view_point = sessionStorage.getItem("e");
+        this.fileext = this.view_point.slice(10, 14).replace("/", ".");
+        this.currentState();
+      }, 1000);
+    },
+
+    /**
+     * 获取当前模型的浏览状态，用于保存后恢复模型状态
+     */
+    currentState() {
+      this.$util.getDomLocation(this, "modelContainer").then(res => {
+        this.modelBox({
+          isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示 false:隐藏模型
+          isLoadModel: true, //是否加载模型 true：加载模型，如果已经加载，不会重新加载， false:卸载模型
+          top: res.top, //距离顶部距离‘px'
+          left: res.left, //距离左边距离‘px'
+          width: res.width, //模型宽‘px'
+          height: res.height, //模型高 ‘px'
+          zIndex: 100, //模型层级
+          background: "",
+          ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+          highLightElementIDs: [], // 高亮显示的构件
+          functionNumber: [36] // 需要模型调用的函数编号数组
+        });
+      });
+      setTimeout(() => {
+        this.stateStr = sessionStorage.getItem("stateStr");
+        this.uploadBase64Img();
+      }, 1000);
+    },
+
+    /**
+     * 上传Base64String 图片
+     */
+    async uploadBase64Img() {
+      let base64_img_data = await this.Request(
+        UploadBase64Img({
+          fileext: this.fileext,
+          Base64Photo: this.view_point
+        })
+      );
+      if (base64_img_data.StatusCode === 200) {
+        this.$toast.clear();
+        if (base64_img_data.Detiel.length != 0) {
+          this.upload_base64_img = base64_img_data.Detiel;
+          // this.currentState();
+          this.viewPointList.push({
+            // ProjectID: localStorage.getItem("projectid"),
+            ModelID: this.defaultModelID,
+            State: this.stateStr,
+            Snapshot: this.upload_base64_img[0].URL,
+            TokenUrL: this.upload_base64_img[0].TokenUrL,
+            smallPhotoURL: this.upload_base64_img[0].smallPhotoURL
+          });
+        } else {
+          this.$message({ type: "error", message: "无数据", center: "true" });
+        }
+      } else {
+        this.$message({
+          type: "error",
+          message: this.upload_base64_img.message
+            ? this.upload_base64_img
+            : "后台异常",
+          center: "true"
+        });
+      }
+    },
+    // 上传：文件状态改变时的钩子，添加文件、上传成功和上传失败时都会被调用
+    async uploadPicture(file) {
+      let params = [
+        {
+          key: "files",
+          value: file.raw
+        }
+      ];
+      let data = await this.Request(UploadImages(params));
+      if (data.StatusCode == 200) {
+        this.imagesDetiel = data.Detiel;
+        this.photoList.push({
+          Id: this.imagesDetiel[0].Id, //上传后的文件名
+          URL: this.imagesDetiel[0].URL, //文件地址
+          smallPhotoURL: this.imagesDetiel[0].smallPhotoURL, //如果存在小图则返回小图地址
+          Type: this.imagesDetiel[0].Type, //文件类型
+          TokenUrL: this.imagesDetiel[0].TokenUrL //域名地址
+        });
+      } else {
+        this.$message({
+          type: "error",
+          message: data.message ? data.message : "后台异常",
+          center: "true"
+        });
+      }
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    })
+  },
+  created() {
+    this._initData();
+    // 获取单位下拉
+    this.getOrg();
+    getBuildList(this, GetBuilding);
+    this.getLoginUserInfoDate();
+    this.getProjectList();
+  },
+  computed: {
+    getViewer3d() {
+      return this.$store.getters.getViewer3d;
+    }
+  },
+  watch: {
+    // 构件ID
+    getViewer3d(val) {
+      this.onModeHighlight(val);
+    },
+    // 部门
+    "filterForm.DepId.DepId": {
+      handler(val, oldval) {
+        if (typeof val == "number") this.getUser(val);
+      }
+    },
+    // 单位
+    "filterForm.OrgId.OrgId": {
+      handler(val, oldval) {
+        if (typeof val == "number") this.getDept(val);
+      }
+    },
+    // 专业
+    "filterForm.Specialty": {
+      handler(val, oldval) {
+        if (val != "") dataResetBSF(this, "Specialty");
+        getFloorList(this, GetFloorbyBuilding);
+      }
+    },
+    // 楼栋
+    "filterForm.BuildName": {
+      handler(val, oldval) {
+        if (val != "") dataResetBSF(this, "BuildName");
+        getSpecialtyList(this, GetSpecialtybyBuilding);
+      }
+    }
+  }
+};
+</script>
+<style lang='stylus' rel='stylesheet/stylus'>
+.initiateChange {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.initiateChange .viewpoint {
+  width: 160px;
+  height: 120px;
+  border: 1px dashed #c0ccda;
+  border-radius: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  float: left;
+  margin-right: 10px;
+}
+
+.initiateChange .viewpoint .modePic {
+  width: 160px;
+  height: 120px;
+}
+
+.model-container {
+  width: 98%;
+  height: 100%;
+  padding: 0 !important;
+  z-index: 90;
+}
+
+.initiateChange .dataList {
+  background: #EFF3FF;
+  display: flex;
+  flex-flow: column;
+  margin: -30px 0 0 -100px;
+  padding: 20px;
+}
+
+.initiateChange .bg {
+  height: 40px;
+  margin-left: -80px;
+  display: flex;
+}
+
+.initiateChange .bg div {
+  width: 25%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-flow: row;
+}
+
+.initiateChange .bg div span {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #eff3ff;
+}
+
+.initiateChange .changeType {
+  width: 100%;
+}
+
+.initiateChange .changeType .el-select {
+  width: 100%;
+}
+
+.initiateChange .el-date-editor--date .el-input__prefix {
+  left: calc(100% - 30px) !important;
+}
+
+.initiateChange .dataList li {
+  display: flex;
+  flex-flow: row;
+  justify-content: flex-end;
+  align-content: center;
+  margin-left: 14%;
+  height: 40px;
+  margin-bottom: 20px;
+}
+
+.initiateChange .dataList li:last-child {
+  margin-bottom: 0px;
+}
+
+.initiateChange .dataList li .ordinal {
+  display: flex;
+  align-items: center;
+  margin-right: 20px;
+  position: relative;
+}
+
+.initiateChange .dataList li .ordinal span {
+  background: #4775C9;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-align: center;
+}
+
+.initiateChange .dataList li .ordinal span:before {
+  content: '';
+  position: absolute;
+  top: 31px;
+  background: #435089;
+  width: 1px;
+  height: 38px;
+}
+
+.initiateChange .dataList li:last-child .ordinal span:before {
+  content: '';
+  position: absolute;
+  top: 31px;
+  background: none;
+  width: 0;
+  height: 0;
+}
+
+.initiateChange .add {
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+}
+
+.initiateChange .add img {
+  width: 100%;
+  height: 100%;
+}
+
+.initiateChange .dataList li .dataContent {
+  background: #ffffff;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.initiateChange .dataList li .dataContent span {
+  background: #ffffff;
+  width: 33.33%;
+  text-align: center;
+  margin: 5px 0;
+  height: 30px;
+  line-height: 30px;
+}
+
+.initiateChange .dataList li .dataContent .unit {
+  border-left: 1px dashed #979797;
+  border-right: 1px dashed #979797;
+}
+
+.initiateChange .dataBtn {
+  width: auto;
+  display: flex;
+  justify-content: flex-end;
+  margin-left: 10px;
+}
+
+.initiateChange .dataBtn span {
+  width: 40px;
+  height: 40px;
+  display: inline-block;
+  margin-left: 10px;
+  background-size: 100% 100%;
+  cursor: pointer;
+}
+
+.initiateChange .sortDown-disabled {
+  background: url('../../../assets/imgs/down.jpg') no-repeat center center;
+  background-size: 100% 100%;
+}
+
+.initiateChange .sortDown {
+  background: url('../../../assets/imgs/up.jpg') no-repeat center center;
+  background-size: 100% 100%;
+}
+
+.initiateChange .sortUp-disabled {
+  background: url('../../../assets/imgs/down.jpg') no-repeat center center;
+  background-size: 100% 100%;
+  transform: rotate(180deg);
+}
+
+.initiateChange .sortUp {
+  background: url('../../../assets/imgs/up.jpg') no-repeat center center;
+  background-size: 100% 100%;
+  transform: rotate(180deg);
+}
+
+.initiateChange .del {
+  background: url('../../../assets/imgs/del_model.png') no-repeat center center;
+  // font-size: 30px;
+  // text-align: center;
+}
+
+.initiateChange .el-form-item {
+  width: 100%;
+  height: auto !important;
+}
+
+.initiateChange .avatar-uploader .el-upload {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.initiateChange .el-upload--picture-card {
+  background: #F8F8F8 !important;
+  width: 132px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.initiateChange .avatar-uploader .el-upload:hover {
+  border-color: #409EFF;
+}
+
+.initiateChange .tip {
+  color: #999999;
+  font-size: 18px;
+  padding-left: 10px;
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+.initiateChange .tipa {
+  color: #999999;
+  font-size: 18px;
+  padding-left: 10px;
+  display: flex;
+  align-items: flex-end;
+  height: 120px;
+}
+
+.initiateChange .upload {
+  display: inline-block;
+}
+
+.originator, .wrap {
+  // float: left;
+}
+
+.initiateChange .workflowBox {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  float: left;
+  margin: -20px 0 0 -90px;
+}
+
+.initiateChange .changeflowBox {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  float: left;
+  width: 100%;
+}
+
+.initiateChange .changeflowBox .workflow1 {
+  margin-right: 20px;
+  width: 100%;
+}
+
+.initiateChange .changeflowBox .workflow1:last-child {
+  margin-right: 0;
+}
+
+.initiateChange .changeflowBox .workflow1 .el-select {
+  width: 100%;
+}
+
+.initiateChange .workflowBox .workflow1 {
+  width: 22%;
+  margin-right: 9px;
+}
+
+.initiateChange .workflowBox .workflow2 {
+  width: 34%;
+  margin-right: 9px;
+}
+
+.initiateChange .el-select .el-input__suffix {
+  width: 0.666667rem;
+  background: #435089;
+  border-radius: 0 0.066667rem 0.066667rem 0;
+  right: 0 !important;
+}
+
+.initiateChange .el-select input {
+  background: #fff !important;
+}
+
+.initiateChange .el-step.is-horizontal .el-step__line {
+  top: 0.25rem;
+  background: #E5E5E5;
+  height: 1px;
+}
+
+.initiateChange .el-steps--horizontal {
+  margin: 0 0 0 -100px;
+}
+
+.initiateChange .relevance {
+  width: 64px;
+  height: 40px;
+  border: 1px solid #E5E5E5;
+  background: #F8F8F8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.initiateChange .btn {
+  margin: 20px 0 20px -80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.initiateChange .relevance {
+  color: #435089;
+  font-size: 18px;
+}
+
+.initiateChange .el-step__icon.is-text {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #E5E5E5;
+  background: #F8F8F8;
+}
+
+.initiateChange .el-step__icon-inner {
+  color: #333;
+  font-size: 20px;
+}
+
+.initiateChange .el-step.is-center .el-step__line {
+  left: 70%;
+  right: -30%;
+}
+
+.initiateChange .el-step__main div {
+  color: #333 !important;
+}
+
+.initiateChange .el-button {
+  width: 100px;
+  color: #fff;
+}
+
+.initiateChange .el-button--default {
+  background: #999999;
+}
+
+.initiateChange .el-button--default:focus, .initiateChange .el-button--default:hover {
+  background: #999999;
+  color: #fff;
+}
+
+.initiateChange .el-button--primary {
+  background: #4775CA;
+}
+
+.initiateChange .el-button--primary:focus, .el-button--primary:hover {
+  background: #4775CA;
+  color: #fff;
+}
+
+// 图标颜色
+.initiateChange .initiateChange .icon {
+  color: #ffa147;
+}
+
+.initiateChange .titleBg {
+  background: #44508a;
+}
+
+.initiateChange .dayManagement {
+  margin-bottom: 26px;
+}
+
+.initiateChange .el-row .el-col-24 {
+  font-size: 22px;
+  color: #28292b;
+}
+
+.initiateChange .dayManagement .el-row .el-col-24 {
+  margin: 20px 0px 0px 0px;
+}
+
+.initiateChange .notice {
+  color: #fff;
+  font-size: 20px;
+  height: 40px;
+  line-height: 40px;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.initiateChange .notice i {
+  font-size: 20px;
+  position: absolute;
+  right: 15px;
+  line-height: 40px;
+  cursor: pointer;
+}
+
+.initiateChange .el-form {
+  padding: 0 20px;
+}
+
+.el-form-item__label {
+}
+
+.initiateChange .el-input {
+}
+
+.initiateChange .el-input input, .initiateChange .el-textarea .el-textarea__inner {
+  background: #F8F8F8;
+  color: #666;
+  font-size: 16px;
+}
+
+.initiateChange .el-select .el-input__inner {
+  color: #333;
+}
+
+.initiateChange .el-input--prefix .el-input__inner {
+  padding-left: 15px !important;
+  padding-right: 15px !important;
+}
+
+.initiateChange .el-textarea .el-textarea__inner {
+  min-height: 80px !important;
+}
+
+.initiateChange .el-form-item__label {
+  color: #333333;
+  font-size: 18px;
+}
+
+.initiateChange .leftBox, .initiateChange .rightBox {
+  width: 50%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  background: #f5f6fa;
+}
+
+.initiateChange .leftBox {
+  left: 0;
+}
+
+.initiateChange .rightBox {
+  right: 0;
+  width: 800px !important;
+}
+
+.initiateChange .leftBox .box-card {
+  width: calc(100% - 30px);
+  height: calc(100% - 60px);
+  margin: 20px 10px 10px 20px;
+}
+
+.initiateChange .rightBox .box-card {
+  width: 800px;
+  height: calc(100% - 45px);
+  padding: 0px 0px 0px 0px;
+  margin: 20px 0px 0px 0px;
+  background: #f5f6fa;
+  border: none;
+  box-shadow: none;
+  background: #fff;
+  overflow-y: auto;
+}
+
+/* 滚动条的宽度 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background-color: transparent;
+}
+
+/* 滚动条的滑块 */
+::-webkit-scrollbar-thumb {
+  background-color: #a1a3a9;
+  border-radius: 6px;
+}
+</style>

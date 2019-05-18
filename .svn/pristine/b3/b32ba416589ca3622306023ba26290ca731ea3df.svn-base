@@ -1,0 +1,43 @@
+<template>
+    <div>
+        查看模型
+        <div id="domId" style="width:800px; height:600px"></div>
+    </div>
+</template>
+<script>
+export default {
+    data(){
+        return{}
+    },
+    mounted(){
+        const oScript = document.createElement('script');
+        oScript.type = 'text/javascript';
+        oScript.src = 'https://static.bimface.com/api/BimfaceSDKLoader/BimfaceSDKLoader@latest-release.js';
+        document.body.appendChild(oScript);
+    },
+    created(){
+        this.showModel();
+    },
+    methods:{
+        showModel(){
+            var viewToken = '562df576e2e043b7bfefe6993ad4f640';
+            var options = new BimfaceSDKLoaderConfig();
+            console.log(options);
+            options.viewToken = viewToken;
+            console.log(BimfaceSDKLoader);
+            BimfaceSDKLoader.load(options, successCallback, failureCallback);
+            function successCallback(viewMetaData) {
+                //创建WebApplication，直接显示模型或图纸
+                var dom4Show = document.getElementById('domId');
+                new Glodon.Bimface.Application.WebApplicationDemo(viewMetaData, dom4Show); 
+            }
+            function failureCallback(error) {
+                console.log(error);
+            }
+        },
+    },
+}
+</script>
+<style>
+
+</style>

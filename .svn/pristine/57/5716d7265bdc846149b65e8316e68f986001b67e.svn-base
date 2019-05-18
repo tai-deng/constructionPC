@@ -1,0 +1,560 @@
+<!-- 材料退还 -->
+<template>
+  <div class="container-procurement2">
+    <div class="wrapper">
+      <el-row>
+        <el-col :span="22">材料退还</el-col>
+        <el-col :span="2">
+          <el-button @click="goto()">返回列表</el-button>
+        </el-col>
+      </el-row>
+      <div class="procurementForm">
+        <el-form ref="form" :model="form">
+          <el-row>
+            <el-col :span="24">
+              <el-form-item label="楼栋:">
+                <div class="originator">
+                  <el-select v-model="form.buildname">
+                    <el-option
+                      v-for="item in BuildNameList"
+                      :key="item.id"
+                      :label="item.text"
+                      :value="item.text"
+                    ></el-option>
+                  </el-select>
+                </div>
+              </el-form-item>
+              <el-form-item label="楼层:">
+                <div class="originator">
+                  <el-select v-model="form.floor">
+                    <el-option
+                      v-for="(item,index) in FloorbyList"
+                      :key="index"
+                      :label="item.text"
+                      :value="item.text"
+                    ></el-option>
+                  </el-select>
+                </div>
+              </el-form-item>
+              <el-form-item label="物资名称:">
+                <div class="originator">
+                  <el-select v-model="form.resourcename">
+                    <el-option
+                      v-for="item in ResorceNameList"
+                      :key="item.id"
+                      :label="item.text"
+                      :value="item.text"
+                    ></el-option>
+                  </el-select>
+                </div>
+              </el-form-item>
+              <el-form-item label="规格型号:">
+                <div class="originator">
+                  <el-select v-model="form.spec">
+                    <el-option
+                      v-for="item in SpecialtyList"
+                      :key="item.id"
+                      :label="item.text"
+                      :value="item.text"
+                    ></el-option>
+                  </el-select>
+                </div>
+              </el-form-item>
+              <!-- <span class="add">
+                <i class="el-icon-plus"></i>
+              </span>-->
+            </el-col>
+          </el-row>
+          <el-form-item>
+            <el-table :data="tableData" style="width: 100%">
+              <el-table-column prop="num" label="序号" width="50"></el-table-column>
+              <el-table-column prop="ResourceName" label="物资名称"></el-table-column>
+              <el-table-column prop="Spec" label="规格型号"></el-table-column>
+              <el-table-column prop="BuildName" label="楼栋"></el-table-column>
+              <el-table-column prop="Floor" label="楼层"></el-table-column>
+              <el-table-column prop="BOQ" label="施工预算量"></el-table-column>
+              <el-table-column prop="OutNum" label="已出库"></el-table-column>
+              <el-table-column prop="StoreNum" label="库存"></el-table-column>
+              <el-table-column label="本次出库" width="100">
+                <template slot-scope="scope">
+                  <el-input
+                    v-model="tableData[scope.$index].ThisOutNum"
+                    @change="importText(scope.$index, scope.row)"
+                  ></el-input>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-form-item>
+          <el-form-item label="原始凭证:">
+            <div class="upload">
+              <el-upload
+                action
+                list-type="picture-card"
+                :on-preview="handlePictureCardPreview2"
+                :on-remove="handleRemove2"
+                multiple
+                :limit="3"
+                :on-change="uploadPicture"
+                :auto-upload="false"
+              >
+                <i class="el-icon-plus"></i>
+              </el-upload>
+            </div>
+            <el-dialog :visible.sync="dialogVisible2">
+              <img width="100%" :src="dialogImageUrl2" alt>
+            </el-dialog>
+            <span class="tip">(最多上传3张)</span>
+          </el-form-item>
+          <el-form-item label="出库时间:">
+            <el-date-picker
+              type="date"
+              placeholder="选择日期"
+              v-model="form.OutDate"
+              style="width: 100%;"
+            ></el-date-picker>
+          </el-form-item>
+          <el-form-item label="领料人:">
+            <div class="person">
+              <el-select v-model="form.UsePerson">
+                <el-option
+                  v-for="item in UsePersonList"
+                  :key="item.id"
+                  :label="item.text"
+                  :value="item.text"
+                ></el-option>
+              </el-select>
+            </div>
+          </el-form-item>
+          <el-form-item>
+            <div class="btn">
+              <el-button @click="onSubmit">确认出库</el-button>
+            </div>
+          </el-form-item>
+        </el-form>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+// 缺少一个规格型号接口
+import {
+  QueryBackNeedInfo,
+  GetBuilding,
+  GetFloorbyBuilding,
+  GetResourceByInfo,
+  UploadImages,
+  GetAllUserList,
+  AddStoreBack,
+  GetSpecByResource
+} from "../../../api/api.js";
+
+export default {
+  data() {
+    return {
+      projectid: localStorage.getItem("projectid"),
+      BuildNameList: [], // 楼栋下拉
+      FloorbyList: [], // 楼层下拉
+      ResorceNameList: [], // 物资名称下拉
+      SpecialtyList: [], // 规格型号下拉
+      UsePersonList: [], // 领料人下拉
+      photoList: [], // 凭证
+      form: {
+        buildname: "", // 楼栋
+        floor: "", // 楼层
+        resourcename: "", // 物资名称
+        spec: "", // 规格型号
+        OutDate: "", // 出库时间
+        UsePerson: "" // 领料人
+      },
+      dialogImageUrl2: "", //原始凭证
+      dialogVisible2: false, //上传凭证图片列表
+      tableData: []
+    };
+  },
+  watch: {
+    // 物资名称
+    "form.resourcename": {
+      handler(val, oldval) {
+        this.getData();
+        this.GetSpecByResource();
+      }
+    },
+    // 楼层
+    "form.floor": {
+      handler(val, oldval) {
+        this.getData();
+        this.getResorceNameListSel();
+      }
+    },
+    // 楼栋
+    "form.buildname": {
+      handler(val, oldval) {
+        this.getFloorbySel(val);
+        this.getData();
+      }
+    }
+  },
+  created() {
+    // 获取出库列表
+    this.getData();
+    // 楼栋下拉
+    this.getBuildingSel();
+    // 领料人下拉
+    this.getUsePersonList();
+  },
+  methods: {
+    // 领料人下拉
+    getUsePersonList() {
+        this.load();
+      GetAllUserList({ projectId: this.projectId }).then(res => {
+        if (res.StatusCode == 200) {
+          this.$toast.clear();
+          this.UsePersonList = res.Detiel;
+        }
+      });
+    },
+    // 规格型号下拉
+    GetSpecByResource() {
+        this.load();
+      GetSpecByResource({
+         ProjectID: this.projectid,
+         BuildName:this.form.buildname,
+         Floor:this.form.floor,
+         ResourceName:this.form.ResourceName
+         }).then(res => {
+        if (res.StatusCode == 200) {
+          this.$toast.clear();
+          this.SpecialtyList = res.Detiel;
+        }
+      });
+    },
+    // 物资名称
+    getResorceNameListSel(v) {
+        this.load();
+      GetResourceByInfo({
+         ProjectID: this.projectid,
+         BuildName:this.form.buildname,
+         Floor:this.form.floor,
+        }).then(res => {
+          this.$toast.clear();
+        if (res.StatusCode == 200) {
+          this.ResorceNameList = res.Detiel;
+        }
+      });
+    },
+    // 楼层下拉
+    getFloorbySel(building) {
+        this.load();
+      GetFloorbyBuilding({
+        projectid: this.projectid,
+        building
+      }).then(res => {
+        if (res.StatusCode == 200) {
+          this.$toast.clear();
+          this.FloorbyList = res.Detiel;
+        }
+      });
+    },
+    // 楼栋下拉
+    getBuildingSel() {
+        this.load();
+      GetBuilding({ projectid: this.projectid }).then(res => {
+        if (res.StatusCode == 200) {
+          this.$toast.clear();
+          this.BuildNameList = res.Detiel;
+        }
+      });
+    },
+    // 返回列表
+    goto() {
+      this.$router.go(-1);
+    },
+    // 获取出库列表
+    getData() {
+      let par = {
+        buildname: this.form.buildname,
+        floor: this.form.floor,
+        resourcename: this.form.resourcename,
+        spec: this.form.spec,
+        projectid: this.projectid
+      };
+        this.load();
+      QueryBackNeedInfo(par).then(res => {
+        if (res.StatusCode == 200) {
+          this.$toast.clear();
+          this.tableData = res.Detiel.map((item, i) => {
+            return Object.assign(item, { num: i + 1, ThisOutNum: "" });
+          });
+        }
+      });
+    },
+    importText() {},
+    // 提交
+    onSubmit() {
+      let par = {
+        model: {
+          OutDate: this.form.InDate, // 出库时间
+          ProjectID: this.projectid,
+          UsePerson: this.form.UsePerson // 领料人
+        },
+        listItems: this.tableData,
+        infiles: this.photoList,
+        projectid: this.projectid
+      };
+        this.load();
+      AddStoreBack(par).then(res => {
+          this.$toast.clear();
+        if (res.StatusCode == 200) {
+          this.$message({
+            message: res.Message,
+            type: "success"
+          });
+          this.$router.go(-1);
+        }
+      });
+    },
+    // 原始凭证 图标删除
+    handleRemove2(file, fileList) {
+      this.photoList = fileList;
+    },
+    handlePictureCardPreview2(file) {
+      //点击文件列表中已上传的文件
+      this.dialogImageUrl2 = file.url;
+      this.dialogVisible2 = true;
+    },
+    // 上传：文件状态改变时的钩子，添加文件、上传成功和上传失败时都会被调用
+    async uploadPicture(file) {
+      let params = [
+        {
+          key: "files",
+          value: file.raw
+        }
+      ];
+      let data = await this.Request(UploadImages(params));
+      if (data.StatusCode == 200) {
+        this.imagesDetiel = data.Detiel;
+        this.photoList.push({
+          Id: this.imagesDetiel[0].Id, //上传后的文件名
+          URL: this.imagesDetiel[0].URL, //文件地址
+          smallPhotoURL: this.imagesDetiel[0].smallPhotoURL, //如果存在小图则返回小图地址
+          Type: this.imagesDetiel[0].Type, //文件类型
+          TokenUrL: this.imagesDetiel[0].TokenUrL //域名地址
+        });
+      } else {
+        this.$message({
+          type: "error",
+          message: data.message ? data.message : "后台异常",
+          center: "true"
+        });
+      }
+    }
+  }
+};
+</script>
+<style lang='stylus' rel='stylesheet/stylus'>
+.container-procurement2 {
+  width: 100%;
+  // height: 100%;
+  overflow-y: scroll;
+  background: #f0f2f5;
+}
+
+.container-procurement2 .procurementForm {
+  width: 960px;
+  margin: 0 auto;
+}
+
+.container-procurement2 .el-col {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.container-procurement2 .el-col .el-form-item {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  margin-right: 12px;
+}
+
+.container-procurement2 .el-col-24 .el-form-item {
+  width: 25%;
+}
+
+.container-procurement2 .el-col-24 .el-form-item .el-form-item__label {
+  width: auto;
+  white-space: nowrap;
+}
+
+.container-procurement2 .el-col {
+  text-align: center;
+  padding: 16px 0 0 0;
+  color: #333;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.container-procurement2 .add {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #435089;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: -40px;
+  cursor: pointer;
+  margin-top: -20px;
+  border-radius: 6px;
+}
+
+.container-procurement2 .add i {
+  color: #435089;
+  font-size: 18px;
+}
+
+.container-procurement2 .el-input--prefix .el-input__inner {
+  padding-left: 15px !important;
+  padding-right: 15px !important;
+}
+
+.container-procurement2 .el-col .el-button--default {
+  background: #FDA143;
+  padding: 0;
+  width: 120px;
+  height: 40px;
+  line-height: 40px;
+  color: #fff;
+  border: none;
+}
+
+.container-procurement2 .avatar-uploader .el-upload {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.container-procurement2 .el-upload--picture-card {
+  background: #F0F0F0 !important;
+  border: 1px solid #D2D2D2 !important;
+  width: 180px;
+  height: 140px;
+  line-height: 140px;
+}
+
+.container-procurement2 .avatar-uploader .el-upload:hover {
+  border-color: #409EFF;
+}
+
+.container-procurement2 .el-upload--picture-card i {
+  color: #999999;
+}
+
+.container-procurement2 .avatar {
+  width: 132px;
+  height: 100px;
+  display: block;
+}
+
+.container-procurement2 .el-form-item__content .tip {
+  color: #999999;
+  font-size: 18px;
+  padding-left: 10px;
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+.container-procurement2 .upload {
+  display: inline-block;
+}
+
+.container-procurement2 .procurementForm .el-select .el-input__suffix {
+  width: 0.666667rem;
+  background: #435089;
+  border-radius: 0 0.066667rem 0.066667rem 0;
+  right: 0 !important;
+}
+
+.container-procurement2 .has-gutter tr th {
+  background: #435089;
+  color: #fff;
+  height: 40px;
+  padding: 0;
+  text-align: center;
+}
+
+.container-procurement2 .el-date-editor--date {
+  width: 260px !important;
+}
+
+.container-procurement2 .el-date-editor--date .el-input__prefix {
+  right: 5px !important;
+  color: #999;
+  left: calc(100% - 30px) !important;
+}
+
+.container-procurement2 .person {
+  width: 240px !important;
+  margin-left: 0.2rem;
+  display: inline-block;
+}
+
+.container-procurement2 .person .el-select {
+  width: 100%;
+}
+
+.container-procurement2 .btn {
+  text-align: center;
+}
+
+.container-procurement2 .btn .el-button--default {
+  background: #4775CA;
+  padding: 0;
+  width: 260px;
+  height: 40px;
+  line-height: 40px;
+  color: #fff;
+  font-size: 16px;
+  border: none;
+}
+
+.container-procurement2 .btn .el-button--default:hover {
+  background: #4775CA;
+}
+
+.container-procurement2 .el-table__row td {
+  color: #333;
+  text-align: center;
+}
+
+.container-procurement2 .el-table__row td:last-child .el-input__inner {
+  background: #D8DFEE;
+  width: 80px;
+  height: 36px;
+  color: #999;
+  line-height: 36px;
+}
+
+.container-procurement2 .el-date-editor .el-input__inner {
+  background: #F0F0F0;
+}
+
+.container-procurement2 .el-table td {
+  border: none;
+}
+/* 滚动条的宽度 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background-color: transparent;
+}
+
+/* 滚动条的滑块 */
+::-webkit-scrollbar-thumb {
+  background-color: #a1a3a9;
+  border-radius: 6px;
+}
+</style>

@@ -1,0 +1,79 @@
+.container-scope(class="container-box-list new-scope")
+    .house-model(:span="12")
+        .model-container
+          .model-container(ref="modelContainer")
+    .filter-wrapper
+        .button-wrapper
+            el-button-group
+                el-button(:type="activeTab ? 'primary' : ''" @click="onPurchaseBtn" :autofocus="activeTab") 采购列表
+                el-button(:type="!activeTab ? 'primary' : ''" @click="onChangeBtn" :autofocus="!activeTab") 变更列表
+
+            el-button(type="warning" @click="startChange") {{ activeTab ? '发起采购' : '发起变更' }}
+        br
+        //- 变更列表
+        template(v-if="!activeTab")
+            ScopeChangeList(@showChangeDetail="showChangeDetail")
+        template(v-else)        
+            .filter
+                el-form(
+                ref="filterFormRef"
+                    :model="filterForm"
+                        :rules="filterRules"
+                        :inline="true"
+                        :validate-on-rule-change="false"
+                )
+                    el-form-item
+                        el-select(v-model="filterForm.BuildName" placeholder="楼栋")
+                            el-option(
+                            v-for="item in BuildNameList"
+                                :key="item.id"
+                                    :label="item.text"
+                                    :value="item.text"
+                            )
+                    el-form-item
+                        el-select(v-model="filterForm.Specialty" placeholder="专业")
+                            el-option(
+                            v-for="item in SpecialtyList"
+                                :key="item.id"
+                                    :label="item.text"
+                                    :value="item.text"
+                            )
+                    el-form-item
+                        el-select(v-model="filterForm.Floor" placeholder="楼层")
+                            el-option(
+                            v-for="item in FloorbyList"
+                                :key="item.id"
+                                    :label="item.text"
+                                    :value="item.text"
+                            )
+                    el-form-item(class="ser-bg")
+                        el-input(v-model="filterForm.Name" placeholder="楼栋、专业、楼层、资源" @blur="onBlur")
+                            i(slot="prefix" class="el-input__icon el-icon-search")
+
+            el-card(class="box-card new-box-card"
+                v-for="(item,index) in PurchaseList"
+            )
+                div( slot="header" class="clearfix border-bottom")
+                    span 采购批次:{{item.Code}}
+                    el-button(style="float: right" type="primary" round @click="toPurchaseDetail(item.ID)") 采购详情
+                    div(class="text item new-list-item")
+                        el-row
+                            el-col( :span="8")
+                                div(class="grid-content bg-purple") 申请人:{{item.ApplyPersonName}}
+                            el-col( :span="8")
+                                div(class="grid-content bg-purple-light text-center") 发起日期:{{item.StartTime}}
+                            el-col( :span="8")
+                                div(class="grid-content bg-purple text-right") 需用日期:{{item.DemandTime}}
+                
+
+
+            el-pagination( :total="totalNum" @current-change="curChange" :page-size="paging.rows" :current-page.sync='paging.page' background layout="prev, pager, next" class="text-center" )
+    CommonDialog(ref="dialogRef" :title="dialogTitle" width="50%" @ok="dialogOk" @close="dialogClose")
+        //- 采购详情
+        template(v-if="dialogType === dialogTypeOptions.purchaseDetail")
+            ScopeDetail(:purchaseDetailId="purchaseDetailId")
+        //- 变更详情 
+        template(v-else-if="dialogType === dialogTypeOptions.changeDetail")
+            ScopeChangeDetail
+
+            

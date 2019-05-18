@@ -1,0 +1,162 @@
+<template>
+    <div class="company_box">
+          <ul class="firstUl">
+            <li
+              :class="i==peopleList.length-1?'firstList firstList_line':'firstList'"
+              v-for="(item, i) in peopleList"
+              :key="i"
+            >
+              <span class="box_span_height"></span>
+              <span :class="i==0?'firstSpan firstSpanColor':'firstSpan'">{{item.DepartmentName}}</span>
+              <span class="box_span_line firstLine_line"></span>
+              <ul class="position_remove">
+                <li class="scondList" v-for="(item, index) in item.UserRoleList" :key="index">
+                  <span class="box_span_line"></span>
+                  <span class="box_span_border">{{item.cRoleName==null?'***':item.cRoleName}}</span>
+                  <span class="box_span_line"></span>
+                  <span  @click="clickItem(item,index,i)" :class="item.show==false?'box_span_border box_show_pointer':'box_span_border box_show_pointer box_show_color'">{{item.cName==''?'***':item.cName}}</span>
+                  <span class="box_span_line"  v-show="item.Building==null?false:true"></span>
+                  <span class="box_span_border" v-show="item.Building==null?false:true">{{(item.Building==null || item.Building=='')?'***':item.Building}}</span>
+                  <div class="click_box_show" v-show="item.show">
+                    <p>电话：{{item.cPhone}}</p>
+                    <p>邮箱：{{item.Email}}</p>
+                    <p>微信：{{item.WeChatNo}}</p>
+                  </div>
+                </li>
+              </ul>
+            </li>
+          </ul>
+    </div>
+</template>
+<script>
+export default {
+    data(){
+        return{}
+    },
+    props: ['peopleList'],
+    methods:{
+      //点击单个人员的时候-显示高亮-只显示一个弹出框
+      clickItem(item,index,list){
+        for(let i=0;i<this.peopleList.length;i++){
+          for(let x=0;x<this.peopleList[i].UserRoleList.length;x++){
+            if( index!=x || list!=i){//不是当前打开的时候
+              if(this.peopleList[i].UserRoleList[x].show!='false'){
+                this.peopleList[i].UserRoleList[x].show=false;
+              }
+            }
+          }
+        }
+        item.show=!item.show;
+        this.$forceUpdate();//强制刷新，解决页面不会重新渲染的问题
+      },
+    }
+}
+</script>
+<style lang="stylus" scoped>
+.company_box {
+        padding: 20px;
+        font-size: 18px;
+        position: relative;
+
+        .company_box ul {
+          position: relative;
+          padding-left: 60px;
+          margin: 0;
+        }
+
+        .scondList:not(:first-child) {
+          border-left: 1px solid #E9E9E9;
+          position: relative;
+          top: -12px;
+          left: 0;
+        }
+
+        .firstList {
+          border-left: 1px solid #979797;
+          position: relative;
+          top: 50px;
+          left: 50px;
+        }
+
+        .firstList_line {
+          border-left: 0;
+        }
+
+        .firstSpan {
+          width: 100px;
+          height: 30px;
+          text-align: center;
+          line-height: 30px;
+          display: inline-block;
+          background-color: #FDA143;
+          position: relative;
+          color: #ffffff;
+          top: -35px;
+          left: -50px;
+        }
+
+        .firstSpanColor {
+          background-color: #4775CA;
+        }
+
+        .box_span_border {
+          border: 1px solid #E9E9E9;
+          display: inline-block;
+          width: 100px;
+          height: 30px;
+          text-align: center;
+          line-height: 30px;
+          margin-top: 20px;
+        }
+        .box_show_pointer{
+          cursor:pointer;
+        }
+        .box_show_color{
+          border 1px solid #FDA143;
+        }
+
+        .box_span_border:hover {
+          background-color: #F5F6FA;
+        }
+
+        .box_span_line {
+          width: 28px;
+          border-bottom: 1px solid #E9E9E9;
+          display: inline-block;
+          height: 30px;
+        }
+
+        .position_remove {
+          position: relative;
+          top: -91px;
+          left: 80px;
+        }
+
+        .box_span_height {
+          height: 100%;
+          width: 0;
+          display: inline-block;
+          border-left: 1px solid #333333;
+        }
+
+        .firstLine_line {
+          position: relative;
+          top: -40px;
+          left: -50px;
+        }
+
+        .click_box_show {
+          z-index: 200;
+          position: absolute;
+          margin-left: 80px;
+          font-size: 16px;
+          padding: 5px 10px;
+          background: rgba(0, 0, 0, 0.4);
+          color: #ffffff;
+          width: 240px;
+          height: 81px;
+          margin-top: 5px;
+        }
+      }
+</style>
+

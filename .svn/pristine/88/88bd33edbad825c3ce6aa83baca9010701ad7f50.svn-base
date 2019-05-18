@@ -1,0 +1,591 @@
+<!-- 风险管理 -->
+<template lang="pug" src="./index.pug"></template>
+<style lang="stylus" src="./index.styl" scoped></style>
+
+<script type='textecmascript-6'>
+import { GetThisMonthCount, GetRiskList, GetRiskInfoByID, GetRiskTotal } from "@/api/api.js";
+import { pubInterface } from "./util/util.js";
+import { mapMutations,mapGetters } from "vuex";
+export default {
+  components: {},
+  created() {
+    this.getRiskIng();  //待接收
+    this.getRiskHandle();  //整改中
+    this.getRiskOver();  //已整改
+    this.getMonthProblem();  //获取本月新增问题数
+    // this.getNoMarkers()  //获取待接收标签
+    // this.getIngMarkers()  //获取整改中标签
+    // this.getOverMarkers()  //获取已整改标签
+    this.getMarkers()
+    this.initModel();  //加载模型
+  },
+  mounted() {
+    // if(this.getIsViewAdded){
+    //   this.setModelMarker();  //设置模型标签
+    // }
+  },
+  data() {
+    return {
+      isNo: false,
+      isIng: false,
+      isOver: false,
+      ingLoading: false,
+      handleLoading: false,
+      overLoading: false,
+      pageSize: 5,
+      ingCurrentPage: 1,
+      ingPageTotal: 0,  //待接收数
+      handleCurrentPage: 1,
+      handlePageTotal: 0,  //整改中数
+      overCurrentPage: 1,
+      overPageTotal: 0,  //已整改数
+      /**[当前折叠面板] */
+      nowCollapse: ["1", "2", "3"],
+      /**[待接收] */
+      dataIng: [],
+      /**[整改中] */
+      dataHandle: [],
+      /**[待接收] */
+      dataOver: [],
+      thisMonthCount: 0,  //本月新增问题数
+      //未整改标签
+      noMarkers: [
+      //   {
+      //   imgTag: require("./img/img2.png"),
+      //   position: null,
+      //   markerState: "",
+      //   tooltip: ""
+      // }
+      ],
+      //整改中标签
+      ingMarkers: [
+      //   {
+      //   imgTag: require("./img/img3.png"),
+      //   position: null,
+      //   markerState: "",
+      //   tooltip: ""
+      // }
+      ],
+      //已整改标签
+      overMarkers: [
+      //   {
+      //   imgTag: require("./img/img4.png"),
+      //   position: null,
+      //   markerState: "",
+      //   tooltip: ""
+      // }
+      ],
+      allAarkers: [],
+      noModelID: [],  //未整改标签ID
+      ingModelID: [],  //整改中标签ID
+      overModelID: [],  //已整改标签ID
+      noModelShow: false,
+      ingModelShow: false,
+      overModelShow: false
+    };
+  },
+  computed: {
+    ...mapGetters([
+      'getIsViewAdded'
+    ]),
+    riskManageHeight(){
+      return {
+        height: (Number(document.documentElement.clientHeight) - 170) + 'px'
+      };
+    }
+  },
+  methods: {
+    /**
+     * @name 加载模型
+     */
+    initModel(){
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          // console.log(res)
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+      // this.isLoadModel = this.getModelBox.isLoadModel
+    },
+    /**
+     * @name 设置模型标签
+     */
+    setModelMarker(){
+      // console.log("=====setModelMarker=====",  this.noMarkers.concat(this.ingMarkers, this.overMarkers))
+      this.modelBox({
+        isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+        isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+        zIndex: 100, //模型层级
+        background: "",
+        ElementIDs: this.allAarkers,  //this.noMarkers.concat(this.ingMarkers, this.overMarkers),  //Object.assign(this.noMarkers, this.ingMarkers, this.overMarkers), // 所有要显示的构件数组，包括半隐藏构件
+        highLightElementIDs: [], // 高亮显示的构件
+        functionNumber: [27] // 需要模型调用的函数编号数组
+      });
+    },
+    /**[发起问题] */
+    onStartQuestion() {
+      this.$router.push({
+        path: "newQuestion",
+        query:{
+          thisMonthCount: this.thisMonthCount,
+          ingPageTotal: this.ingPageTotal,
+          handlePageTotal: this.handlePageTotal,
+          overPageTotal: this.overPageTotal
+        }
+      });
+    },
+    /**
+     * @name 定位视点
+     * @param {Object} row 当前行的数据对象
+     * @param {integer} riskID 风险问题ID
+     */
+    async onHandle(row) {
+      // console.log("视点属性：", row);
+      // alert(row.sort)
+      let data = await this.Request(GetRiskInfoByID({riskID: row.sort}));
+      if(data.StatusCode === 200){
+        if (typeof(data.Detiel[0].listViewpoints[0]) != "undefined") {
+          // console.log("定位视点", data, data.Detiel[0].listViewpoints[0].State)
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [data.Detiel[0].listViewpoints[0].State], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [28] // 需要模型调用的函数编号数组
+          });
+        }else{
+          this.$message({
+            type: "warning",
+            message: "暂无视点",
+            center: "true"
+          });
+        }
+      }else{
+        this.$message({
+          type: "error",
+          message: data.Message,
+          center: "true"
+        });
+      }
+    },
+    /**
+     * @name 根据项目ID和状态获取风险管理问题列表（待接收）
+     * @param {string} projectId 项目ID
+     * @param {string} status 状态 0： 未整改 1： 整改中 2： 已整改
+     * @param {integer} pageIndex 页码
+     * @param {integer} pageSize 页大小
+     */
+    getRiskIng(){
+      this.ingLoading = true;
+      let params = {
+        ProjectID: localStorage.getItem('projectid'),
+        status: 0,
+        pageIndex: this.ingCurrentPage,
+        pageSize: this.pageSize
+      }
+      this.Request(
+        GetRiskList(params),
+      ).then(data => {
+        if (data.StatusCode === 200) {
+          if(data.Detiel.length != 0){
+            this.ingPageTotal = parseInt(data.Count);
+            this.dataIng = [];
+            data.Detiel.forEach(element => {
+              this.dataIng.push({
+                sort: element.ID,
+                title: element.Subject,
+                question_type: element.ProblemType,
+                state: element.Status
+              })
+            });
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+        this.ingLoading = false;
+      });
+    },
+    /**
+     * @name 根据项目ID和状态获取风险管理问题列表（整改中）
+     * @param {string} projectId 项目ID
+     * @param {string} status 状态 0： 未整改 1： 整改中 2： 已整改
+     * @param {integer} pageIndex 页码
+     * @param {integer} pageSize 页大小
+     */
+    getRiskHandle(){
+      this.handleLoading = true;
+      let params = {
+        ProjectID: localStorage.getItem('projectid'),
+        status: 1,
+        pageIndex: this.handleCurrentPage,
+        pageSize: this.pageSize
+      }
+      this.Request(
+        GetRiskList(params),
+      ).then(data => {
+        if (data.StatusCode === 200) {
+          if(data.Detiel.length != 0){
+            this.handlePageTotal = parseInt(data.Count);
+            this.dataHandle = [];
+            data.Detiel.forEach(element => {
+              this.dataHandle.push({
+                sort: element.ID,
+                title: element.Subject,
+                question_type: element.ProblemType,
+                state: element.Status
+              })
+            });
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+        this.handleLoading = false;
+      });
+    },
+    /**
+     * @name 根据项目ID和状态获取风险管理问题列表（已整改）
+     * @param {string} projectId 项目ID
+     * @param {string} status 状态 0： 未整改 1： 整改中 2： 已整改
+     * @param {integer} pageIndex 页码
+     * @param {integer} pageSize 页大小
+     */
+    getRiskOver(){
+      this.overLoading = true;
+      let params = {
+        ProjectID: localStorage.getItem('projectid'),
+        status: 2,
+        pageIndex: this.overCurrentPage,
+        pageSize: this.pageSize
+      }
+      this.Request(
+        GetRiskList(params),
+      ).then(data => {
+        if (data.StatusCode === 200 && typeof("data.StatusCode") != "undefined") {
+          if(data.Detiel.length != 0){
+            this.overPageTotal = parseInt(data.Count);
+            this.dataOver = [];
+            data.Detiel.forEach(element => {
+              this.dataOver.push({
+                sort: element.ID,
+                title: element.Subject,
+                question_type: element.ProblemType,
+                state: element.Status
+              })
+            });
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+        this.overLoading = false;
+      });
+    },
+    /**
+     * 翻页
+     */
+    ingCurrentChange: function(val) {
+      this.ingCurrentPage = val;
+      this.getRiskIng();
+    },
+    handleCurrentChange: function(val){
+      this.handleCurrentPage = val;
+      this.getRiskHandle();
+    },
+    overCurrentChange: function(val){
+      this.overCurrentPage = val;
+      this.getRiskOver();
+    },
+    /**
+     * @name 根据项目ID获取本月新增问题数
+     * @param {string} projectId 项目ID
+     */
+    getMonthProblem(){
+      this.Request(
+        GetThisMonthCount({projectid: localStorage.getItem('projectid')}),
+      ).then(data => {
+        if (data.StatusCode === 200) {
+          this.thisMonthCount = data.Result
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+      });
+    },
+    formatterState(row, column){
+      return row.state + "/3"
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    }),
+    /**
+     * @name 点击打开详情
+     */
+    openDetail(row, event, column){
+      this.$router.push({
+        path: "questionDetail",
+        query: {riskID: row.sort, state: row.state}
+      });
+    },
+    /**
+     * @name 获取标签
+     * @param {string} status 状态 0： 未整改 1： 整改中 2： 已整改
+     */
+    async getMarkers(){
+      this.noMarkers = []
+      this.ingMarkers = []
+      this.overMarkers = []
+      this.noModelID = []
+      this.ingModelID = []
+      this.overModelID= []
+      let noMarker = await pubInterface(this, GetRiskTotal, {projectId: localStorage.getItem("projectid"), status: 0})
+      if(noMarker.StatusCode === 200){
+        if(noMarker.Detiel.length > 0){
+          noMarker.Detiel.forEach(element => {
+              let initiateTime = element.Risk.InitiateTime == "" ? "" : element.Risk.InitiateTime.substring(0, element.Risk.InitiateTime.indexOf("T"))
+              let markerTag = require("moment")(new Date(initiateTime)).format("YYYY-MM") == require("moment")(new Date()).format("YYYY-MM") ? require("./img/img5.png") : require("./img/img2.png")
+              if(element.listViewpoints.length > 0){
+                  this.noModelID.push(element.Risk.ID)
+                  element.listViewpoints.forEach(ele => {
+                      this.noMarkers.push({
+                          imgTag: markerTag,
+                          position: JSON.parse(ele.State).camera.position,
+                          markerID: element.Risk.ID,
+                          // tooltips: "【问题】：" + element.Risk.Problem + " 【发起人】：" + element.Risk.Initiator + " 【发起时间】：" + initiateTime,
+                          tooltips: "<div style='padding: 15px; background: rgba(0,0,0,0.6); text-align: left; color:#fff; max-width: 200px'><p style='margin-bottom: 10px'>"+ element.Risk.Problem +"</p><p>上传人："+ element.Risk.Initiator +"</p><p>上传时间："+ initiateTime +"</p></div>"
+                      })
+                  })
+              }
+          })
+        }else{
+          this.noMarkers = []
+        }
+      }else{
+        this.$message({
+            type: "error",
+            message: noMarker.Message,
+            center: "true"
+        });
+      }
+      let ingMarker = await pubInterface(this, GetRiskTotal, {projectId: localStorage.getItem("projectid"), status: 1})
+      if(ingMarker.StatusCode === 200){
+        if(ingMarker.Detiel.length > 0){
+          ingMarker.Detiel.forEach(element => {
+              let initiateTime = element.Risk.InitiateTime == "" ? "" : element.Risk.InitiateTime.substring(0, element.Risk.InitiateTime.indexOf("T"))
+              let markerTag = require("moment")(new Date(initiateTime)).format("YYYY-MM") == require("moment")(new Date()).format("YYYY-MM") ? require("./img/img5.png") : require("./img/img3.png")
+              if(element.listViewpoints.length > 0){
+                  this.ingModelID.push(element.Risk.ID)
+                  element.listViewpoints.forEach(ele => {
+                      this.ingMarkers.push({
+                          imgTag: markerTag,
+                          position: JSON.parse(ele.State).camera.position,
+                          markerID: element.Risk.ID,
+                          tooltips: "<div style='padding: 15px; background: rgba(0,0,0,0.6); text-align: left; color:#fff; max-width: 200px'><p style='margin-bottom: 10px'>"+ element.Risk.Problem +"</p><p>上传人："+ element.Risk.Initiator +"</p><p>上传时间："+ initiateTime +"</p></div>"
+                      })
+                  })
+              }
+          })
+        }else{
+          this.ingMarkers = []
+        }
+      }else{
+        this.$message({
+            type: "error",
+            message: ingMarker.Message,
+            center: "true"
+        });
+      }
+      let overMarker = await pubInterface(this, GetRiskTotal, {projectId: localStorage.getItem("projectid"), status: 2})
+      if(overMarker.StatusCode === 200){
+        if(overMarker.Detiel.length > 0){
+          overMarker.Detiel.forEach(element => {
+              let initiateTime = element.Risk.InitiateTime == "" ? "" : element.Risk.InitiateTime.substring(0, element.Risk.InitiateTime.indexOf("T"))
+              let markerTag = require("moment")(new Date(initiateTime)).format("YYYY-MM") == require("moment")(new Date()).format("YYYY-MM") ? require("./img/img5.png") : require("./img/img4.png")
+              if(element.listViewpoints.length > 0){
+                  this.overModelID.push(element.Risk.ID)
+                  element.listViewpoints.forEach(ele => {
+                      this.overMarkers.push({
+                          imgTag: markerTag,
+                          position: JSON.parse(ele.State).camera.position,
+                          markerID: element.Risk.ID,
+                          tooltips: "<div style='padding: 15px; background: rgba(0,0,0,0.6); text-align: left; color:#fff; max-width: 200px'><p style='margin-bottom: 10px'>"+ element.Risk.Problem +"</p><p>上传人："+ element.Risk.Initiator +"</p><p>上传时间："+ initiateTime +"</p></div>"
+                      })
+                  })
+              }
+          })
+        }else{
+          this.overMarkers = []
+        }
+        this.allAarkers = this.noMarkers.concat(this.ingMarkers, this.overMarkers)
+        this.setModelMarker()
+      }else{
+        this.$message({
+            type: "error",
+            message: overMarker.Message,
+            center: "true"
+        });
+      }
+      // this.allAarkers = this.noMarkers.concat(this.ingMarkers, this.overMarkers)
+      // this.setModelMarker()
+    },
+    /**
+     * @name 获取整改中标签
+     * @param {string} status 状态 0： 未整改 1： 整改中 2： 已整改
+     */
+    getIngMarkers(){
+      // getRiskMarkers(this, GetRiskTotal, 1)
+    },
+    /**
+     * @name 获取已整改标签
+     * @param {string} status 状态 0： 未整改 1： 整改中 2： 已整改
+     */
+    getOverMarkers(){
+      // getRiskMarkers(this, GetRiskTotal, 2)
+    },
+    /**
+     * @name 显示\隐藏标签操作
+     * @param state 状态
+     */
+    onMarkerShowOrHide(state){
+      switch (state) {
+        case 0:
+          {
+            this.noModelShow = !this.noModelShow;
+            let nofun = this.noModelShow ? 37 : 38
+            this.marksHideOrShow(this.noModelID, nofun)
+          }
+          break;
+        case 1:
+          {
+            this.ingModelShow = !this.ingModelShow;
+            let ingfun = this.ingModelShow ? 37 : 38
+            this.marksHideOrShow(this.ingModelID, ingfun) 
+          }
+          break;
+        case 2:
+          {
+            this.overModelShow = !this.overModelShow;
+            let overfun = this.overModelShow ? 37 : 38
+            this.marksHideOrShow(this.overModelID, overfun)
+          }
+          break;
+        default:
+          break;
+      }
+    },
+    /**
+     * @name 隐藏或显示模型标签
+     * @param {Array} makid 需要显示或隐藏的标签ID集合
+     * @param {Number} fun 函数代号 37隐藏标签 38显示标签
+     */
+    marksHideOrShow(makid, fun){
+      this.modelBox({
+        isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+        isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+        zIndex: 100, //模型层级
+        background: "",
+        ElementIDs: makid, // 需要显示或隐藏的标签ID集合
+        highLightElementIDs: [], // 高亮显示的构件
+        functionNumber: [fun] // 需要模型调用的函数编号数组
+      });
+    }
+  },
+  watch: {
+    // getIsViewAdded: {
+    //   handler(val, oldval) {
+    //     if (val) {
+    //       this.setModelMarker();  //设置模型标签
+    //     }
+    //   }
+    // }
+    // noMarkers: {
+    //   handler(val, oldval) {
+    //     this.setModelMarker();  //设置模型标签
+    //   }
+    // },
+    // ingMarkers: {
+    //   handler(val, oldval) {
+    //     this.setModelMarker();  //设置模型标签
+    //   }
+    // },
+    // overMarkers: {
+    //   handler(val, oldval) {
+    //     this.setModelMarker();  //设置模型标签
+    //   }
+    // }
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-quality
+  width 100%
+  height 100%
+</style>
+<style scoped>
+.model-container {
+  width: 100%;
+  height: 100%;
+  padding: 0 !important;
+  z-index:100;
+}
+</style>
+<style>
+.container-risk .el-pagination{
+  text-align: center;
+  padding: 10px 0;
+}
+.container-risk .el-pager li{
+  text-indent: initial;
+}
+/* 滚动条 begin */
+.container-risk .content{
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+.container-risk .content::-webkit-scrollbar {
+  width: 8px;
+  }
+.container-risk .content::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+  border-radius: 10px;
+  background-color: #F5F5F5;
+} 
+
+/*定义滑块 内阴影+圆角*/
+.container-risk .content::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3);
+  background-color: #555;
+}
+/* 滚动条 end */
+</style>
+
+

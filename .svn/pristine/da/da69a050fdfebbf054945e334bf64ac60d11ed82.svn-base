@@ -1,0 +1,324 @@
+<!-- 角色 role -->
+<template>
+  <div class="role-container">
+    <div class="r-title flex-row">
+      <div class="r-title-text">角色</div>
+      <div class="r-title-btn el-icon-menu" @click="onPopup"></div>
+    </div>
+
+    <div  v-loading="loading">
+      <div class="r-set-warp" v-if="role_s.length>0">
+        <div
+          class="r-set-content"
+          @click="onChoose(index,item)"
+          :class="{'selClick':i==index}"
+          v-for="(item,index) in role_s"
+          :key="item.id"
+        >
+          <div class="r-set flex-between">
+            <div class="r-set-l flex">
+              <div class="r-set-check">
+                <el-radio v-model="radio" :label="item.id" @change='radioChange'>{{item.text}}</el-radio>
+                <!-- <el-checkbox size="18px" v-model="item.check" @change="onCheckB"></el-checkbox> -->
+              </div>
+              <!-- <div class="r-set-name">{{item.text}}</div> -->
+            </div>
+            <div class="r-set-r flex-end">
+              <div class="r-set-reset" @click.stop="onPopup(item)">编辑</div>
+              <div
+                class="r-set-reset"
+                :class="{'hidden':item.disabled}"
+                @click.stop="onDel(item.id)"
+              >删除</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div  class="is-notsaying"  v-else>
+        暂无角色信息
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import {GetRoleList,DeleteRole,GetUserRoleByUID,SaveUserRole} from '@/api/api.js'
+import {infaces} from '../module/interfaces.js'
+import { Promise, resolve } from 'q';
+export default {
+  name: "roles",
+  data() {
+    return {
+      radio:-1,//单选
+      oldRadio:-1,//上一个选项
+      role_s: [],
+      isCreated:true,//是否是第一次加载
+      // isgetRoleLists:false,//是否获取到了角色列表
+      i:null,
+      loading:true,//角色蒙层
+    };
+  },
+  props: {
+    personnel_sel:null,
+    refreshRoleList:null,//父组件通知，刷新子组件角色列表
+  },
+  // created(){
+  //   this._initData()
+  // },
+  watch:{
+    //更新角色列表
+    refreshRoleList(){
+      this.getRoleLists()
+    },
+    //监听人员选中
+    personnel_sel(Uid){
+      console.log(Uid)
+      this.getUserRoleByUID(Uid)
+      
+    },
+    radio(newRadio,oldRadio){
+      console.log(newRadio,oldRadio)
+      this.oldRadio = oldRadio
+    }
+  },
+  created(){
+    this._initData()
+  },
+  methods: {
+    _initData(){
+       this.getRoleLists()
+       
+      console.log('第一个角色',this.personnel_sel)
+      // this.$emit('get_role_sel',fristRole)
+    },
+    /**
+     * 获取角色列表
+     */
+    getRoleLists(){
+        infaces(this,GetRoleList,{ProjectID:localStorage.getItem('projectid')}).then(res=>{
+          console.log(res)
+          this.role_s = res.Detiel 
+          this.loading = false
+        })
+    },
+    /**根据用户ID获取角色 */
+    getUserRoleByUID(Uid){
+      this.Request(GetUserRoleByUID({Uid})).then(res=>{
+          console.log(res)
+          if(res.StatusCode==200){
+            this.radio = res.Detiel[0].ID+''
+            this.reIndex(this.role_s,res.Detiel[0].ID).then(index=>{
+              // 
+              console.log(index)
+              this.onChoose(index,{
+                id:res.Detiel[0].ID+'',
+                text:res.Detiel[0].cRoleName
+              }) 
+            })
+          }else{
+            this.radio = -1
+          }
+        })
+    },
+    /**
+     * 根据角色列表和角色ID返回在列表中的下标
+     */
+    async reIndex(roleList,Uid){
+      console.log(roleList,Uid)
+      return Promise(resolve=>{
+            let thisIndex = -1
+            roleList.forEach((i,index) => {
+              console.log(i,index,Uid)
+              if(i.id==Uid){
+                thisIndex = index
+                resolve(thisIndex)
+                return
+
+              }
+            });
+      })
+    },
+    /**
+     * 分配或修改用户角色
+     */
+    saveUserRole(ids,uID,isCancel){
+      infaces(this,SaveUserRole,{ids,uID,isCancel}).then(res=>{
+          console.log(res)
+          this.$message({
+            type: 'success',
+            message: '成功!'
+          });
+        })
+    },
+    /**
+     * 单选改变事件
+     */
+    radioChange(ids){
+      console.log(ids)
+      this.$confirm('是否确定修改人员角色?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
+          center: true
+        }).then(() => {
+          this.saveUserRole(ids,this.personnel_sel,0)
+          
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消'
+          });
+          this.radio = this.oldRadio
+        });
+    },
+    // 弹窗
+    onPopup(obj) {
+      this.$emit("onPopup", "role",obj);
+    },
+    // 选中
+    onChoose(index,item) {
+      console.log('选中角色',index,item)
+      this.i=index;
+      this.$emit('get_role_sel',item)
+    },
+    // change
+    onCheckB(e) {
+      console.log(e);
+    },
+    // 编辑
+    onReset(e) {
+      console.log(e);
+    },
+    // 删除
+    onDel(id) {
+      console.log('删除角色',id);
+      this.$confirm('是否删除该角色?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          infaces(this,DeleteRole,{roleIds:Number(id)}).then(res=>{
+            console.log(res)
+            this.getRoleLists()
+            this.$message({type: 'success',message:'删除成功',center:'true'})
+          })
+        })
+      
+    }
+  },
+  computed: {}
+};
+</script>
+
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.role-container {
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+  background-color: #fff;
+  position: relative;
+
+  .r-title {
+    width: 100%;
+    height: 50px;
+    background: rgba(67, 80, 137, 1);
+    font-size: 20px;
+    font-family: SourceHanSansCN-Medium;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 1);
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+
+    .r-title-btn {
+      position: absolute;
+      top: 0;
+      right: 21px;
+      line-height: 50px;
+    }
+  }
+
+  .r-set-warp {
+    padding-top: 50px;
+    height: 95.6%;
+    overflow-y: auto;
+  }
+ .is-notsaying{
+    box-sizing border-box
+    width 100%
+    height 100%
+    text-align center
+    font-size 18px
+    color #666
+    display inline-block
+    padding 80px 0 0 20px
+    background-color #f1f1f1  
+  }
+  .r-set-content {
+    padding: 0 20px;
+
+    .r-set {
+      height: 40px;
+      border-bottom: 1px solid #E5E5E5;
+
+      .r-set-l {
+        flex: 1;
+        font-size: 16px;
+        font-family: SourceHanSansCN-Normal;
+        font-weight: 400;
+        color: rgba(51, 51, 51, 1);
+
+        .r-set-l-name {
+          flex: 1;
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+
+        .r-set-check {
+          width: 18px;
+          margin-right: 20px;
+
+          .el-checkbox__input {
+            .is-checked {
+              .el-checkbox__inner {
+                background-color: rgba(253, 161, 67, 1) !important;
+              }
+            }
+          }
+        }
+      }
+
+      .r-set-r {
+        font-size: 18px;
+        font-family: SourceHanSansCN-Medium;
+        font-weight: 500;
+
+        .r-set-reset {
+          color: rgba(69, 128, 255, 1);
+          margin-right: 15px;
+        }
+      }
+    }
+  }
+}
+</style>
+<style>
+.r-set-warp::-webkit-scrollbar{
+  /*滚动条整体样式*/
+  width: 8px !important; /*高宽分别对应横竖滚动条的尺寸*/
+  height: 1px;
+}
+.r-set-warp::-webkit-scrollbar-thumb{
+  /*滚动条里面小方块*/
+  border-radius: 0;
+  width: 5px;
+  -webkit-box-shadow: inset 0 0 3px rgba(49, 49, 49, 0.1) !important;
+  background: #ccc;
+}
+.r-set-warp::-webkit-scrollbar-track{
+  /*滚动条里面轨道*/
+  -webkit-box-shadow: inset 0 0 5px rgba(49, 49, 49, 0.1) !important;
+  border-radius: 0;
+  background: #ededed;
+}
+</style>

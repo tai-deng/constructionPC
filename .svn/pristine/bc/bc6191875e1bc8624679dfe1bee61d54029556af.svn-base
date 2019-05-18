@@ -1,0 +1,124 @@
+<template>
+    <div class='model_history_all'>
+        <div class="model_btn_head">
+           <el-button class='add_btn_head' @click="returnModel()"> 
+               <i class='icon_add'>
+                   <img src="../../../../assets/imgs/model_return.png" alt="">
+               </i>
+               返回
+           </el-button>
+           
+       </div>
+       <div class="model_history_body">
+           <p class="model_history_p">历史版本</p>
+           <div>
+                <ul>
+                    <li class='model_history_box' v-for='list in lists' v-bind:key='list.id'>
+                        <div class='model_list_box'>
+                            <img v-if="list.Thumbnails==''?false:true" :src="list.Thumbnails" alt >
+                            <div class='model_history_box_bottom'>
+                                <p>模型类型：{{list.Specialty}}</p>
+                                <p>更新时间：{{list.dUpdateTime==null?'':list.dUpdateTime.split('T')[0]}}</p>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+           </div>
+           
+       </div>
+
+    </div>
+</template>
+<script>
+import {GetHistoryModelList} from '@/api/api.js'
+export default {
+    data(){
+        return{
+            lists:[],
+        }
+    },
+    created(){
+        this.getAll();
+    },
+    methods:{
+        returnModel:function(){
+            this.$router.push({path: './allModel'})
+        },
+
+        getAll(){
+            var post={BuildingID:this.$route.query.BuildingID,Category:this.$route.query.Category,projectId:localStorage.getItem("projectid") };
+            this.Request(GetHistoryModelList(post)).then(res => {
+                if(res.StatusCode=='200'){
+                    this.lists=res.Detiel
+                }else{
+                    this.$message({type: "error",message: res.Message,center: "true"});
+                }
+            })
+        }
+
+        
+    }
+}
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.model_history_all
+    padding 10px 20px
+    background-color #F5F6FA
+    width 100%
+    height 100%
+    .model_btn_head
+        padding-top 20px
+        .add_btn_head
+            color #ffffff
+            background-color #4775CA
+            border-radius  5px
+            height 48px
+            width 184px
+            line-height 25px
+            font-size 20px
+           
+            .icon_add
+                margin-right 30px
+                display inline-block
+                width 25px 
+                height 25px
+    .model_history_body
+        font-size 22px
+        padding-top 30px
+        .model_history_p
+            margin-bottom 20px
+        .model_history_box
+            width 330px
+            background-color #DBDBDB
+            position relative
+            display inline-block
+            margin-right 30px
+            height 200px
+            .model_history_box_bottom
+                width 100%
+                height 60px
+                position absolute
+                bottom 0
+                left 0
+                padding-left 20px
+                background rgba(121,121,121,0.5)
+                box-sizing border-box
+                color #ffffff
+                font-size 16px
+                line-height 30px  
+                display none 
+            .model_list_box
+                height 100%
+                width 100%
+            .model_list_box img     
+                height 100%
+                width 100%
+        .model_history_box:hover
+            .model_history_box_bottom
+                display block
+
+
+
+
+</style>
+

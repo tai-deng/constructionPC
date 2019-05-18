@@ -1,0 +1,227 @@
+<!-- 物资需求-按进度计划 -->
+<template lang="html" src="./index.html"></template>
+<style lang="stylus" src="./index.styl" scoped></style>
+
+<script type='textecmascript-6'>
+import Timeline from "@/common/timeline/index";
+import { SaveRangeInfo,GetBuilding,QueryPurchaseInfo,SyncPurchaseInfoElement } from "../../../../../../api/api.js";
+import {initPurchase,getBuildList} from '../../../util/util.js'
+
+export default {
+  components: {
+    Timeline
+  },
+  data() {
+    return {
+      totalNum: 0,
+      paging: { page: 1, rows: 5 }, // [采购列表分页]
+      userID:localStorage.getItem("userId"), //用户ID
+      projectid:localStorage.getItem("projectid"),
+      BuildNameList:[],
+      /**[采购审核] */
+      listFlow: [
+        {
+          bottom: [{ text: "发起" }],
+          icoClassName: "hideIco"
+        },
+        {
+          bottom: [{ text: "审核" }]
+        },
+        {
+          bottom: [{ text: "审批" }]
+        },
+        {
+          bottom: [{ text: "采购" }]
+        }
+      ],
+      /**[时间快捷选项] */
+      pickerOptions2: {
+        shortcuts: [
+          {
+            text: "最近一周",
+            onClick(picker) {
+              const end = new Date();
+              const start = new Date();
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+              picker.$emit("pick", [start, end]);
+            }
+          },
+          {
+            text: "最近一个月",
+            onClick(picker) {
+              const end = new Date();
+              const start = new Date();
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+              picker.$emit("pick", [start, end]);
+            }
+          },
+          {
+            text: "最近三个月",
+            onClick(picker) {
+              const end = new Date();
+              const start = new Date();
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+              picker.$emit("pick", [start, end]);
+            }
+          }
+        ]
+      },
+      /**[表单] */
+      filterForm: {
+        buildname: "", // 楼栋
+        starttime: "", // 开始时间
+        endtime: "", // 结束时间
+      },
+      form:{
+        check:'0',
+        DemandTime:'',
+        Type: "1",
+      },
+      /**[表格数据]
+       *  @mergeTwoRow  {合并第二列}
+       */
+      listItems: []
+    };
+  },
+  props:['listtype'],
+  created(){
+    // 楼栋下拉
+    getBuildList(this, GetBuilding);
+  },
+  methods: {
+    // 同步模型
+    async onSyncMode(){
+      if(!this.isJudge())return
+      this.load();
+      let res = await this.Request(SyncPurchaseInfoElement({
+        buildname:this.filterForm.buildname,
+        starttime:this.filterForm.starttime,
+        endtime:this.filterForm.endtime,
+      }))
+      this.$toast.clear();
+      if(res.StatusCode === 200){
+        // 高亮ID
+        console.log(res.Detiel)
+      }else {
+        this.$message({
+          type: 'error',
+          message: res.Message,
+          center: 'true'
+        })
+      }
+    },
+    /**关闭 物资需求 */
+    closeMaterial() {},
+    onSubmit() {
+      if(!this.isJudge(1))return
+      initPurchase(this,SaveRangeInfo);
+    },
+    // 分页
+    curChange(d) {
+      this.paging.page = d;
+      this.getData();
+    },
+    // 获取采购信息
+    getData(){
+      let par=Object.assign(this.filterForm, {
+        projectid:this.projectid,
+        listtype:this.listtype,
+        querytype:'1',
+        page: this.paging.page, // 第几也页
+        rows: this.paging.rows // 每页行数
+      })
+      QueryPurchaseInfo(par).then(res=>{
+        if(res.StatusCode==200){
+          this.listItems=res.Detiel.map(item=>{
+            return Object.assign(item,{
+              ThisPurchaseNum:'',
+              Floor:this.filterForm.buildname,
+              ProjectID:this.projectid,
+              isSel:false,
+            })
+          })
+          console.log(this.listItems)
+        }
+      })
+    },
+    // 流程数据
+    getFlowList(d){
+      this.listFlow=d;
+    },
+    /**[表格合并方法] */
+    arraySpanMethod({ row, column, rowIndex, columnIndex }) {
+    },
+    isJudge(flag){
+      if(this.filterForm.buildname==''){
+        this.$message({
+          type: 'warning',
+          message: '请选择楼栋',
+          center: 'true'
+        })
+        return false
+      }
+      if(this.filterForm.starttime==''){
+        this.$message({
+          type: 'warning',
+          message: '请选择开始时间',
+          center: 'true'
+        })
+        return false
+      }
+      if(this.filterForm.endtime==''){
+        this.$message({
+          type: 'warning',
+          message: '请选择结束时间',
+          center: 'true'
+        })
+        return false
+      }
+      if(flag==1){
+        if(this.listFlow.length>4){
+          this.$message({
+            type: 'warning',
+            message: '该流程为4个人',
+            center: 'true'
+          })
+          return false
+        }
+        if(this.form.DemandTime==''){
+          this.$message({
+            type: 'warning',
+            message: '请选择需求时间',
+            center: 'true'
+          })
+          return false
+        }
+      }
+      return true;
+    }
+  },
+  watch:{
+    filterForm:{
+      handler(val,oldval){
+        if(this.filterForm.buildname==''){
+          this.$message({
+             type: 'warning', message: "请选择楼栋", center: 'true'
+          })
+          return
+        }
+        if(this.filterForm.starttime==''){
+          this.$message({
+             type: 'warning', message: "请选择开始时间", center: 'true'
+          })
+          return
+        }
+        if(this.filterForm.endtime==''){
+          this.$message({
+             type: 'warning', message: "请选择结束时间", center: 'true'
+          })
+          return
+        }
+        this.getData();
+      },
+      deep:true
+    }
+  }
+};
+</script>

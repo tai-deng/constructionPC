@@ -1,0 +1,618 @@
+
+<!-- 进度规划-图 -->
+<template>
+  <div class="gantt-container">
+    <div class="gantt" ref="gantta"></div>
+  </div>
+</template>
+
+<script>
+import "dhtmlx-gantt";
+import "dhtmlx-gantt/codebase/locale/locale_cn.js";
+import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_marker.js";
+import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_multiselect.js";
+import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_smart_rendering.js";
+import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_undo.js"; // 撤销
+
+// import "dhtmlx-gantt/codebase/ext/dhtmlxgantt_quick_info.js"
+import config from "../../base/zoom.js";
+import { mapMutations } from "vuex";
+import { getDateFormatting, isPower } from "../../base/util.js";
+import {
+  delete_JDGH_push,
+  EditModelSchedulePlan,
+  AddModelSchedulePlan,
+  TaskAssociation,
+  DelTaskAssociation
+} from "../../../../../api/api.js";
+
+export default {
+  name: "gantt",
+  data() {
+    return {
+      // 选中的id
+      delTaskId: [],
+      projectid: localStorage.getItem("projectid"),
+      ids: [],
+      selTansk: 0
+    };
+  },
+  props: {
+    tasks: {
+      type: Object,
+      default() {
+        return { data: [], links: [] };
+      }
+    }
+    // deleteItem: { type: Boolean, default: false }
+  },
+  methods: {
+    $_initGanttEvents: function() {
+      if (gantt.$_eventsInitialized) return;
+
+      // gantt.attachEvent("onBeforeLightbox", function(id, el) {});
+
+      gantt.attachEvent("onAfterSort", function(field, direction, parent) {
+        gantt.render();
+        console.log(field, direction, parent);
+      });
+
+      // 点击任务
+      gantt.attachEvent("onTaskSelected", id => {
+        this.ids = [];
+        this.setDelBnt(1);
+      });
+
+      // 添加进度后
+      gantt.attachEvent("onBeforeTaskAdd", async (id, task) => {
+        let taskStart = getDateFormatting(task.start_date);
+        let taskEnd = getDateFormatting(task.end_date);
+        let res = await this.Request(
+          AddModelSchedulePlan({
+            ProjectID: this.projectid,
+            TaskId: task.parent,
+            TaskName: task.text,
+            BaseStartTime: taskStart,
+            BaseFinishTime: taskEnd,
+            Duration: task.duration
+          })
+        );
+        if (res.StatusCode == 200) {
+          this.setDelBnt(2);
+          this.$message({
+            type: "success",
+            message: "修改保存成功！",
+            center: "true"
+          });
+        } else {
+          this.setDelBnt(3);
+          this.$message({
+            type: "success",
+            message: res.Message,
+            center: "true"
+          });
+        }
+      });
+
+      // 进度更新后
+      gantt.attachEvent("onAfterTaskUpdate", async (id, task) => {
+        let taskStart = getDateFormatting(task.start_date);
+        let taskEnd = getDateFormatting(task.end_date);
+        let res = await this.Request(
+          EditModelSchedulePlan({
+            TaskId: id,
+            TaskName: task.text,
+            BaseStartTime: taskStart,
+            BaseFinishTime: taskEnd,
+            Duration: task.duration
+          })
+        );
+
+        if (res.StatusCode == 200) {
+          this.setDelBnt(4);
+          this.$message({
+            type: "success",
+            message: "修改保存成功！",
+            center: "true"
+          });
+        } else {
+          this.setDelBnt(5);
+          this.$message({
+            type: "success",
+            message: res.Message,
+            center: "true"
+          });
+        }
+      });
+
+      gantt.attachEvent("onBeforeTaskDelete", (id, item) => {
+        if (typeof this.deleteItem !== "boolean") {
+          // let a = gantt.getSelectedTasks();
+          this.ids = this.getTaskIds(id, this.ids);
+        }
+        return true;
+      });
+
+      gantt.attachEvent("onAfterTaskDelete", task_id => {
+        delete_JDGH_push({ ids: this.ids.join(",") }).then(res => {
+          this.setDelBnt(6);
+          if (res.StatusCode == 200) {
+            this.$message({
+              type: "success",
+              message: res.Message,
+              center: "true"
+            });
+            if (gantt.getSelectedTasks().length == 0) {
+              this.$emit("delBtn", false);
+            } else {
+              this.$message({
+                type: "error",
+                message: res.Message,
+                center: "true"
+              });
+            }
+          }
+        });
+      });
+
+      // 添加链接线1
+      gantt.attachEvent("onBeforeLinkAdd", (id, link) => {
+        let target = link.target;
+        let item = gantt.getTask(target);
+        this.setDelBnt(7);
+        if (item.parent == 0) {
+          return true;
+        } else {
+          this.$message({
+            title: "不能添加该前置构件！",
+            type: "warning",
+            center: "true"
+          });
+          return false;
+        }
+      });
+
+      // 添加链接线2
+      gantt.attachEvent("onAfterLinkAdd", (id, link) => {
+        let target = link.target;
+        let item = gantt.getTask(target);
+
+        TaskAssociation({
+          TaskId: link.source,
+          AssociatedTaskId: link.target
+        }).then(res => {
+          this.setDelBnt(8);
+          if (res.StatusCode == 200) {
+            this.$message({
+              message: res.Message,
+              type: "success",
+              center: "true"
+            });
+          } else {
+            this.$message({
+              message: res.Message,
+              type: "error",
+              center: "true"
+            });
+          }
+        });
+      });
+
+      // 更新连接线
+      gantt.attachEvent("onBeforeLinkUpdate", (id, link) => {
+        console.log(id, link, "更新");
+        // this.$emit("link-updated", id, "updated", link);
+      });
+
+      // 删除连接线 onBeforeLinkDelete
+      gantt.attachEvent("onBeforeLinkDelete", (id, link) => {
+        let target = link.target;
+        let item = gantt.getTask(target);
+        DelTaskAssociation({
+          AssociatedTaskId: link.target
+        }).then(res => {
+          this.setDelBnt(9);
+          if (res.StatusCode == 200) {
+            this.$message({
+              type: "success",
+              message: res.Message,
+              center: "true"
+            });
+          } else {
+            this.$message({
+              type: "error",
+              message: res.Message,
+              center: "true"
+            });
+          }
+        });
+      });
+
+      // 在调用redo（）方法之前触发
+      gantt.attachEvent("onBeforeRedo", action => {
+        // 取消更新或者触发更新  boolean
+        // type - （字符串）命令的类型：“add / remove / update”
+        // entity - （字符串）已更改的对象的类型：“task”或“link”
+        // value - （对象）已更改的任务/链接对象
+        // oldValue - （对象）更改前的任务/链接对象
+        console.log(action);
+        // return true;
+      });
+
+      // 数据加载后
+      gantt.attachEvent("onLoadEnd", v => {
+        console.log(v);
+      });
+
+      // 在将任务拖动到其他位置之前触发
+      // gantt.attachEvent("onBeforeRowDragMove", function(id, parent, tindex) {
+      //   console.log(id,parent,tindex)
+      //   return true/false;
+      // });
+
+      // 如果同时指定了start_date和end_date选项，并且您创建了一个超出范围的任务，则该任务将不会显示在图表中。
+      gantt.attachEvent("onLightboxSave", (id, task, is_new) => {
+        // let taskStart = getDateFormatting(task.start_date);
+        // let taskEnd = getDateFormatting(task.end_date);
+
+        // if (!isPower(this)) {
+        //   return false;
+        // } else {
+        return true;
+        // }
+      });
+
+      // 更改任务计划时间和完成进度之前触发
+      gantt.attachEvent("onBeforeTaskChanged", function(id, mode, task) {
+        // mode (progress/resize)
+        console.log(task.start_date, task.end_date);
+        return true;
+      });
+
+      gantt.$_eventsInitialized = true;
+    },
+
+    // 日期显示形式
+    onDateShape(c) {
+      config.init(c);
+      this.repaint();
+    },
+
+    // 重绘
+    repaint() {
+      gantt.clearAll();
+      gantt.parse(this.$props.tasks);
+      gantt.render();
+      gantt.setSizes();
+      // this.upProcedureWp();
+    },
+
+    // 获取所有的ID
+    upProcedureWp() {
+      this.procedureWpArr = [];
+      this.$props.tasks.data.forEach(d => {
+        if (d.procedureWp) {
+          this.procedureWpArr.push(d.id);
+        }
+      });
+      console.log(this.procedureWpArr);
+    },
+
+    // 添加一项新任务
+    onAddScheme(task) {
+      console.log(task);
+      gantt.addTask(task);
+    },
+
+    // 删除指定任务节点
+    onDeleteItem() {
+      let _this = this;
+      if (gantt.getSelectedTasks().length == 0) {
+        _this.gantState({ deleteItem: false });
+        return;
+      }
+      gantt.confirm({
+        title: gantt.locale.labels.confirm_deleting_title,
+        text: gantt.locale.labels.confirm_deleting,
+        callback: function(result) {
+          _this.gantState({ deleteItem: false });
+          if (result) {
+            gantt.batchUpdate(function() {
+              gantt.eachSelectedTask(function(task_id) {
+                _this.ids = _this.getTaskIds(task_id, _this.ids);
+                _this.ids.forEach(el => {
+                  if (gantt.isTaskExists(el)) {
+                    gantt.deleteTask(el);
+                  }
+                });
+              });
+            });
+          }
+        }
+      });
+    },
+
+    // 导入文件数据
+    onInputFile(task) {
+      console.log("导入文件数据", task);
+    },
+
+    closeTask(id) {
+      // 关闭一个任务
+      gantt.close(id);
+    },
+
+    userLabelById(id) {
+      for (var i = 0; i < this.tasks.length; i++) {
+        if (this.tasks[i].data.id == id) {
+          return this.tasks[i].data.text;
+        }
+      }
+      return "";
+    },
+
+    getTaskIds(id, arr) {
+      let child = gantt.getChildren(id);
+      arr.push(id);
+      if (child.length > 0) {
+        for (let i = 0; i < child.length; i++) {
+          this.getTaskIds(child[i], arr);
+        }
+      }
+      return arr;
+    },
+
+    setDelBnt(f) {
+      if (gantt.getSelectedTasks().length > 0) {
+        this.gantState({ isDelBtn: true });
+      } else {
+        this.gantState({ isDelBtn: false });
+      }
+    },
+
+    ...mapMutations({
+      gantState: "GET_GANTT_STATE"
+    })
+  },
+  computed: {
+    // 删除动作
+    deleteItem() {
+      return this.$store.getters.getGanttState.deleteItem;
+    },
+    // 新增
+    addScheme() {
+      return this.$store.getters.getGanttState.addScheme;
+    },
+    // 导入文件数据
+    inputFile() {
+      return this.$store.getters.getGanttState.inputFile;
+    },
+    // 日期显示形式
+    dateShape() {
+      return this.$store.getters.getGanttState.dateShape;
+    }
+  },
+  watch: {
+    tasks(c, o) {
+      this.repaint();
+    },
+    // 日期显示形式
+    dateShape(c, o) {
+      if (c) this.onDateShape(c);
+    },
+    // 删除动作
+    deleteItem(c, o) {
+      if (c) {
+        this.onDeleteItem();
+      }
+    },
+    // 新增
+    addScheme(c, o) {
+      if (c) {
+        this.onAddScheme(c);
+      }
+    }
+  },
+  mounted() {
+    this.$_initGanttEvents();
+    if (!isPower(this)) {
+      gantt.config.readonly = true;
+    }
+    config.init(3);
+    config.layout();
+    gantt.init(this.$refs.gantta);
+    gantt.parse(this.$props.tasks);
+  },
+  beforeDestroy() {
+    gantt.clearAll();
+    this.gantState({ isDelBtn: false });
+  }
+};
+
+// 自定义按钮事件
+window.clickGridButton = function(action) {
+  if (!window.isPower()) return;
+  let id = gantt.getSelectedId();
+  if (typeof id == "object") {
+    let t = setTimeout(() => {
+      window.clickGridButton(action);
+      clearTimeout(t);
+    }, 50);
+    return;
+  }
+  let parentId = gantt.getParent(id);
+  switch (action) {
+    case 1: // 添加
+      // gantt.showLightbox(id);
+      gantt.createTask(null, id);
+      break;
+    case 2: // 排序 up;
+      gantt.sort("start_date", true, parentId);
+      break;
+    case 3: // 排序 down
+      gantt.sort("start_date", false, parentId);
+      break;
+  }
+};
+</script>
+
+<style scope>
+/* 加载gantt 样式 */
+@import "~dhtmlx-gantt/codebase/dhtmlxgantt.css";
+@import url("https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css?v=6.1.5");
+/* 右边标题背景/颜色 */
+.gantt-container .gantt {
+  /* padding: 0 40px; */
+  background-color: #f0f2f5;
+  height: 100%;
+}
+.gantt-container .weekend {
+  background: #f4f7f4;
+}
+.gantt-container .day_scale {
+  background-color: rgba(108, 123, 188, 1);
+}
+.gantt-container .week_scale {
+  background-color: #666666;
+}
+.gantt-container .month_scale {
+  background-color: #333333;
+}
+.gantt-container .grid_header_class {
+  color: red;
+  background-color: #f1f1f1;
+}
+.gantt-container .gantt_task .gantt_task_scale .gantt_scale_cell {
+  font-size: 18px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+}
+/* 左边标题背景/颜色 */
+.gantt-container .gantt_grid_scale {
+  background-color: rgba(67, 80, 137, 1);
+}
+.gantt-container .gantt_grid_scale .gantt_grid_head_cell {
+  font-size: 18px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+}
+/* 操作图标 */
+.gantt-container .fa {
+  cursor: pointer;
+  font-size: 14px;
+  text-align: center;
+  opacity: 0.4;
+  padding: 5px;
+}
+
+.gantt-container .fa:hover {
+  opacity: 1;
+}
+
+.gantt-container .fa-pencil {
+  color: #ffa011;
+}
+
+.gantt-container .fa-plus {
+  color: #328ea0;
+}
+
+.gantt-container .fa-times {
+  color: red;
+}
+.gantt-container .fa img {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+/* 灯箱按钮 */
+.gantt-container .gantt_btn_set div {
+  display: flex;
+  align-items: center;
+  justify-items: center;
+  margin: 0;
+}
+.gantt-container .gantt_delete_btn,
+.gantt-container .gantt_cancel_btn,
+.gantt-container .gantt_save_btn {
+  padding-right: 8px;
+}
+.gantt-container .gantt_section_time {
+  line-height: 2em;
+}
+.gantt-container .gantt_duration {
+  line-height: 2em;
+}
+.gantt-container .gantt_section_time .gantt_time_selects select,
+.gantt-container .gantt_section_time .gantt_duration {
+  height: 2em !important;
+}
+/* 自定义按钮 */
+.gantt-container .gantt_last_cell > .gantt_tree_content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+.gantt-container .bnt-warp img {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+.gantt-container .bnt-warp {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-items: center;
+}
+/* 测试背景色 */
+.gantt-container .bgcolor {
+  background-color: rgba(244, 246, 255, 1) !important;
+}
+/* checkbox 样式 */
+.gantt-container /* .gantt_cell > .gantt_tree_content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gantt-container .gantt_tree_content > input[type="checkbox"] {
+  width: 30px;
+  height: 30px;
+  background: rgba(255, 255, 255, 1);
+  border-radius: 2px;
+  border: 2px solid rgba(210, 210, 210, 1);
+} */
+/*隐藏掉我们模型的checkbox*/
+.gantt-container .my_protocol .input_agreement_protocol {
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  display: none;
+}
+/*未选中时*/
+.gantt-container .my_protocol .input_agreement_protocol + span {
+  width: 30px;
+  height: 15px;
+  display: inline-block;
+  background: url("../../../../../assets/imgs/icon_checkbox.png") no-repeat;
+  background-position-x: 0px;
+  background-position-y: -25px;
+  position: relative;
+  top: 3px;
+}
+/*选中checkbox时,修改背景图片的位置*/
+.gantt-container .my_protocol .input_agreement_protocol:checked + span {
+  background-position: 0 0px;
+  top: 3px;
+}
+
+.gantt-container .flex-right {
+  /* text-align: right !important; */
+  padding-left: 30px !important;
+}
+.gantt-container .bgc {
+  background-color: rgba(244, 246, 255, 1) !important;
+}
+</style>

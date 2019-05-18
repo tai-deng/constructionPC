@@ -1,0 +1,517 @@
+
+<template>
+  <div class='user-management-container' >
+    <div class="content-top">
+      <!-- 新增按钮 -->
+      <button @click="addFunc()"><img src="@/assets/imgs/add_model.png" /><span>新增</span></button>
+      <!-- 搜索按钮 -->
+      <!-- <div class='search-container'>
+        <input
+          type="text"
+          value="名称"
+        />
+       <i class="el-icon-search"></i>
+      </div> -->
+    </div>
+    <!-- 内容 -->
+    <div class="content-bottom">
+      <datamodel :loader="loading" :dataList="dataList"  :dataNameList="titleName" @isChange="isChange" @isDel="GetDelDictFunc"></datamodel>
+    </div>
+    <!-- 模态框 -->
+    <div
+      class="layer-container"
+      v-show="model_show"
+    >
+      <div class="contentBox">
+        <div class="model_title">
+        {{formStatus.ids?'修改':'新增'}}
+          <i> <img
+              class="model_show_time_img"
+              src="../../../../assets/imgs/close_model.png"
+              alt="关闭模态框"
+              @click="closeUploadModel()"
+            > </i>
+        </div>
+        <div class="model_content">
+          <ul>
+            <li>
+              <span><b>*</b>{{titleName[1]}}</span>
+              <input
+                v-model.trim="formStatus.itemName"
+                type="text"
+                name="itemName"
+
+              />
+            </li>
+            <li>
+              <span>{{titleName[2]}}</span>
+              <textarea
+                v-model.trim="formStatus.desc"
+                type="text"
+                name="desc"
+              ></textarea>
+            </li>
+          </ul>
+
+        </div>
+        <div class="model_bottom">
+          <span
+            class="cancelBtn"
+            @click="model_show = false"
+          >取消</span>
+          <span
+            class="commitBtn"
+            @click="addDataCommit()"
+          >提交</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import datamodel from "./subcomponents/dataModel";
+import { GetDictInfoList,AddDict,EditDict,DelDict} from '@/api/api.js'
+
+export default {
+  data() {
+    return {
+      model_show: false,
+
+      formStatus: {
+        itemName: "",
+        limitTime: "",
+        time: "",
+        desc: ''
+      },
+      dataList: [],
+      titleName: ["序号","类型名称","描述", "操作"],
+      type: '工程类型',
+      loading: true,
+      ProjectID: localStorage.getItem('projectid')
+
+    };
+  },
+  props: {
+    typeCode: {
+      type: String,
+      // default: '工程类型'
+    },
+    activeName: {
+      type: String,
+    }
+  },
+  components: {
+    datamodel
+  },
+  created(){
+    this.DictInfoList()
+  },
+  methods: {
+    //新增按钮
+    addFunc() {
+      if(sessionStorage.getItem('menuType') !== "2"){
+        this.$message({
+        type: "warning",
+        message: "您没有权限操作",
+        center: "true"
+        });
+        return;
+      }
+      this.model_show = true;
+      this.formStatus = {}
+    },
+    // 取消模态框函数
+    closeUploadModel() {
+      this.model_show = false;
+    },
+    //添加数据函数
+    addDataCommit(data) {
+      data = this.formStatus;
+      console.log(data);
+      if (!this.formStatus.itemName) {
+        this.$toast({
+          duration: 500,
+          message: "请输入类型"
+        });
+        return;
+      }
+      this.model_show = false;
+      console.log(this.formStatus.ids);
+      if(!this.formStatus.ids){
+        // 新增接口
+          this.GetAddDict(data)
+         setTimeout(()=>{
+           this.DictInfoList()
+         }, 1000)
+      }else {
+        // 修改接口
+        this.GetEditDict(data)
+         setTimeout(()=>{
+           this.DictInfoList()
+         }, 1000)
+      }
+     
+      
+    },
+    //删除确认
+    GetDelDictFunc(id){
+      if(sessionStorage.getItem('menuType') !== "2"){
+        this.$message({
+        type: "warning",
+        message: "您没有权限操作",
+        center: "true"
+        });
+        return;
+      }
+      this.$confirm('此操作将永久删除数据, 是否继续?', '提示').then(()=>{
+        this.GetDelDict(id)
+      }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });          
+        });
+    },
+    //修改参数传递函数
+    isChange(e){
+      if(sessionStorage.getItem('menuType') !== "2"){
+        this.$message({
+        type: "warning",
+        message: "您没有权限操作",
+        center: "true"
+        });
+        return;
+      }
+      this.model_show = e.isTrue
+      this.formStatus.itemName = e.item_info.itemName
+      this.formStatus.desc = e.item_info.desc
+      this.formStatus.ids = e.item_info.ID
+      console.log(e)
+    },
+      /**
+     * api
+     */
+    // 获取数据字典列表接口
+     async DictInfoList(){
+       console.log(this.typeCode)
+       if(this.typeCode !== this.activeName){
+        this.loading = false
+        return false
+       }
+       console.log(this.ProjectID)
+      let dicInfo = await this.Request(GetDictInfoList({ProjectID:this.ProjectID,DIcode:this.typeCode}))
+      console.log(dicInfo)
+      if(dicInfo.StatusCode === 200){
+        this.dataList = []
+        dicInfo.Detiel.forEach((item)=>{
+          let each = JSON.parse(JSON.stringify(item).replace('cDIName', 'itemName').replace('cRemarks', 'desc'))
+          this.dataList.push(each)
+        })
+        this.dataList= this.dataList.reverse()
+        this.loading = false
+        console.log(this.dataList)
+      }else{
+        // this.$message({
+        //   type: 'info',
+        //   message: dicInfo.Message,
+        //   center: 'true'
+        // })
+        this.dataList = []
+        this.loading = false
+      }
+      
+    },
+      //新增
+    async GetAddDict(param){
+      if(param){
+        let data = {
+          ProjectID: this.ProjectID, //项目id
+          DICode:this.typeCode, // 类型名称
+          DIName: param.itemName,  //工程类型名称
+          Remarks: param.desc  // 描述
+          }
+          console.log(data)
+        let res = await this.Request(AddDict(data))
+        console.log(res)
+        if(res.StatusCode === 200){
+          this.$message({
+            type: 'suceess',
+            message: res.Message,
+            center: 'true'
+          })
+        }else {
+          this.$message({
+            type: 'error',
+            message: res.Message,
+            center: 'true'
+          })
+        }
+      }
+     
+    },
+    //修改
+    async GetEditDict(param){
+        if(param){
+        let data = {
+          ProjectID: this.ProjectID,  // 项目id
+          DICode:this.typeCode, // 类型名称
+          DIName: param.itemName,  //工程类型名称
+          Remarks: param.desc,  // 描述
+          ids: param.ids
+          }
+          console.log(data)
+        let res = await this.Request(EditDict(data))
+        console.log('修改')
+        console.log(res)
+        if(res.StatusCode === 200){
+          this.$message({
+            type: 'suceess',
+            message: res.Message,
+            center: 'true'
+          })
+        }else {
+          this.$message({
+            type: 'error',
+            message: res.Message,
+            center: 'true'
+          })
+        }
+      }
+    },
+    //删除
+    async GetDelDict(id){
+      console.log('删除')
+      console.log(id)
+      if(id){
+        let res = await this.Request(DelDict({ids:id}))
+        console.log(res)
+         if(res.StatusCode === 200){
+          this.$message({
+            type: 'suceess',
+            message: res.Message,
+            center: 'true'
+          })
+          this.DictInfoList()
+        }else {
+          this.$message({
+            type: 'error',
+            message: res.Message,
+            center: 'true'
+          })
+        }
+      }
+      
+    }
+   
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+
+@import '../../../../assets/stylus/variable.styl';
+
+.user-management-container {
+  width: 100%;
+  height: 100%;
+  background-color: #eff3ff;
+  padding: 0 0 100px 20px;
+
+  .content-top {
+    padding-top: 20px;
+    padding-right: 20px;
+    overflow: hidden;
+    zoom: 1;
+
+    button {
+      width: 120px;
+      height: 40px;
+      color: #fff;
+      font-size: 16px;
+      background-color: #4775CA;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+
+      img {
+        float: left;
+        width: 18px;
+        height: 18px;
+        margin-left: 20px;
+        vertical-align: middle;
+        background-size: cover;
+      }
+
+      span {
+        margin-right: 30px;
+      }
+    }
+
+    .search-container {
+      position: relative;
+      float: right;
+      height: 100%;
+
+      input {
+        width: 340px;
+        height: 40px;
+        padding-left: 60px;
+        color: #999999;
+        font-size: 16px;
+        box-shadow: 0px 1px 7px 0px rgba(216, 223, 238, 0.75);
+        border-radius: 20px;
+      }
+
+      i {
+        position: absolute;
+        top: 10px;
+        left: 20px;
+        font-size $font-size-18;
+        color: #999999;
+      }
+    }
+  }
+
+  .content-top:after {
+    content: '';
+    height: 0;
+    inline-height: 0;
+    display: block;
+    visibility: hidden;
+    clear: both;
+  }
+
+  .content-bottom {
+    height: 78%;
+    padding-bottom: 100px;
+    background-color #fff;
+    box-shadow:0px 1px 7px 0px rgba(216,223,238,0.5);
+  }
+
+  .layer-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 2;
+
+    .contentBox {
+      position: relative;
+      margin: 270px 0 0 460px;
+      width: 1000px;
+      height: 540px;
+      background: rgba(255,255,255, 1);
+      .model_title {
+        height: 30px;
+        background: -webkit-gradient(linear, left center, right center, from(#548AFF), to(#6956FF));
+        text-align: center;
+        color: #fff;
+        font-size: 18px;
+        padding-top: 10px;
+
+        .model_show_time_img {
+          float: right;
+          display: inline-block;
+          width: 18px;
+          height: 18px;
+          margin-right: 25px;
+          margin-top: 5px;
+          cursor: pointer;
+        }
+      }
+
+      .model_content {
+        margin-top: 40px;
+
+        ul {
+          li {
+            margin-bottom: 20px;
+
+            span {
+              display: inline-block;
+              height: 40px;
+              line-height: 40px;
+              text-align: right;
+              font-size: $font-size-18;
+              padding: 0 10px;
+              b {
+              position: relative;
+              top: -0.06rem;
+              left: 0;
+              color: #FC605C;
+              font-size: $font-size-10;
+            }
+            }
+
+            span:first-child {
+              width: 230px;
+            }
+
+            input {
+              display: inline-block;
+              height: 40px;
+              width: 600px;
+              padding-left: 8px;
+              font-size $font-size-18;
+              background-color: #E5E5E5;
+              border-radius: 4px;
+            }
+
+            .others {
+              width: 200px !important;
+            }
+            textarea {
+              height: 120px!important;
+              width: 300px!important;
+              padding-left: 8px;
+              font-size $font-size-18;
+              background-color: #E5E5E5;
+              border-radius: 4px;
+              resize: none
+            }
+          }
+          li:last-child {
+            span {
+              vertical-align: top;
+            }
+          }
+        }
+      }
+
+      .model_bottom {
+        position: absolute;
+        bottom: 85px;
+        left: 390px;
+
+        span, submit {
+          display: inline-block;
+          width: 100px;
+          height: 34px;
+          line-height: 34px;
+          color: #fff;
+          text-align: center;
+          box-shadow: 0px 1px 7px 0px rgba(188, 188, 188, 0.65);
+          border-radius: 4px;
+          font-size: $font-size-18;
+        }
+
+        .cancelBtn {
+          background: rgba(153, 153, 153, 1);
+          margin-right: 20px;
+          cursor: pointer
+        }
+
+        .commitBtn {
+          background: rgba(71, 117, 202, 1);
+          cursor: pointer
+        }
+      }
+    }
+  }
+}
+</style>
+<style >
+</style>

@@ -1,0 +1,309 @@
+<!-- 权限 jurisdiction -->
+<template>
+  <div class="jurisdiction-container">
+    <div class="j-title flex-row">
+      <div class="j-title-text">权限</div>
+    </div>
+    <div class="j-set-content-scroll" v-loading="loading">
+      <div class="check-all">
+        <el-checkbox v-model="allChecked" @change="allCheckedChange">全选</el-checkbox>
+      </div>
+      <!-- 第一层导航 -->
+      <div class="j-set-content" v-for="(item,index) in jurisdiction_s" :key="item.id">
+        <div class="j-set-warp">
+          <div class="j-set flex-between" @click.stop="onChoose(index)">
+            <div class="j-set-l flex">
+              <div class="j-set-check">
+                <el-checkbox size="18px" v-model="item.check" @change="onCheck(item.check,item)"></el-checkbox>
+              </div>
+              <div class="j-set-name">
+                <span>{{item.text}}</span>
+                <span
+                  v-if="[0,2,3,6].indexOf(index)!=-1"
+                  class="j-state"
+                  @click="onSelect(item,true,null)"
+                  :style="{'background-color':item.sate=='1'?'#FDA143':'#DDDDDD'}"
+                >只读</span>
+                <span
+                  v-if="[0,2,3,6].indexOf(index)!=-1"
+                  class="j-state"
+                  @click="onSelect(item,false,null)"
+                  :style="{'background-color':item.sate=='2'?'#FDA143':'#DDDDDD'}"
+                >编辑</span>
+              </div>
+            </div>
+            <div
+              class="j-set-r flex-end"
+              :class="item.isClick?'el-icon-caret-bottom':'el-icon-caret-top'"
+              v-if="item.children"
+            ></div>
+          </div>
+        </div>
+
+        <!-- 第二层子导航 -->
+        <template v-if="item.isClick">
+          <div class="j-set-children flex" v-for="va in item.children" :key="va.id">
+            <div class="j-set-children-name">
+              <span>{{va.text}}</span>
+              <span
+                class="j-state"
+                @click="onSelect(va,true,item)"
+                :style="{'background-color':va.sate=='1'?'#FDA143':'#DDDDDD'}"
+              >只读</span>
+              <span
+                class="j-state"
+                @click="onSelect(va,false,item)"
+                :style="{'background-color':va.sate=='2'?'#FDA143':'#DDDDDD'}"
+              >编辑</span>
+            </div>
+            <template v-if="item.name== 'PM节点'">
+              <div
+                class="j-set-children-config"
+                @click.stop="onConfig(va.id)"
+              >{{va.config? '解除配置':'配置导航'}}</div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import { GetMenuList, GetListByRoleID, SaveMenu } from "@/api/api.js";
+import { infaces } from "../module/interfaces.js";
+import jurisdiction from '../module/jurisdiction.js'
+export default {
+  name: "departments",
+  mixins:[jurisdiction],
+  data() {
+    return {
+      jurisdiction_s: [],
+      i: 0,
+      loading:true,//蒙层
+      
+    };
+  },
+  
+  props: [
+    "role_sel" //选中的人员
+  ],
+  methods: {
+    _initData() {
+      console.log('%c bbbbbb','color:red',this.role_sel)
+      if(!this.role_sel.id){
+
+        //获取所有权限
+        infaces(this, GetMenuList, {}).then(list => {
+          console.log(list);
+          // 数据处理
+          list.Detiel.forEach(i => {
+            i.check = false; //是否选
+            i.isClick = true; //是否选择
+            if (i.children) {
+              console.log(i.children);
+              i.children.forEach(j => {
+                j.check = false; // 是否选择
+              });
+            }
+          });
+          console.log(list);
+          this.jurisdiction_s = list.Detiel;
+          this.loading = false
+        });
+        console.log(this.role_sel);
+      }else{
+         
+        this.getListByRoleID(this.role_sel.id)
+      }
+    },
+    /**
+     * 根据角色id获取权限列表
+     * //每个主菜单是否勾选规则
+          // 全选判断规则//每个主菜单是否勾选规则
+          // 全选判断规则
+     */
+    getListByRoleID(Rid) {
+      let set  = new Set()
+      infaces(this, GetListByRoleID, { Rid }).then(res => {
+        console.log(res.Detiel);
+        res.Detiel.forEach(i => {
+          //每个主菜单是否勾选规则
+          // 全选判断规则
+          if(i.children.length>0){ //有子菜单
+            let arr1 = i.children.filter(j=>j.sate=='1') //只读
+            let arr2 = i.children.filter(j=>j.sate=='2') //编辑
+            //如果
+            console.log(arr1,arr2)
+            if((arr1.length==i.children.length)||(arr2.length==i.children.length)){
+              console.log('dsdfasdf')
+              i.check = true
+              set.add(i.id)
+            }else{
+              i.check = false
+            }
+          }else{
+            if(i.sate!='0'){
+              i.check=true
+              set.add(i.id)
+            }else{
+              i.check = false
+            }
+          }
+          i.isClick = true; //是否选择
+        });
+        console.log(res);
+        this.jurisdiction_s = res.Detiel;
+        //全选框是否勾选
+        this.allChecked = set.size == this.jurisdiction_s.length
+      });
+    },
+    
+
+    // 子选项
+    onCheckChildren(e, item, va) {
+      console.log(e, item, va);
+    },
+    // 配置
+    onConfig(id) {
+      console.log("配置", id);
+    },
+    
+    
+  },
+  created() {
+    this._initData();
+  },
+  
+  watch: {
+    roleId(d) {
+      console.log(d);
+      this.getListByRoleID(d);
+    }
+  }
+};
+</script>
+
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.jurisdiction-container
+  width 24.44%
+  overflow hidden
+  box-shadow 0px 3px 7px 0px rgba(229, 229, 229, 1)
+  color rgba(102, 102, 102, 1)
+  position relative
+  .j-title
+    width 100%
+    height 50px
+    background rgba(67, 80, 137, 1)
+    font-size 20px
+    font-family SourceHanSansCN-Medium
+    font-weight 500
+    color rgba(255, 255, 255, 1)
+    position absolute
+    top 0
+    left 0
+    z-index 2
+  .j-set-content-scroll
+    padding 50px 0 20px 0
+    height 95.6%
+    overflow-y auto
+    box-sizing border-box
+  .j-set-content-scroll .check-all
+    background-color white
+    // line-height:27px;
+    padding-left 20px
+  .j-set-content
+    .j-set-warp
+      padding 0 20px
+      background-color #fff
+    .j-set-children
+      height 40px
+      background rgba(244, 246, 255, 1)
+      font-size 18px
+      font-family SourceHanSansCN-Regular
+      font-weight 400
+      margin-left 56px
+      position relative
+      .j-set-children-check
+        width 18px
+        height 18px
+        margin-right 20px
+      .j-set-children-config
+        position absolute
+        right 21px
+        top 5px
+        font-size 18px
+        font-family SourceHanSansCN-Regular
+        font-weight 400
+        color rgba(69, 128, 255, 1)
+    .selText
+      color #4580FF
+    .j-set
+      height 40px
+      border-bottom 1px solid #E5E5E5
+      .j-set-l
+        flex 1
+        font-size 16px
+        font-family SourceHanSansCN-Normal
+        font-weight 400
+        color rgba(51, 51, 51, 1)
+        .j-set-l-name
+          flex 1
+          overflow hidden
+          white-space nowrap
+          text-overflow ellipsis
+        .j-set-check
+          width 18px
+          margin-right 20px
+      .j-set-r
+        font-size 18px
+        font-family SourceHanSansCN-Medium
+        font-weight 500
+        .j-set-reset
+          color rgba(69, 128, 255, 1)
+          margin-right 15px
+</style>
+<style>
+.j-state {
+  display: inline-block;
+  background: rgba(221, 221, 221, 1);
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 1);
+  line-height: 20px;
+  margin-left: 10px;
+  padding: 1px 16px;
+}
+.j-set-children-name span:first-child,
+.j-set-name span:first-child {
+  display: inline-block;
+  width: 140px;
+  margin-right: 10px;
+}
+.check-all .el-checkbox__label {
+  font-size: 16px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(69, 128, 255, 1);
+  margin-left: 14px;
+}
+.j-set-content-scroll::-webkit-scrollbar{
+  /*滚动条整体样式*/
+  width: 8px !important; /*高宽分别对应横竖滚动条的尺寸*/
+  height: 1px;
+}
+.j-set-content-scroll::-webkit-scrollbar-thumb{
+  /*滚动条里面小方块*/
+  border-radius: 0;
+  width: 5px;
+  -webkit-box-shadow: inset 0 0 3px rgba(49, 49, 49, 0.1) !important;
+  background: #ccc;
+}
+.j-set-content-scroll::-webkit-scrollbar-track{
+  /*滚动条里面轨道*/
+  -webkit-box-shadow: inset 0 0 5px rgba(49, 49, 49, 0.1) !important;
+  border-radius: 0;
+  background: #ededed;
+}
+</style>

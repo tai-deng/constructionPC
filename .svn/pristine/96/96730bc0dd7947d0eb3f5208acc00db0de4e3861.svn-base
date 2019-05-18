@@ -1,0 +1,395 @@
+.progress
+  .progress-detail
+    position absolute
+    bottom -50px
+    width 620px
+    padding 28px
+    background #fff
+    z-index 100
+    transform translateY(-33%)
+
+    .btns .el-form-item__content
+      button
+        width 100px
+
+      button:nth-child(1)
+        color #fff
+        background #999999
+
+      button:nth-child(2)
+        color #fff
+        background #4775CA
+
+    .hide-ico
+      >>>
+        .el-upload--picture-card
+          display none !important
+
+    .tit
+      position relative
+      width 100%
+      height 24px
+
+      span
+        position absolute
+        right 0
+
+  .timeline
+  // position absolute
+  // top 0
+  // left 230px
+  // width 100%
+  // height 100%
+  // padding-left 230px
+
+    ul
+      width 100%
+      height 100%
+      display flex
+      padding-left 0
+
+      >li
+        height auto
+
+  .ico-wrapper
+    line-height 0
+    height 12px
+
+    .ico
+      position absolute
+      display block
+      margin-left -5px
+      width 12px
+      height 12px
+      background #4775CA
+      border-radius 50%
+      z-index 10
+
+    .line
+      display block
+      width 100%
+      height 5px
+      border-bottom 1px solid #E5E5E5
+
+.container-time
+  position relative
+  padding 18px 0s
+  width 100%
+  height 100%
+  box-sizing border-box
+  background-color rgba(245, 246, 251, 1)
+  display flex
+  justify-content flex-start
+  flex-wrap nowrap
+  flex-direction column
+  .top 
+    .left
+      .progress-detail
+        position absolute
+        bottom 256px
+        right 20px
+        z-index 120
+        li
+          cursor pointer
+          .itemColor 
+            display inline-block
+            margin-right 10px
+            width 30px
+            height 30px
+            background-color #cccccc
+          span 
+            display inline-block
+            width 72px
+            height 30px
+            line-height 30px
+            color #ccc
+            vertical-align top
+          .blackFont {
+            color #333
+          }
+  .flex
+    >>>
+      .el-form-item__content
+        display flex
+
+        >div:first-child
+          margin-right 40px
+
+  .progress
+    // position absolute
+    // top: 800px
+    width 100%
+    display flex
+    height: 216px;
+    z-index 101
+
+    .right-wrapper
+      width 100%
+      // margin-top 8px
+      background-color #fff
+
+    .right
+      // width 100%
+      height 100%
+      display flex
+
+      .befor-line
+        position relative
+        margin 20px 28px 0
+        height 100%
+        padding-top 140px
+
+        .line
+          position absolute
+          left 0
+          top 50%
+          width 130px
+          border 1px solid #e5e5e5
+          transform translateY(-50%)
+
+      .after-title
+        width 230px
+        position relative
+        height 100%
+
+        .line
+          position absolute
+          left 100px
+          top 50%
+          width 130px
+          border-bottom 1px solid #e5e5e5
+
+        p
+          position absolute
+          width 100px
+          text-align center
+          font-size 18px
+          color #1F1F1F
+
+          &:nth-child(1)
+            top 25%
+
+          &:nth-child(3)
+            top 75%
+
+      >>>
+        .timeline
+          >ul
+            >li
+              width 240px
+              padding-top 8px
+
+              &.add
+                .add-line
+                  width 1px
+                  height 17px
+                  background #C8C8C8
+                  margin-bottom 20px
+
+                .add-line-ico
+                  margin-left -20px
+                  width 40px
+                  height 40px
+                  line-height 40px
+                  border-radius 50%
+                  background #435089
+                  color #fff
+                  text-align center
+                  font-size 28px
+
+              &.reverse
+                .timeline-content
+                  margin-left 5px
+                  transform rotate(111deg)
+
+                .container-time-line
+                  margin-left -116px
+
+                p:nth-child(7), p:nth-child(6), p:nth-child(4)
+                  margin-left -110px
+
+              &.success
+                .timeline-content, .container-time-line
+                  color #25D18A
+
+              &.error
+                .timeline-content, .container-time-line
+                  color #FC605C
+
+              >p
+                margin-left 20px
+                width 100px
+
+                &:nth-of-type(3)
+                  font-size 16px
+
+                &:nth-of-type(1)
+                  font-size 16px
+                  padding-top 17px
+
+        .timeline-content
+          margin-left 6px
+          width 46px
+          height 5px
+          display block
+          border-bottom 1px solid
+          transform-origin top left
+          transform rotate(68deg)
+
+          p
+            color #333
+
+        .container-time-line
+          width 100px
+          height 0
+          border-top 2px solid
+
+        .container-time-dot
+          margin-top 18px
+          margin-left -4px
+          font-size 30px
+          color #409EFF !important
+
+        .timeline-top
+          left 0
+          width 132px
+          height 82px
+          background #4775CA
+          color #fff
+          border-radius 8px
+          box-sizing border-box
+          padding-top 10px
+          margin-bottom 14px
+          transform translateX(-50%)
+
+          p
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            line-height 28px
+            text-indent 14px
+            font-size 18px
+            
+
+          &::after
+            content ''
+            position absolute
+            left 50%
+            bottom -12px
+            width 0
+            height 0
+            border-width 12px 16px 0
+            border-style solid
+            border-color #4775CA transparent transparent /* 灰 透明 透明 */
+            transform translateX(-50%)
+
+    .left
+      position relative
+      padding 30px
+      width 280px
+      text-align center
+      color #fff
+      background #435089
+      box-sizing border-box
+
+      .tips-left
+        position absolute
+        right 0
+        top 50%
+        margin-top -13px
+        border 13px solid
+        border-top-color transparent
+        border-left-color transparent
+        border-bottom-color transparent
+
+      p:nth-child(1)
+        margin-top 18px
+
+      p:nth-child(2)
+        margin-top 30px
+
+      *:nth-child(3)
+        margin-top 10px
+        width 140px
+        height 40px
+        background #4775CA
+        color #fff
+        border-color #4775CA
+
+      p
+        font-size 24px
+        text-align left
+        line-height 40px
+
+    >>>
+      .el-carousel__item
+        display flex
+
+      .el-carousel__indicators
+        display none
+
+      .el-carousel__arrow--left
+        display none
+
+      .el-carousel__arrow--right
+        right 0
+        height 100%
+        width 40px
+        border-radius inherit
+        background #435088
+
+        i:before
+          content '\e613'
+
+  .top
+    flex 1
+    display flex
+    padding 20px 0 14px
+    box-sizing border-box
+
+    .left
+      width 100%
+      text-align center
+      font-size 18px
+
+      .model
+        height 80%
+
+    .left
+      border-right 1px solid #C7C7C7
+
+    // 下拉样式
+  .type
+    position absolute
+    top 20px
+    left 20px
+    width 343px
+    height 41px
+
+    >>>
+      .el-select
+        width 100%
+
+      .el-select .el-input__inner
+        color #fff
+        background #4775CA
+        border 1px solid #4775CA
+        border-radius 5px
+        overflow hidden
+        text-align center
+
+      .el-input__suffix
+        right 0
+        width 50px
+        background #44508a
+        border-radius 0 5px 5px 0
+
+      .el-input__suffix-inner .el-select__caret::before
+        content '\e60c'
+        font-size 24px
+
+      .el-input--suffix
+        overflow hidden
+
+      .el-select .el-input .el-select__caret
+        color #fff

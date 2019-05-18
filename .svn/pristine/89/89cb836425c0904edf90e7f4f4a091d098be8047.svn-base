@@ -1,0 +1,502 @@
+ <template>
+    <div class="cycle_right_body1">
+        <div class="cycle_right_title">
+            <el-row>
+            <el-col :span="8" :class="['cycle_right_align', {'cycle_right_align_change': textItem==='偏差率(%)'}]">
+                <img v-show="textItem==='偏差率(%)'"
+                class="cycle_right_img"
+                src="../../../../assets/imgs/gantt-add-a.png"
+                @click="addColor()"
+                alt
+                >
+                {{textItem}}
+            </el-col>
+            <el-col :span="12" :offset="4" class="cycle_right_align">表示颜色</el-col>
+            </el-row>
+        </div>
+
+        <div class="cycle_right_body_color">
+            <ul v-show="textItem==='偏差率(%)'">
+            <li v-for="(item , index) in colorList" v-bind:key="index">
+                <el-row>
+                  <el-col :span="8" class="cycle_right_align">
+                      <el-select v-model="item.Operator" style="width:60px;">
+                      <el-option
+                          v-for="list in numberList"
+                          :key="list.value"
+                          :label="list.label"
+                          :value="list.value"
+                      ></el-option>
+                      </el-select>
+                      <el-input-number
+                      :controls="false"
+                      :precision="1"
+                      v-model="item.DiffRate"
+                      style="width:80px;"
+                      ref="min"
+                      @change="minChange"
+                      ></el-input-number>
+                  </el-col>
+
+                  <el-col :span="8" class="cycle_right_align">
+                      <el-select v-model="item.EndOperator" style="width:60px;">
+                      <el-option
+                          v-for="list in numberMaxList"
+                          :key="list.value"
+                          :label="list.label"
+                          :value="list.value"
+                      ></el-option>
+                      </el-select>
+                      <el-input-number
+                      :controls="false"
+                      :precision="1"
+                      v-model="item.EndDiffRate"
+                      style="width:80px;"
+                      ref="max"
+                      @change="maxChange"
+                      ></el-input-number>
+                  </el-col>
+
+                  <el-col :span="8" class="cycle_right_align">
+                      <el-color-picker
+                      v-model="item.ColorName"
+                      style="width:120px;margin-top:3px;margin-right:30px;"
+                      ></el-color-picker>
+                      <i
+                      class="cycle_right_align_del"
+                      v-show="index > 0"
+                      @click="delColor(item,index)"
+                      >-</i>
+                  </el-col>
+                </el-row>
+            </li>
+            </ul>
+            <ul v-show="textItem==='时间状态'">
+              <li v-for="(item) in tiemColorList" v-bind:key="item.id">
+                  <el-row>
+                    <el-col :span="8" class="cycle_right_align">
+                      <div>{{item.state}}</div>
+                    </el-col>
+
+                    <el-col :span="8" class="cycle_right_align">
+                      <div class="line"></div>
+                    </el-col>
+
+                    <el-col :span="8" class="cycle_right_align">
+                        <el-color-picker
+                        v-model="item.cValue"
+                        style="width:120px;margin-top:3px;margin-right:30px;"
+                        ></el-color-picker>
+                        <!-- <i
+                        class="cycle_right_align_del"
+                        @click="timeDelColor(item,item.id)"
+                        >-</i> -->
+                    </el-col>
+                  </el-row>
+              </li>
+            </ul>
+        </div>
+        <div class="cycle_right_body_foot">
+            <el-button class="cycle_save_btn" @click="saveColor()">保存</el-button>
+        </div>
+    </div>
+</template>
+<script type='textecmascript-6'>
+import { GetCycleMessageInfo, SubCycleMessage, AddColor } from "@/api/api.js";
+    export default {
+        data(){
+        return {
+            isOK: false,  //输入的偏差率是否正确
+            numberList: [  //比较大小
+                { value: "=", label: "=" },
+                { value: ">", label: ">" },
+                { value: "≥", label: "≥" }
+            ],
+            numberMaxList: [
+                { value: "=", label: "=" },
+                { value: "<", label: "<" },
+                { value: "≤", label: "≤" }
+            ],
+            tiemColorList:[
+              { id: 0, state: "未开始", cValue:null },
+              { id: 1, state: "预期未完成", cValue:null },
+              { id: 2, state: "提前开始" ,cValue:null},
+              { id: 3, state: "提前完成" ,cValue:null},
+              { id: 4, state: "正常开始" ,cValue:null},
+              { id: 5, state: "正常完成" ,cValue:null},
+              { id: 6, state: "延迟开始" ,cValue:null},
+              { id: 7, state: "延迟完成" ,cValue:null}
+          ],
+            //三算对比
+            colorList: [
+            {
+                Operator: "=",
+                DiffRate: "",
+                EndOperator: "=",
+                EndDiffRate: "",
+                ColorName: "#59FF40",
+                ProjectID: localStorage.getItem("projectid"),
+                iCreator: localStorage.getItem("userid"),
+                dCreateTime: require("moment")(new Date()).format("YYYY-MM-DD")
+            }
+            ],
+
+        };
+        },
+        props:{textItem: String,},
+        methods: {
+            //三算对比
+            addColor() {
+            let text = {
+                Operator: "=",
+                DiffRate: "",
+                EndOperator: "=",
+                EndDiffRate: "",
+                ColorName: null,
+                ProjectID: localStorage.getItem("projectid"),
+                iCreator: localStorage.getItem("userid"),
+                dCreateTime: require("moment")(new Date()).format("YYYY-MM-DD")
+            };
+            this.colorList.push(text);
+            },
+            //三算对比 AddColor
+            saveColor() {
+              if(this.textItem==='偏差率(%)'){
+
+              
+                for (var i = 0; i < this.colorList.length; i++) {
+                    if (this.colorList[i].ColorName == null) {
+                    this.$message({
+                        type: "error",
+                        message: "颜色不能为空",
+                        center: "true"
+                    });
+                    return false;
+                    }
+                    if(this.colorList[i].DiffRate > this.colorList[i].EndDiffRate){
+                    this.$notify.error({
+                        title: '错误',
+                        message: '输入的值不正确'
+                    });
+                    return false;
+                    }
+            
+                // this.colorList[i].ProjectID=localStorage.getItem('projectid');
+                // this.colorList[i].iCreator=localStorage.getItem('user');
+                // this.colorList[i].dCreateTime=require('moment')(new Date()).format('YYYY-MM-DD')
+                  }
+                  if(!this.isOK){
+                      this.$notify.error({
+                      title: '错误',
+                      message: '输入的值不正确'
+                      });
+                      return false;
+                  }
+                  this.load();
+                  this.Request(AddColor(this.colorList)).then(res => {
+                      if (res.StatusCode == "200") {
+                      this.$message({
+                          type: "success",
+                          message: res.Message,
+                          center: "true"
+                      });
+                      } else {
+                      this.$message({
+                          type: "error",
+                          message: res.Message,
+                          center: "true"
+                      });
+                      }
+                      this.$toast.clear();
+                  });
+                }else if(this.textItem === '时间状态'){
+                  this.load();
+                    //需要时间管理的添加颜色的接口tiemAddColor
+                  this.Request(tiemAddColor(this.tiemColorList)).then(res => {
+                      if (res.StatusCode == "200") {
+                      this.$message({
+                          type: "success",
+                          message: res.Message,
+                          center: "true"
+                      });
+                      } else {
+                      this.$message({
+                          type: "error",
+                          message: res.Message,
+                          center: "true"
+                      });
+                      }
+                      this.$toast.clear();
+                  });
+                }
+            },
+            //三算对比--删除颜色
+            delColor(item, index) {
+            // console.log(item);
+            // console.log(index);
+            this.colorList.splice(index, 1);
+            },
+            // timeDelColor(item,index){
+            //   this.tiemColorList.splice(index, 1)
+            // },
+            /**
+             * 最小值输入框的值发生变化时触发
+             */
+            minChange(currentValue, beforeValue){
+            let minArr, maxArr, maxs = [], maxv = 0
+            minArr = this.$refs.min
+            maxArr = this.$refs.max
+            maxArr.forEach(element => {
+                maxs.push(element.value)
+            })
+            maxv = Math.max(...maxs)
+            if(currentValue < maxv){
+                this.isOK = false;
+                this.$notify.error({
+                title: '错误',
+                message: '输入的值不正确'
+                });
+            }else{
+                this.isOK = true;
+            }
+            },
+            /**
+             * 最大值输入框的值发生变化时触发
+             */
+            maxChange(currentValue, beforeValue){
+            let minArr, mins = [], minv = 0
+            minArr = this.$refs.min
+            minArr.forEach(element => {
+                mins.push(element.value)
+            })
+            minv = Math.max(...mins)
+            if(currentValue <= minv){
+                this.isOK = false;
+                this.$notify.error({
+                title: '错误',
+                message: '输入的值不正确'
+                });
+            }else{
+                this.isOK = true;
+            }
+            }
+        }
+    }
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-cycle {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  font-size: 16px;
+
+  .cycle_left_main {
+    width: 15%;
+    height: 100%;
+    background-color: #ffffff;
+    float: left;
+    border-right: 1px solid #F5F6FA;
+    box-sizing: border-box;
+  }
+
+  .cycle_left_main li {
+    width: 100%;
+    text-align: center;
+    height: 48px;
+    line-height: 48px;
+  }
+
+  .cycle_left_main_li {
+    background-color: #4775CA;
+    color: #ffffff;
+  }
+
+  .cycle_left_main span {
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-width: 13px 13px 13px 0;
+    border-style: solid;
+    border-color: transparent;
+    float: right;
+    margin-top: 11px;
+  }
+
+  .cycle_left_main_li .cycle_left_main_span {
+    border-color: transparent #F5F6FA transparent transparent;
+  }
+
+  .cycle_right_main {
+    width: 85%;
+    height: 100%;
+    float: left;
+    background-color: #F5F6FA;
+  }
+
+  .cycle_right_body1 {
+    width: 54%;
+    margin-left: 23%;
+    margin-top: 200px;
+    // height: 480px;
+    box-shadow: 0px 1px 7px 0px rgba(216, 223, 238, 0.5);
+    background-color: #ffffff;
+  }
+
+  .cycle_right_align {
+    text-align: center;
+  }
+
+  .cycle_right_title {
+    color: #ffffff;
+    background-color: #435089;
+    font-size: 18px;
+    font-family: SourceHanSansCN-Regular;
+    font-weight: 400;
+    width: 100%;
+    height: 40px;
+    line-height: 40px;
+  }
+
+  .cycle_right_align_input {
+    width: 120px;
+  }
+
+  .cycle_right_body_foot {
+    text-align: center;
+  }
+
+  .cycle_save_btn {
+    background: rgba(71, 117, 202, 1);
+    box-shadow: 0px 1px 7px 0px rgba(161, 192, 250, 0.75);
+    border-radius: 4px;
+    border: 0;
+    color: #ffffff;
+    padding: 10px 84px;
+    font-size: 16px;
+  }
+
+  .cycle_right_img {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #ffffff;
+    margin-top: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    float: left;
+  }
+
+  .cycle_right_align_change {
+    padding-left: 50px;
+  }
+
+  .cycle_right_body_color {
+    width: 100%;
+    height: 420px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .cycle_right_body_color li {
+    width: 100%;
+    height: 50px;
+    line-height: 50px;
+    font-size: 16px;
+    font-weight: 400;
+    border-bottom: 1px solid #F0F0F0;
+    overflow: hidden;
+  }
+
+  .cycle_right_body2 {
+    width: 60%;
+    margin-left: 20%;
+    margin-top: 160px;
+    height: 600px;
+    box-shadow: 0px 1px 7px 0px rgba(216, 223, 238, 0.5);
+    background-color: #ffffff;
+  }
+
+  .cycle_right_message {
+    width: 100%;
+    height: 480px;
+    border-bottom: 1px solid red;
+  }
+
+  .cycle_right_main_list {
+    width: 100%;
+    height: 160px;
+    box-sizing: border-box;
+    padding-top: 20px;
+    padding-left: 60px;
+  }
+
+  .cycle_right_main_list li {
+    display: inline-block;
+    background-color: #ffffff;
+    padding: 12px 25px;
+    font-size: 18px;
+    font-family: SourceHanSansCN-Medium;
+    font-weight: 500;
+    color: rgba(153, 153, 153, 1);
+    cursor: pointer;
+  }
+
+  .cycle_right_main_list .cycle_right_main_li {
+    color: #ffffff;
+    background-color: #4775CA;
+  }
+
+  .cycle_right_main_div {
+    width: 54%;
+    margin-left: 23%;
+    height: 600px;
+    box-shadow: 0px 1px 7px 0px rgba(216, 223, 238, 0.5);
+    background-color: #ffffff;
+  }
+
+  .cycle_right_form {
+    width: 100%;
+    height: 460px;
+    padding-top: 50px;
+    box-sizing: border-box;
+    font-size: 18px;
+    font-family: SourceHanSansCN-Medium;
+    font-weight: 500;
+  }
+
+  .cycle_right_center {
+    text-align: right;
+    padding-right: 15px;
+    line-height: 40px;
+  }
+
+  .cycle_right_red {
+    color: red;
+    padding-right: 5px;
+  }
+
+  .cycle_right_form_margin {
+    margin-top: 30px;
+  }
+
+  .cycle_right_align_del {
+    display: inline-block;
+    width: 26px;
+    height: 26px;
+    font-size: 20px;
+    text-align: center;
+    border: 1px solid #7D86AD;
+    color: #7D86AD;
+    border-radius: 50%;
+    line-height: 26px;
+    cursor: pointer;
+    position: relative;
+    top: -14px;
+  }
+  .line{
+    display: inline-block
+    width: 90%;
+    height: 0;
+    // border-top:1px solid #999;
+  }
+}
+</style>

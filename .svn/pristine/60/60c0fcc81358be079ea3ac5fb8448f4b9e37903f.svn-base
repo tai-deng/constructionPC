@@ -1,0 +1,251 @@
+import {
+  GetElementTree
+} from '@/api/api'
+export default {
+  methods: {
+    /**
+     * 获取构件树结构
+     * @param {String} projectid  项目ID
+     * @param {String} buildname  楼栋
+     * @param {Number} ordertype	排序类型 1.为楼层在上面（施工图） 2为楼层在下面（全费用）
+     */
+    GetElementTree(floorId, bool) {
+      // this.load()
+      this.floorId = floorId
+      let param = {
+        projectid: this.projectid,
+        buildname: this.floorId,
+        ordertype: this.listType
+      }
+      GetElementTree(param).then(data => {
+        let arr = data.Detiel
+        let newArr = []
+        let parentList = []
+        arr.forEach(item => {
+          let tempObj = {
+            id: item.BuildingName,
+            disabled: bool ? false : item.IsRelation ? true : false
+          }
+          if (this.selected) {
+            tempObj.disabled = false
+          }
+          parentList.push(tempObj)
+        })
+        // 去重
+        let obj = {}
+        let IsRelationArr = parentList.reduce(function (item, next) {
+          obj[next.id] ? '' : obj[next.id] = true && item.push(next)
+          return item
+        }, [])
+        IsRelationArr.forEach(item => {
+          // 设置默认展开节点
+          this.expandedKeys.push(item.id)
+          // 一级楼栋
+          newArr.push({
+            id: item.id,
+            label: item.id,
+            disabled: item.disabled,
+            children: []
+          })
+          // 如：1.清单关联 2.构件清单关联 3.已关联， 则默认选中
+          if (!bool && this.listType === 3 && item.disabled) this.checkedKeys.push(item.BuildingName)
+        })
+        // 二级专业
+        newArr.forEach(item => {
+          arr.forEach(obj => {
+            if (obj.BuildingName === item.id) {
+              let tempObj = {
+                id: obj.Specialty,
+                label: obj.Specialty,
+                parentId: item.id,
+                disabled: bool ? false : obj.IsRelation,
+                children: []
+              }
+              if (this.selected) {
+                tempObj.disabled = false
+              }
+              item.children.push(tempObj)
+            }
+            // 如：1.清单关联 2.构件清单关联 3.已关联， 则默认选中
+            if (!bool && this.listType === 3 && obj.IsRelation) this.checkedKeys.push(obj.Specialty)
+          })
+          let temp = {}
+          item.children = item.children.reduce((item, next) => {
+            temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+            return item
+          }, [])
+        })
+        if (this.listType === 1 || this.listType === 3) {
+          // 三级楼层
+          newArr.forEach(item => {
+            item.children.forEach(treeItem => {
+              arr.forEach(fromArr => {
+                if (fromArr.Specialty === treeItem.id) {
+                  let tempObj = {
+                    id: fromArr.Floor,
+                    label: fromArr.Floor,
+                    parentId: treeItem.id,
+                    disabled: bool ? false : fromArr.IsRelation,
+                    children: []
+                  }
+                  if (this.selected) tempObj.disabled = false
+                  treeItem.children.push(tempObj)
+                }
+                // 如：1.清单关联 2.构件清单关联 3.已关联， 则默认选中
+                if (!bool && this.listType === 3 && fromArr.IsRelation) this.checkedKeys.push(fromArr.Floor)
+              })
+              let temp = {}
+              treeItem.children = treeItem.children.reduce((item, next) => {
+                temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+                return item
+              }, [])
+            })
+          })
+          // 四级族
+          newArr.forEach(item => {
+            item.children.forEach(treeItem => {
+              treeItem.children.forEach(fourItem => {
+                arr.forEach(fromArr => {
+                  if (fromArr.Floor === fourItem.id) {
+                    let tempObj = {
+                      id: fromArr.FamilyName,
+                      label: fromArr.FamilyName,
+                      parentId: fourItem.id,
+                      disabled: bool ? false : fromArr.IsRelation,
+                      children: []
+                    }
+                    if (this.selected) tempObj.disabled = false
+                    fourItem.children.push(tempObj)
+                  }
+                  // 如：1.清单关联 2.构件清单关联 3.已关联， 则默认选中
+                  if (!bool && this.listType === 3 && fromArr.IsRelation) this.checkedKeys.push(fromArr.FamilyName)
+                })
+                let temp = {}
+                fourItem.children = fourItem.children.reduce((item, next) => {
+                  temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+                  return item
+                }, [])
+              })
+            })
+          })
+          // 五级族类型
+          newArr.forEach(item => {
+            item.children.forEach(treeItem => {
+              treeItem.children.forEach(fourItem => {
+                fourItem.children.forEach(fiveItem => {
+                  arr.forEach(fromArr => {
+                    if (fromArr.FamilyName === fiveItem.id) {
+                      let tempObj = {
+                        id: fromArr.FamilyTypeName,
+                        label: fromArr.FamilyTypeName,
+                        elementId: fromArr.RaletionElementID,
+                        disabled: bool ? false : fromArr.IsRelation,
+                        parentId: fourItem.id
+                      }
+                      if (this.selected) tempObj.disabled = false
+                      fiveItem.children.push(tempObj)
+                    }
+                    // 如：1.清单关联 2.构件清单关联 3.已关联， 则默认选中
+                    if (!bool && this.listType === 3 && fromArr.IsRelation) this.checkedKeys.push(fromArr.FamilyTypeName)
+                  })
+                  let temp = {}
+                  fiveItem.children = fiveItem.children.reduce((item, next) => {
+                    temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+                    return item
+                  }, [])
+                })
+              })
+            })
+          })
+        } else if (this.listType === 2) {
+          // 三级族
+          newArr.forEach(item => {
+            item.children.forEach(treeItem => {
+              arr.forEach(fromArr => {
+                if (fromArr.Specialty === treeItem.id) {
+                  let tempObj = {
+                    id: fromArr.FamilyName,
+                    label: fromArr.FamilyName,
+                    parentId: treeItem.id,
+                    disabled: bool ? false : fromArr.IsRelation,
+                    children: []
+                  }
+                  if (this.selected) tempObj.disabled = false
+                  treeItem.children.push(tempObj)
+                }
+              })
+              let temp = {}
+              treeItem.children = treeItem.children.reduce((item, next) => {
+                temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+                return item
+              }, [])
+            })
+          })
+          // 四级族类型
+          newArr.forEach(item => {
+            item.children.forEach(treeItem => {
+              treeItem.children.forEach(fourItem => {
+                arr.forEach(fromArr => {
+                  if (fromArr.FamilyName === fourItem.id) {
+                    let tempObj = {
+                      id: fromArr.FamilyTypeName,
+                      label: fromArr.FamilyTypeName,
+                      parentId: fourItem.id,
+                      disabled: bool ? false : fromArr.IsRelation,
+                      children: []
+                    }
+                    if (this.selected) tempObj.disabled = false
+                    fourItem.children.push(tempObj)
+                  }
+                })
+                let temp = {}
+                fourItem.children = fourItem.children.reduce((item, next) => {
+                  temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+                  return item
+                }, [])
+              })
+            })
+          })
+          // 五级楼层
+          newArr.forEach(item => {
+            item.children.forEach(treeItem => {
+              treeItem.children.forEach(fourItem => {
+                fourItem.children.forEach(fiveItem => {
+                  arr.forEach(fromArr => {
+                    if (fromArr.FamilyTypeName === fiveItem.id) {
+                      let tempObj = {
+                        id: fromArr.Floor,
+                        label: fromArr.Floor,
+                        parentId: fourItem.id,
+                        disabled: bool ? false : fromArr.IsRelation,
+                        elementId: fromArr.RaletionElementID
+                      }
+                      if (this.selected) tempObj.disabled = false
+                      fiveItem.children.push(tempObj)
+                    }
+                  })
+                  let temp = {}
+                  fiveItem.children = fiveItem.children.reduce((item, next) => {
+                    temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+                    return item
+                  }, [])
+                })
+              })
+            })
+          })
+        }
+        newArr.forEach(item => {
+          item.children.forEach(obj => {
+            if (obj.disabled) {
+              item.disabled = true
+            }
+          })
+        })
+        this.array = newArr
+        this.checkedKeys = [...new Set(this.checkedKeys)]
+        this.loadingTree = false
+        // this.$toast.clear()
+      })
+    },
+  }
+}

@@ -1,0 +1,1253 @@
+<!-- communication协调沟通 -->
+<template>
+  <div class="container-communication2">
+    <div class="leftBox">
+      <div class="box-card">
+        <div class="title">
+          <i class="el-icon-menu icon"></i>
+        </div>
+          <!-- 模型box -->
+        <div class="model-container">
+          <div ref="modelContainer" class="model-container"></div>
+        </div>
+      </div>
+    </div>
+    <div class="rightBox">
+      <div class="box-card">
+        <!-- 日常管理 -->
+        <div class="dayManagement" v-show="alteration">
+          <div class="titleBg notice">
+            协调沟通
+            <i class="el-icon-close" @click="close()"></i>
+          </div>
+          <el-row>
+            <el-col :span="24">
+              <el-form ref="form" :model="form" label-width="80px" :rules="speakRules">
+                <el-form-item label="主题:" prop="theme">
+                  <div class="originator">
+                    <el-input v-model="form.theme" placeholder="请输入主题"></el-input>
+                  </div>
+                </el-form-item>
+                <el-form-item label="类型:" prop="type">
+                  <div class="originator">
+                    <el-select v-model="form.type" placeholder ="请选择类型">
+                      <el-option
+                        v-for="item in com_type_list"
+                        :key="item.id"
+                        :label="item.text"
+                        :value="item.id"
+                      ></el-option>
+                    </el-select>
+                  </div>
+                </el-form-item>
+                <el-form-item label="问题描述:" prop="describe">
+                  <el-input type="textarea" v-model="form.describe"></el-input>
+                </el-form-item>
+                <el-form-item label="模型视点:">
+                  <div class="wrap">
+                    <div class="upload">
+                      <!-- <el-upload
+                        action="https://jsonplaceholder.typicode.com/posts/"
+                        list-type="picture-card"
+                        :on-preview="handlePictureCardPreview1"
+                        :on-remove="handleRemove1"
+                        multiple
+                        :limit="3"
+                      >
+                        <i>
+                          <img src="../../../assets/imgs/camera.png" alt sizes="24" srcset>
+                        </i>
+                      </el-upload> -->
+
+                      <div class="viewpoint" v-for="item in upload_base64_img" :key="item.index" v-show="fileext.length != 0">
+                        <img :src="item.TokenUrL+item.URL" alt="">
+                      </div>
+                      <div class="viewpoint" @click="createViewPoint">
+                        <img class="camera" src="../../../assets/imgs/camera.png" alt >
+                      </div>
+                    </div>
+                    <el-dialog :visible.sync="dialogVisible1">
+                      <img width="100%" :src="dialogImageUrl1" alt>
+                    </el-dialog>
+                    <span class="tip">(最多关联3张)</span>
+                  </div>
+                </el-form-item>
+                <el-form-item label="上传凭证:">
+                  <div class="wrap">
+                    <div class="upload">
+                      <el-upload
+                        action
+                        list-type="picture-card"
+                        :on-change="handlePictureCardPreview2"
+                        :on-remove="handleRemove2"
+                        multiple
+                        :limit="6"
+                        :auto-upload="false"
+                      >
+                        <i class="el-icon-plus"></i>
+                      </el-upload>
+                    </div>
+                    <el-dialog :visible.sync="dialogVisible2">
+                      <img width="100%" :src="dialogImageUrl2" alt>
+                    </el-dialog>
+                    <span class="tip">(最多上传6张)</span>
+                  </div>
+                </el-form-item>
+                <el-form-item label="构件关联:" >
+                  <span class="relevance" v-if="form.isRelation">
+                    <img src="../../../assets/imgs/unRelation.png" @click="getRelationFun">
+                  </span>
+                   <span class="relevance" v-else  >
+                    <img src="../../../assets/imgs/allRelation.png" @click="getRelationFun">
+                  </span>
+                </el-form-item>
+                <el-form-item label="工作流程:"></el-form-item>
+                <el-form-item>
+                  <div class="workflowBox">
+                    <div class="workflow1">
+                      <el-select v-model="form.priority" placeholder="优先级">
+                        <el-option
+                          v-for="item in indexList"
+                          :key="item.value"
+                          :label="item.label"
+                          :value="item.value"
+                        ></el-option>
+                      </el-select>
+                    </div>
+                    <div class="workflow2">
+                      <el-select v-model="form.unit" placeholder="责任单位" @change="handleResponsibility">
+                        <el-option
+                          v-for="item in org_list"
+                          :key="item.ID"
+                          :label="item.Name"
+                          :value="item.ID"
+                        ></el-option>
+                      </el-select>
+                    </div>
+                    <div class="workflow1">
+                      <el-select v-model="form.department" placeholder="岗位部门" @change="handleClass">
+                        <el-option
+                          v-for="item in dept_list"
+                          :key="item.id"
+                          :label="item.text"
+                          :value="item.id"
+                        ></el-option>
+                      </el-select>
+                    </div>
+                    <div class="workflow1">
+                      <el-select v-model="form.personnel" placeholder="人员" @change="handlePerson">
+                        <el-option
+                          v-for="item in user_list_by_dept"
+                          :key="item.id"
+                          :label="item.text"
+                          :value="item.id"
+                        ></el-option>
+                      </el-select>
+                    </div>
+                    <span class="add" @click="addData()">
+                      <img src="../../../assets/imgs/add.png" alt>
+                    </span>
+                  </div>
+                </el-form-item>
+                <div class="item" v-show="dataList">
+                  <el-form-item>
+                    <div class="bg">
+                      <div>
+                        <span></span>
+                      </div>
+                      <div>
+                        <span></span>
+                      </div>
+                      <div>
+                        <span></span>
+                      </div>
+                      <div>
+                        <span></span>
+                      </div>
+                    </div>
+                    <ul class="dataList">
+                      <li>
+                        <div class="ordinal">
+                          <span>{{1}}</span>
+                        </div>
+                        <div class="dataContent">
+                          <span>{{userData.companyName}}</span>
+                          <span class="unit">{{userData.department}}</span>
+                          <span>{{userData.name}}</span>
+                        </div>
+                        <div class="dataBtn">
+                          <span class="sortDown" ></span>
+                          <span class="sortUp" ></span>
+                          <span class="del"></span>
+                        </div>
+                      </li>
+                      <li v-for="(item,index) in arrData" v-bind:key="index">
+                        <div class="ordinal">
+                          <span>{{index+2}}</span>
+                        </div>
+                        <div class="dataContent">
+                          <span>{{item.companyName}}</span>
+                          <span class="unit">{{item.department}}</span>
+                          <span>{{item.name}}</span>
+                        </div>
+                        <div class="dataBtn">
+                          <span class="sortDown" @click="downItem(index)"></span>
+                          <span class="sortUp" @click="upItem(index)"></span>
+                          <span class="del" @click="delItem(index)"></span>
+                        </div>
+                      </li>
+                    </ul>
+                  </el-form-item>
+                </div>
+                <div class="item" v-show="dataStep">
+                  <el-form-item>
+                    <el-steps align-center>
+                      <el-step v-for="(item, index) in newArrData" :key="index" :title="item.companyName" :description="item.department"></el-step>
+                      <!-- <el-step title="设计单位" description="工程部"></el-step>
+                      <el-step title="建设单位" description="工程部"></el-step>
+                      <el-step title="施工单位" description="工程部"></el-step> -->
+                    </el-steps>
+                  </el-form-item>
+                </div>
+                <el-form-item>
+                  <div class="btn">
+                    <el-button  @click.prevent="close()">取消</el-button>
+                    <el-button type="primary" @click="onSubmit('form')">提交</el-button>
+                  </div>
+                </el-form-item>
+              </el-form>
+            </el-col>
+          </el-row>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+// vuex
+import { mapMutations } from 'vuex'
+import {
+  GetLoginUserInfo, //用户信息
+  GetDefaultModelId, //获取模型ID
+  SaveCommunicate, //保存沟通管理数据
+  UploadBase64Img, //上传Base64String 图片
+  UploadImages,  //上传图片
+  GetComTypeList,  //沟通类型列表
+  GetOrgList, //单位列表
+  GetDeptList,  //按公司获取部门数据列表
+  GetUserListByDept,  //获取人员列表
+} from '@/api/api.js'
+export default {
+  data() {
+    return {
+      data: "",
+      alteration: true, //变更弹框
+      form: {
+        //form表单
+        theme: "", //主题
+        type: "",  //工程洽商-类型
+        describe: "",  //描述
+        priority: '',  //排序--工作流程优先级
+        unit: '',   //排序--责任单位
+        department: '',  //排序--岗位部门
+        personnel: '',   //排序--人员
+        isRelation: false //构件关联
+      },
+      indexList: [
+        { value: 1, label: "1" },
+        { value: 2, label: "2" },
+        { value: 3, label: "3" },
+        { value: 4, label: "4" },
+        { value: 5, label: "5" },
+        { value: 6, label: "6" }
+      ],
+      org_list: [],//单位列表
+      dept_list: [],//部门列表
+      user_list_by_dept: [],// 人员列表
+      userID: localStorage.getItem('userId'), //用户ID
+      projectId: localStorage.getItem('projectid'),  //项目Id
+      view_point: sessionStorage.getItem('e'), //视点路径
+      defaultModelID: 0, //模型ID
+      upload_base64_img: [], //数据视点图片详情
+      fileext: '',  //图片格式
+      viewPointList: [],//视点列表
+      stateStr: sessionStorage.getItem('stateStr'), //视点快照图路径
+      photoList: [],//发起沟通--凭证列表
+      // credentialsList: [],//工程变更--凭证列表
+      flowList: [],//工作流列表
+      com_type_list: [],//发起沟通类型列表
+      text: {}, //添加工作流程
+      elementIDS: '',//关联构件（多个构件ID用英文逗号分隔）
+      elementIdS: [],//构件ID临时存储
+      // speakAllList: [], //工作流程汇总表
+      dataList: false,
+      dataStep: false,
+      arrData: [],
+      arrData1: [
+        {
+          companyName: "无",
+          department: "张三",
+          name: "李四"
+        }
+      ],
+      userData:  {
+          companyName: "无",
+          department: "张三",
+          name: "李四"
+        },
+      userInfo: null,
+      dialogImageUrl1: "", //问题描述
+      dialogImageUrl2: "", //上传凭证
+      dialogVisible1: false, //视点图片列表
+      dialogVisible2: false, //上传凭证图片列表
+      //发起沟通-表单验证
+      speakRules: {
+        theme: [{ required: true, message: "请输入主题", trigger: "blur" }], //主题
+        type: [
+          { required: true, message: "请选择工程洽商-类型", trigger: "change" }
+        ], //工程洽商-类型
+        describe: [{ required: true, message: "请输入描述", trigger: "blur" }] //描述
+      },
+    };
+  },
+  created(){
+    this.LoginUserInfo(this.userID)  //获取用户信息 
+    // this.initModel()  //模型加载
+    this.getModelId() //模型ID
+    this.comTypeList() //获取沟通类型列表
+    this.orgList() //获取单位列表
+  },
+  methods: {
+      /**
+     * 加载模型
+     */
+    initModel(){
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          console.log(res)
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    }),
+    close() {
+      //关闭变更
+      this.$router.go(-1);
+    },
+    onSubmit(formName) {
+      //表单提交
+      console.log("submit!");
+
+
+      this.elementIDS = this.elementIdS.join(',')
+       this.$refs[formName].validate(valid => {
+         console.log(valid)
+        if (valid) {
+          this.GetSaveCommunicate()
+          this.dataList = false;
+          this.dataStep = true;
+          this.$nextTick(()=>{
+            this.close()
+          })
+        } else {
+          return false;
+        }
+      });
+  
+    },
+    // 添加流程
+    addData() {
+      this.dataList = true;
+      this.dataStep = false;
+      // for (var i = 0; i < this.arrData1.length; i++) {
+      //   this.arrData.push(this.arrData1[i]);
+      // }
+      let flow_list = {
+        ID: 1, 
+        Type: 1, //类型
+        MasterID: 1, //主表ID
+        Priority: Number(this.form.priority), //优先级
+        OrgId: Number(this.form.unit), //责任单位
+        DepId: Number(this.form.department), //岗位部门
+        Person: Number(this.form.personnel), //人员
+        Status: 1, //状态
+        dCreateTime: require('moment')().format('YYYY-MM-DD'), //创建时间
+        iCreator: this.userID,   //创建人
+        dUpdateTime: require('moment')().format('YYYY-MM-DD'), //修改时间
+        iUpdator: this.userID,   //修改人
+        bDelFlag: true, //是否删除
+      }
+      this.flowList.push(flow_list);
+      if (
+        this.form.priority == "" &&
+        this.form.unit == "" &&
+        this.form.department == "" &&
+        this.form.personnel == ""
+      ) {
+        this.$message.warning("工作流程数据不齐全！");
+        return false;
+      }
+      console.log(this.arrData1[0])
+      this.text = {
+        number: this.form.priority, //优先级
+        companyName: this.arrData1[0].companyName, //责任单位
+        department: this.arrData1[0].department, //岗位部门
+        name: this.arrData1[0].name, //人员
+      };
+      console.log(this.text)
+      this.arrData.splice(this.text.number - 1, 0, this.text);
+      console.log(this.arrData)
+      // 去重数组没有定义的项
+      let newArrList = []
+      this.arrData.forEach(item => {
+        if(item){
+          newArrList.push(item)
+        }
+      })
+      this.arrData = newArrList
+    },
+    // 问题描述
+    handleRemove1(file, fileList) {
+      //图标删除
+      console.log(file, fileList);
+    },
+    handlePictureCardPreview1(file) {
+      //点击文件列表中已上传的文件
+      this.dialogImageUrl1 = file.url;
+      this.dialogVisible1 = true;
+    },
+
+    //删除工作流程具体项
+    delItem(i){
+      console.log(i)
+        this.arrData.splice(i, 1)
+      console.log(this.arrData)
+    },
+    //上移工作流程优先级
+    upItem(i){
+      console.log(i)
+      console.log(this.arrData)
+      if(i){
+      let arr = this.arrData.splice(i, 1)
+      console.log(arr)
+      this.arrData.splice((i-1),0, arr[0])
+      console.log(this.arrData)
+      }
+    },
+    //下移工作流程优先级
+    downItem(i){
+      console.log(i)
+      let arr = this.arrData.splice(i, 1)
+      console.log(arr)
+      this.arrData.splice((i+1),0, arr[0])
+      console.log(this.arrData)
+    },
+    //  //创建视点
+    createViewPoint() {
+      console.log('33333')
+      this.$util.getDomLocation(this, "modelContainer").then(res => {
+        this.modelBox({
+          isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示 false:隐藏模型
+          isLoadModel: true, //是否加载模型 true：加载模型，如果已经加载，不会重新加载， false:卸载模型
+          top: res.top, //距离顶部距离‘px'
+          left: res.left, //距离左边距离‘px'
+          width: res.width, //模型宽‘px'
+          height: res.height, //模型高 ‘px'
+          zIndex: 100, //模型层级
+          background: "",
+          ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+          highLightElementIDs: [], // 高亮显示的构件
+          functionNumber: [35] // 需要模型调用的函数编号数组
+        });
+      });
+      setTimeout(()=>{
+        this.view_point = sessionStorage.getItem('e')
+        this.fileext = this.view_point.slice(10,14).replace('/','.')
+        console.log(this.view_point)
+        // this.uploadBase64Img()
+        this.currentState()
+
+      },1000)
+    },
+     //获取当前模型的浏览状态，用于保存后恢复模型状态
+    currentState() {
+      this.$util.getDomLocation(this, "modelContainer").then(res => {
+        this.modelBox({
+          isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示 false:隐藏模型
+          isLoadModel: true, //是否加载模型 true：加载模型，如果已经加载，不会重新加载， false:卸载模型
+          top: res.top, //距离顶部距离‘px'
+          left: res.left, //距离左边距离‘px'
+          width: res.width, //模型宽‘px'
+          height: res.height, //模型高 ‘px'
+          zIndex: 100, //模型层级
+          background: "",
+          ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+          highLightElementIDs: [], // 高亮显示的构件
+          functionNumber: [36] // 需要模型调用的函数编号数组
+        });
+      });
+      setTimeout(() => {
+        this.stateStr = sessionStorage.getItem("stateStr")
+        this.uploadBase64Img();
+      }, 1000);
+    },
+    //上传凭证
+    handleRemove2(file, fileList) {
+      //图标删除
+      console.log(file, fileList);
+    },
+    //文件列表中上传成功时的钩子
+    async handlePictureCardPreview2(res,file) {
+      //点击文件列表中已上传的文件
+      // this.dialogImageUrl2 = file.url;
+      // this.dialogVisible2 = true;
+        let prams = [{
+        key: 'files', value: res.raw
+      }]
+      // file.forEach(i=>{
+      //   prams.push({ key: 'files', value: i.raw })
+      // })
+      //上传图片
+      let upload_images = await this.Request(UploadImages(prams))
+      console.log(upload_images)
+      if(upload_images.StatusCode == 200){
+        if(upload_images.Detiel.length){
+            this.photoList = []  //  原来 是 = upload_images.Detiel
+        this.photoList.push({    //   原来是  this.credentialsList.push()
+          Id: upload_images.Detiel[0].Id, //上传后的文件名
+          Url: upload_images.Detiel[0].URL,
+          smallPhotoURL: upload_images.Detiel[0].smallPhotoURL, //如果存在小图则返回小图地址
+          Type: upload_images.Detiel[0].Type, //文件类型
+          TokenUrL: upload_images.Detiel[0].TokenUrL, //域名地址
+          // ThumbUrl: this.photoList[0].smallPhotoURL,
+          // Ext: this.photoList[0].Type
+        })
+        }else{
+          this.$message({
+            type: "error",
+            message: upload_images.message ? upload_images.message : "图片上传失败",
+            center: "true"
+          });
+        }
+      }else{
+        this.$message({type:'error',message:upload_images.message?upload_images.message:'后台异常',center:'true'})
+      }
+    },
+
+    //关联构建
+    getRelationFun(){
+      console.log('aaa')
+      this.form.isRelation = !this.form.isRelation
+    },
+
+     //监听单位
+    handleResponsibility(val) {
+      this.arrData1[0].companyName= this.returnName(this.org_list,this.form.unit).Name
+      console.log(this.arrData1[0])
+      this.deptList()
+    },
+    //监听部门
+    handleClass(val) {
+      this.arrData1[0].department= this.returnName(this.dept_list,this.form.department).text
+      console.log(this.arrData1[0])
+      this.userListByDept()
+    },
+    //监听人员
+    handlePerson(val) {
+      this.arrData1[0].name= this.returnName(this.user_list_by_dept,this.form.personnel).text
+      console.log(this.arrData1[0])
+    },
+    //工作流程添加同步
+    returnName(arr ,id ) {
+      let nameObj = null
+      for(let i = 0; i<arr.length;i++) {
+        if(arr[i].ID ===id || arr[i].id === id) {
+          nameObj = arr[i]
+          return nameObj
+        }
+      }
+      return nameObj
+    },
+    /**
+     * 接口API
+     */
+    // 保存沟通管理数据
+    async GetSaveCommunicate (){
+
+      // let res = await this.Request(SaveCommunicate(data))
+      // console.log(res)
+      let step_count = Object.keys(this.text)
+      let prams = {
+        listFlow: this.flowList, //工作流列表
+        PhotoList: this.photoList,//上传凭证照片列表
+        listViewpoints: this.viewPointList,//视点快照列表
+        ID: 1,//风险ID
+        ProjectID: this.projectId,//项目ID
+        Subject: this.form.theme,//主题
+        ComType: this.form.type,//类型
+        Description: this.form.describe,//描述
+        Status: 1,//状态
+        CurrentStep: 1,//当前步骤
+        StepCount: step_count.length,//工作流总步骤
+        ElementIDS: this.elementIDS,//关联构件（多个构件ID用英文逗号分隔）
+        dCreateTime: require('moment')().format('YYYY-MM-DD'), //创建时间
+        iCreator: this.userID,   //创建人
+        dUpdateTime: require('moment')().format('YYYY-MM-DD'), //修改时间
+        iUpdator: this.userID,   //修改人
+        bDelFlag: true, //是否删除
+      }
+      let save_communicate = await this.Request(SaveCommunicate(prams));
+      if(save_communicate.StatusCode == 200){
+        this.$message({type:'success',message:save_communicate.Message,center:'true'})
+      }else{
+        this.$message({type:'error',message:save_communicate.Message?save_communicate.message:'后台异常',center:'true'})
+      }
+    },
+      //模型ID
+    async getModelId() {
+      //获取默认模型ID
+      let defaultModelId = await this.Request(GetDefaultModelId({projectId: this.projectId}))
+      if(defaultModelId.StatusCode == 200){
+        this.defaultModelID = defaultModelId.Result
+      }else{
+        this.$message({type:'error',message:defaultModelId.message?defaultModelId.message:'后台异常',center:'true'})
+      }
+    },
+     //上传Base64String 图片
+    async uploadBase64Img() {
+      let upload_base64_img = await this.Request(UploadBase64Img({fileext: this.fileext, Base64Photo: this.view_point}));
+      if (upload_base64_img.StatusCode === 200) {
+        if (upload_base64_img.Detiel.length != 0) {
+          this.upload_base64_img = upload_base64_img.Detiel
+          // this.currentState()
+          this.viewPointList.push({
+            ProjectID: this.projectId,
+            ModelID: this.defaultModelID,
+            State: this.stateStr,
+            Snapshot: this.upload_base64_img[0].URL
+          })
+        } else {
+          this.$message({ type: "error", message: "无数据", center: "true" })
+        }
+      } else {
+        this.$message({type: "error",message: upload_base64_img.message ? upload_base64_img : "后台异常",center: "true"})
+      }
+    },
+      //获取沟通类型列表
+    async comTypeList() {
+      let com_type_list = await this.Request(GetComTypeList());
+      console.log('沟通管理列表')
+      console.log(com_type_list)
+      if (com_type_list.StatusCode === 200) {
+        if (com_type_list.Detiel.length != 0) {
+          this.com_type_list = com_type_list.Detiel
+        } else {
+          this.$message({ type: "error", message: "无数据", center: "true" })
+        }
+      } else {
+        this.$message({type: "error",message: com_type_list.message ? com_type_list : "后台异常",center: "true"})
+      }
+    },
+
+      //获取单位列表 
+    async orgList() {
+      let org_list = await this.Request(GetOrgList({projectId: this.projectId}));
+      if (org_list.StatusCode === 200) {
+        if (org_list.Detiel.length != 0) {
+          this.org_list = org_list.Detiel
+        } else {
+          this.$message({ type: "error", message: "无数据", center: "true" })
+        }
+      } else {
+        this.$message({type: "error",message: org_list.message ? org_list : "后台异常",center: "true"})
+      }
+    },
+    //按公司获取部门数据列表
+    async deptList() {
+       this.form.department = ''
+       this.form.personnel = ''
+      let dept_list = await this.Request(GetDeptList({orgId: this.form.unit}));
+      // console.log(dept_list)
+      if (dept_list.StatusCode === 200) {
+        if (dept_list.Detiel.length != 0) {
+          this.dept_list = dept_list.Detiel
+        } else {
+          
+          // this.dept_list = [{text:'无数据'}]
+          this.form.department = '无数据'
+          this.form.personnel = '无数据'
+          console.log(this.dept_list)
+          this.$message({ type: "error", message: "无数据", center: "true" })
+        }
+      } else {
+        this.$message({type: "error",message: dept_list.message ? dept_list : "后台异常",center: "true"})
+      }
+    },
+    //获取人员列表
+    async userListByDept() {
+      this.form.personnel = ''
+      let user_list_by_dept = await this.Request(GetUserListByDept({projectId: this.projectId, orgId: this.form.unit, deptId: this.form.department}));
+      if (user_list_by_dept.StatusCode === 200) {
+        if (user_list_by_dept.Detiel.length != 0) {
+          this.user_list_by_dept = user_list_by_dept.Detiel
+        } else {
+          this.form.personnel = '无数据'
+          this.$message({ type: "error", message: "无数据", center: "true" })
+        }
+      } else {
+        this.$message({type: "error",message: user_list_by_dept.Message ? user_list_by_dept.Message: "后台异常",center: "true"})
+      }
+    },
+    // 获取用户信息
+    async LoginUserInfo(id){
+      let res = await this.Request(GetLoginUserInfo({curUserId: id}))
+      if(res.StatusCode === 200){
+        console.log(res)
+        this.userData.department = res.Detiel[0].loginUserInfo.cDepName
+        this.userData.name = res.Detiel[0].loginUserInfo.cName
+        this.userData.companyName = res.Detiel[0].loginUserInfo.OrgName
+        this.userInfo = res.Detiel[0].loginUserInfo
+        
+      }
+    }
+
+  },
+  computed: {
+    getViewer3d() {
+      console.log(this.$store.getters.getViewer3d)
+      return this.$store.getters.getViewer3d
+    },
+    //处理空项人员变化
+    newArrData() {
+        let arr = []
+        this.arrData.forEach(i=>{
+          arr.push(i)
+        })
+        arr.unshift(this.userData)
+        return arr    
+    }
+  },
+  watch:{
+    getViewer3d(val){
+      if(this.form.isRelation){
+        this.elementIdS.push(val.elementId)
+      }
+    },
+    // 用户信息
+    userData: {
+      handler(val){
+        if(val){
+          let flow_list = {
+            ID: 1, 
+            Type: 1, //类型
+            MasterID: 1, //主表ID
+            Priority: 1, //优先级
+            OrgId: this.userInfo.iSys_Company_ID, //责任单位
+            DepId: this.userInfo.iSys_Dep_ID, //岗位部门
+            Person: this.userInfo.ID, //人员
+            Status: 1, //状态
+            dCreateTime: val.dCreateTime, //创建时间
+            iCreator: this.userInfo.iCreator,   //创建人
+            dUpdateTime: this.userInfo.dUpdateTime, //修改时间
+            iUpdator: this.userInfo.iUpdator,   //修改人
+            bDelFlag: true, //是否删除
+          }
+          this.flowList.push(flow_list)
+          console.log(this.flowList)
+        }
+      },
+      deep: true
+    }
+  }
+};
+</script>
+<style lang='stylus' rel='stylesheet/stylus'>
+.container-communication2 {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.container-communication2 .dataList {
+  background: #EFF3FF;
+  display: flex;
+  flex-flow: column;
+  margin: -30px 0 0 -100px;
+  padding: 20px;
+}
+
+.container-communication2 .bg {
+  height: 40px;
+  margin-left: -80px;
+  display: flex;
+}
+
+.container-communication2 .bg div {
+  width: 25%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-flow: row;
+}
+
+.container-communication2 .bg div span {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #eff3ff;
+}
+
+.container-communication2 .dataList li {
+  display: flex;
+  flex-flow: row;
+  justify-content: flex-end;
+  align-content: center;
+  margin-left: 14%;
+  height: 40px;
+  margin-bottom: 20px;
+}
+
+.container-communication2 .dataList li:last-child {
+  margin-bottom: 0px;
+}
+
+.container-communication2 .dataList li .ordinal {
+  display: flex;
+  align-items: center;
+  margin-right: 20px;
+  position: relative;
+}
+
+.container-communication2 .dataList li .ordinal span {
+  background: #4775C9;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-align: center;
+}
+
+.container-communication2 .dataList li .ordinal span:before {
+  content: '';
+  position: absolute;
+  top: 31px;
+  background: #435089;
+  width: 1px;
+  height: 38px;
+}
+
+.container-communication2 .dataList li:last-child .ordinal span:before {
+  content: '';
+  position: absolute;
+  top: 31px;
+  background: none;
+  width: 0;
+  height: 0;
+}
+
+.container-communication2 .add {
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.container-communication2 .add img {
+  width: 100%;
+  height: 100%;
+}
+
+.container-communication2 .dataList li .dataContent {
+  background: #ffffff;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.container-communication2 .dataList li .dataContent span {
+  background: #ffffff;
+  width: 33.33%;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 5px 0;
+  height: 30px;
+  line-height: 30px;
+}
+
+.container-communication2 .dataList li .dataContent .unit {
+  border-left: 1px dashed #979797;
+  border-right: 1px dashed #979797;
+}
+
+.container-communication2 .dataBtn {
+  width: auto;
+  display: flex;
+  justify-content: flex-end;
+  margin-left: 10px;
+}
+
+.container-communication2 .dataBtn span {
+  width: 40px;
+  height: 40px;
+  display: inline-block;
+  margin-left: 10px;
+  background-size: 100% 100%;
+  cursor: pointer;
+}
+
+.container-communication2 .sortDown {
+  background: url('../../../assets/imgs/down.jpg') no-repeat center center;
+  background-size: 100% 100%;
+}
+
+.container-communication2 .sortUp {
+  background: url('../../../assets/imgs/up.jpg') no-repeat center center;
+  background-size: 100% 100%;
+}
+
+.container-communication2 .del {
+  background: url('../../../assets/imgs/del_model.png') no-repeat center center;
+}
+
+.container-communication2 .el-form-item {
+  width: 100%;
+  height: auto !important;
+}
+
+.container-communication2 .avatar-uploader .el-upload {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.container-communication2 .el-upload--picture-card {
+  background: #F8F8F8 !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 132px;
+  height: 100px;
+}
+
+.container-communication2 .el-upload--picture-card i {
+  width: 28px;
+  height: 24px;
+  display: block;
+}
+
+.container-communication2 .el-upload--picture-card i img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.container-communication2 .avatar-uploader .el-upload:hover {
+  border-color: #409EFF;
+}
+
+.container-communication2 .avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 132px;
+  height: 100px;
+  line-height: 132px;
+  text-align: center;
+}
+
+.container-communication2 .avatar {
+  width: 132px;
+  height: 100px;
+  display: block;
+}
+
+.container-communication2 .el-form-item__content .tip {
+  color: #999999;
+  font-size: 18px;
+  padding-left: 10px;
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+.container-communication2 .upload {
+  display: inline-block;
+  width: 132px;
+  height: 100px;
+}
+
+.container-communication2 .upload img {
+  width: 30px;
+  height: auto;
+}
+
+.container-communication2 .originator {
+  float: left;
+  width: 260px;
+}
+
+.container-communication2 .el-select {
+  width: 100%;
+}
+
+.container-communication2 .workflowBox {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  float: left;
+  margin: -20px 0 0 -40px;
+}
+
+.container-communication2 .workflowBox .workflow1 {
+  width: 156px;
+  margin-right: 9px;
+}
+
+.container-communication2 .workflowBox .workflow2 {
+  width: 180px;
+  margin-right: 9px;
+}
+
+.container-communication2 .el-select .el-input__suffix {
+  width: 0.666667rem;
+  background: #435089;
+  border-radius: 0 0.066667rem 0.066667rem 0;
+  right: 0 !important;
+}
+
+.container-communication2 .el-select input {
+  background: #fff !important;
+}
+
+.container-communication2 .el-step.is-horizontal .el-step__line {
+  top: 0.25rem;
+  background: #E5E5E5;
+  height: 1px;
+}
+
+.container-communication2 .el-steps--horizontal {
+  margin: 0 0 0 -100px;
+}
+
+.container-communication2 .relevance {
+  width: 64px;
+  height: 40px;
+  border: 1px solid #E5E5E5;
+  background: #F8F8F8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container-communication2 .btn {
+  padding: 20px 25% 20px 5%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container-communication2 .relevance {
+  color: #435089;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.container-communication2 .el-step__icon.is-text {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #E5E5E5;
+  background: #ddd;
+}
+
+.container-communication2 .el-step__main div {
+  color: #333 !important;
+}
+
+.container-communication2 .el-button {
+  width: 100px;
+  color: #fff;
+}
+
+.container-communication2 .el-button--default {
+  background: #999999;
+}
+
+.container-communication2 .el-button--default:focus, .container-communication2 .el-button--default:hover {
+  background: #999999;
+  color: #fff;
+}
+
+.container-communication2 .el-button--primary {
+  background: #4775CA;
+}
+
+.container-communication2 .el-button--primary:focus, .el-button--primary:hover {
+  background: #4775CA;
+  color: #fff;
+}
+
+// 图标颜色
+.container-communication2 .container-communication2 .icon {
+  color: #ffa147;
+}
+
+.container-communication2 .titleBg {
+  background: #44508a;
+}
+
+.container-communication2 .dayManagement {
+  margin-bottom: 26px;
+  // width:800px;
+}
+
+.container-communication2 .el-row .el-col-24 {
+  font-size: 22px;
+  color: #28292b;
+}
+
+.container-communication2 .dayManagement .el-row .el-col-24 {
+  margin: 20px 0px;
+}
+
+.container-communication2 .notice {
+  color: #fff;
+  font-size: 20px;
+  height: 40px;
+  line-height: 40px;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.container-communication2 .notice i {
+  font-size: 20px;
+  position: absolute;
+  right: 15px;
+  line-height: 40px;
+  cursor: pointer;
+}
+
+.container-communication2 .el-form {
+  padding: 0 20px;
+
+}
+
+.container-communication2 .el-input {
+}
+
+.container-communication2 .el-input input, .container-communication2 .el-textarea .el-textarea__inner {
+  background: #F8F8F8;
+  color: #333;
+  font-size: 16px;
+}
+.el-textarea{width:80%; }
+.container-communication2 .el-textarea .el-textarea__inner {
+  min-height: 120px !important;
+  width:560px;
+}
+
+.container-communication2 .el-form-item__label {
+  color: #333333;
+  font-size: 18px;
+    width:150px !important; 
+}
+
+.container-communication2 .leftBox, .container-communication2 .rightBox {
+  width: 800px;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  background: #f5f6fa;
+}
+
+.container-communication2 .el-step__icon-inner {
+  color: #333;
+  font-size: 20px;
+}
+
+.container-communication2 .el-step.is-center .el-step__line {
+  left: 70%;
+  right: -30%;
+}
+
+.container-communication2 .leftBox {
+  left: 0;
+  width:950px;
+}
+
+.container-communication2 .rightBox {
+  right: 10px;
+  width:800px;
+}
+
+.container-communication2 .leftBox .box-card {
+  width: calc(100% - 30px);
+  height: calc(100% - 42px);
+  margin: 20px 10px 20px 20px;
+}
+
+.container-communication2 .rightBox .box-card {
+  width: 800px;
+  height: calc(100% - 42px);
+  margin: 20px 0px 20px 0px;
+  background: #f5f6fa;
+  border: none;
+  box-shadow: none;
+  background: #fff;
+  overflow: auto;
+}
+.container-communication2 .upload div.viewpoint {
+  display: inline-block;
+  width: 132px;
+  height: 100px;
+  border: 1px dashed #999;
+  border-radius: 6px;
+  text-align: center;
+  line-height: 145px;
+  display: inline-block;
+  vertical-align: middle;
+}
+.container-communication2 .upload .viewpoint+.viewpoint{
+  margin-left: 10px;
+}
+.container-communication2 .upload .viewpoint img {
+  width: 30px;
+  height: auto;
+}
+.container-communication2 .upload .viewpoint img.camera {
+  width: 30px;
+  height: auto;
+}
+
+.model-container {
+  width: 98%;
+  height: 90%;
+  padding: 0 !important;
+  z-index:90;
+  margin-top: 50px;
+}
+</style>

@@ -1,0 +1,477 @@
+<!-- 时间管理times -->
+<template lang="pug" src="./index.pug"></template>
+<style lang="stylus" src="./index.styl"></style>
+<style lang="stylus" scoped>
+.kaoqin
+  margin-top 18px
+  margin-right 0 !important
+  width 20% !important
+
+.search-input
+    .el-input-group__prepend
+      background #fff
+      border-right none
+      border-radius 29px 0 0 29px
+  .reason .is-checked
+    .el-radio__inner
+      border-color #FDA143
+      background #FDA143
+
+    .el-radio__label
+      color #606266
+
+  .el-table thead.is-group th
+    background #435089
+    border-right-color #435089
+    border-bottom-color #435089
+
+    .cell
+      color #fff
+
+.table
+  position relative
+
+.addIco
+  position absolute
+  left 330px
+  top 35px
+  color #fff
+  z-index 100
+  font-size 22px
+.padding_blank
+  padding-left 24%
+  
+  .blankList
+    .el-radio
+      display block
+      line-height 50px
+.human_little_img
+  width 35px
+  height 35px
+  position absolute
+  top 0.6rem
+  z-index 100
+
+.human_big_img
+  width 45px
+  height 45px
+  float left
+</style>
+<style>
+.padding_blank .el-form-item__label{
+  line-height:50px;
+}
+.supar_table table tr>td:first-child {
+    padding:0;
+    overflow: hidden;
+}
+</style>
+
+<script type="textecmascript-6">
+import CommonDialog from "@/common/common-dialog/index";
+import Calendar from "himmas-vue-calendar";
+import {GetGroupListWithPersonCount,GetClassGroupToCbx,AddClassGroup} from '@/api/api.js'
+
+export default {
+  components: {
+    CommonDialog,
+    Calendar
+  },
+  created() {
+    this.getGroup();
+  },
+  mounted() {},
+  data() {
+    return {
+      alteration: true, //变更弹框
+      ruleForm: { //新增人员
+        name: "",//姓名
+        age:'',//年龄
+        manNumber:'',//身份证
+        phone:'',//手机
+        number:'',//实名卡账号
+        money:'',//工资卡号
+        door:'',//门禁卡号
+        isWork:'',//劳动合同签署状态
+        isQucik:'',//安全培训状态
+        isHaswork:'',//是否有特种作业证
+        class:'', //班组
+        address:'',//详细地址
+        region: "",
+        typeMan:'', //民族
+        date1: "",
+        date2: "",
+        delivery: false,
+        type: [],
+        resource: "",//性别
+        desc: "",
+      },
+    
+      //新增人员--表单验证
+      rules:{
+        name:[{required: true, message: '请输入真实姓名', trigger: 'blur' },   //姓名
+            { min: 2, max: 5, message: '长度在 2 到 5 个字符', trigger: 'blur' },
+            {pattern:/^[\u0391-\uFFE5A-Za-z]+$/,message: '姓名只可以输入中文/英文',trigger: 'blur' }],
+        resource: [{required: true, message: '请选择性别', trigger: 'change'}], //性别
+        typeMan:[{required: true, message: "请输入民族", trigger: "blur"}],//民族
+        age:[{required: true, message: "请输入年龄", trigger: "blur"}],//年龄
+        manNumber:[{required: true, message: "请输入身份证", trigger: "blur"},
+            {pattern:/(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/,message:'身份证号码格式不对', trigger: "blur"}],//身份证号码
+        phone:[{required: true, message: '请输入手机号码', trigger: 'blur' },
+            {pattern:/^1[3|4|5|7|8][0-9]\d{8}$/,message: '手机号码格式不对',trigger: 'blur' }],//手机号码
+        number:[{required: true, message: '请输入实名卡账号', trigger: 'blur' }],    //实名卡账号
+        money:[{required: true, message: '请输入工资卡号', trigger: 'blur' }],    //工资卡号
+        isWork:[{required: true, message: '请选择劳动合同签署状态', trigger: 'change'}],//劳动合同签署状态
+        isHaswork:[{required: true, message: '请选择是否含有特种作业证', trigger: 'change'}],//是否有特种作业证
+        
+
+      },
+      dialogImageUrl1: "", //视点图片
+      dialogImageUrl2: "", //上传凭证
+      dialogVisible1: false, //视点图片列表
+      dialogVisible2: false, //上传凭证图片列表
+      centerDialogVisible: false,
+      /**[当前选中按钮] */
+      activeBtn: true,
+      /**[筛选表单] */
+      filterForm: {
+        search: ""
+      },
+      /**[班组划分] */
+      menuList: [
+        {
+          name: "木工班组",
+          number: 1
+        },
+        {
+          name: "水电班组",
+          number:2
+        },
+        {
+          name: "机械班组",
+          number: 3
+        },
+        {
+          name: "钢筋班组",
+          number: 4
+        }
+      ],
+      /**[表格数据] */
+      tableData: [
+        {
+          sort: "序号",
+          company: "所属公司",
+          name: "姓名",
+          grade: "班组",
+          card: "实名卡号",
+          tell: "手机号",
+          money: "工资发放状态",
+          zhengchang: "正常",
+          chidao: "迟到",
+          zaotui: "早退",
+          qingjia: "请假",
+          isHaswork:'0',  //是否含有特工证件
+          /**[是黑名单 ？true : false] */
+          isBlacklist: false
+        },
+        {
+          sort: "序号",
+          company: "所属公司",
+          name: "姓名",
+          grade: "班组",
+          card: "实名卡号",
+          tell: "手机号",
+          money: "工资发放状态",
+          zhengchang: "正常",
+          chidao: "迟到",
+          zaotui: "早退",
+          qingjia: "请假",
+          isHaswork:'1',  //是否含有特工证件
+          /**[是黑名单 ？true : false] */
+          isBlacklist: false
+        },
+        {
+          sort: "序号",
+          company: "所属公司",
+          name: "姓名",
+          grade: "班组",
+          card: "实名卡号",
+          tell: "手机号",
+          money: "工资发放状态",
+          zhengchang: "正常",
+          chidao: "迟到",
+          zaotui: "早退",
+          qingjia: "请假",
+          isHaswork:'1',  //是否含有特工证件
+          /**[是黑名单 ？true : false] */
+          isBlacklist: true
+        }
+      ],
+      /**[分页数据] */
+      page: 1,
+      total: 0,
+      page_size: 20,
+      page_sizes: [10, 20, 40, 60],
+      /**[弹框类型] */
+      dialogType: "blacklist",
+      /**[弹框类型] 可选项
+       *  @blacklist  黑名单
+       *  @info       人员详情
+       *  @attendance 考勤管理
+       */
+      dialogTypeOptions: {
+        blacklist: "blacklist",
+        info: "info",
+        attendance: "attendance"
+      },
+      /**[弹框表单] */
+      dialogForm: {
+        reason: 1
+      },
+      dialogRules: {
+        reason: [{ required: true, message: "请选择拉黑理由" }]
+      },
+      /**[拉黑理由] */
+      reasonOptions: [
+        { label: "AAA", value: 1 },
+        { label: "bbb", value: 2 },
+        { label: "ccc", value: 3 }
+      ],
+      /**[个人信息-配置] */
+      userInfo: [
+        /**[第1栏] */
+        [
+          { label: "姓名", prop: "name" },
+          { label: "性别", prop: "sex" },
+          { label: "年龄", prop: "age", class: "age" },
+          { label: "身份证", prop: "idcard", class: "idcard" },
+          { label: "手机号", prop: "tell" },
+          { label: "民族", prop: "nation" },
+          { label: "实名卡号", prop: "card", class: "card" },
+          { label: "门禁卡号", prop: "door_card" },
+          { label: "工种", prop: "work_type" },
+          { label: "家庭住址", prop: "addres", class: "addres" }
+        ],
+        /**[第2栏] */
+        [
+          { label: "特种作业证证号", prop: "card_number" },
+          { label: "操作类别", prop: "handle_type" },
+          { label: "初次领证日期", prop: "created_date" },
+          { label: "使用期限", prop: "use_date" }
+        ],
+        /**[第3栏] */
+        [
+          { label: "所属公司", prop: "affiliation_company" },
+          { label: "所属班组", prop: "affiliation_company" },
+          { label: "劳动合同签署状态", prop: "contract_state" },
+          { label: "安全培训状态", prop: "safe_state" },
+          { label: "工资卡账号", prop: "bank_card" },
+          { label: "工资发放状态", prop: "salary_state" },
+          {
+            label: "本月考情天数（正常）",
+            prop: "check_normal",
+            class: "kaoqin"
+          },
+          { label: "（迟到）", prop: "check_chidao", class: "kaoqin" },
+          { label: "（早退）", prop: "check_zaotui", class: "kaoqin" },
+          { label: "（缺勤）", prop: "check_queqin", class: "kaoqin" }
+        ]
+      ],
+      /**个人信息-数据 */
+      userInfoData: {
+        check_queqin: 26,
+        check_zaotui: 26,
+        check_chidao: 26,
+        check_normal: 26,
+        salary_state: "已发放",
+        bank_card: "1334 0955 5100 0621 123",
+        safe_state: "已签署",
+        contract_state: "班组一",
+        affiliation_company: "某某公司",
+        use_date: "2年",
+        created_date: "2018/02/02",
+        handle_type: "电工作业",
+        card_number: 2345678900981,
+        img: require("./img/img.png"),
+        sex: "男",
+        name: "王某某",
+        age: 36,
+        idcard: 430681190002020098,
+        tell: 13622335566,
+        nation: "汉族",
+        card: "6217 1111 1000 0621 173",
+        door_card: 13622335566,
+        work_type: "混凝土工",
+        addres: "湖南省长沙市天心区某某街道某某小区某某楼某某号"
+      }
+    };
+  },
+  computed: {
+    dialogTitle: function() {
+      let tit = "加入黑名单";
+      if (this.dialogType === this.dialogTypeOptions.info) {
+        tit = "人员详情";
+      } else if (this.dialogType === this.dialogTypeOptions.attendance) {
+        tit = "考勤管理";
+      }
+      return tit;
+    },
+    okText: function() {
+      let tit = "确定";
+      if (
+        this.dialogType === this.dialogTypeOptions.info ||
+        this.dialogType === this.dialogTypeOptions.attendance
+      ) {
+        tit = "";
+      }
+      return tit;
+    },
+    closeText: function() {
+      let tit = "取消";
+      if (
+        this.dialogType === this.dialogTypeOptions.info ||
+        this.dialogType === this.dialogTypeOptions.attendance
+      ) {
+        tit = "";
+      }
+      return tit;
+    }
+  },
+  methods: {
+    renderHeader(h) {
+      return h("span", {
+        innerHTML: "序号1"
+      });
+    },
+    /**[添加考勤颜色] */
+    renderContent(h, row) {
+      let cla = "";
+      if (row.day === 1) cla = "error";
+      if (row.day === 2) cla = "warning";
+      if (row.day === 3) cla = "brand";
+      return h(
+        "div",
+        {
+          class: "day-style"
+        },
+        [row.day, h("span", { class: cla })]
+      );
+    },
+    getClassName(index) {
+      let cla = "";
+      switch (index) {
+        case 0:
+          cla = "one";
+          break;
+        case 1:
+          cla = "two";
+          break;
+        case 2:
+          cla = "three";
+          break;
+      }
+      return cla;
+    },
+    close() {
+      //关闭变更
+      this.alteration = false;
+    },
+    onSubmit() {
+      //表单提交
+      console.log("submit!");
+    },
+    // 视点
+    handleRemove1(file, fileList) {
+      //图标删除
+      console.log(file, fileList);
+    },
+    handlePictureCardPreview1(file) {
+      //点击文件列表中已上传的文件
+      this.dialogImageUrl1 = file.url;
+      this.dialogVisible1 = true;
+    },
+    //上传凭证
+    handleRemove2(file, fileList) {
+      //图标删除
+      console.log(file, fileList);
+    },
+    handlePictureCardPreview2(file) {
+      //点击文件列表中已上传的文件
+      this.dialogImageUrl2 = file.url;
+      this.dialogVisible2 = true;
+    },
+    dialogOk() {
+      this.$refs.dialogFormRef.validate(valid => {
+        if (valid) {
+          console.log(valid);
+        }
+      });
+    },
+    dialogClose() {
+      this.$refs.dialogRef.hide();
+    },
+    handleSizeChange(page_size) {
+      this.page_size = page_size;
+    },
+    handleCurrentChange(page) {
+      this.page = page;
+    },
+    /**[编辑] */
+    onEdit() {},
+    /**[查看考勤详情] */
+    onLooKattendance() {
+      this.dialogType = this.dialogTypeOptions.attendance;
+      this.$refs.dialogRef.show();
+    },
+    /**[移除黑名单] */
+    onOutBlacklist(row) {},
+    /**[查看详情] */
+    onLook(row) {
+      this.dialogType = this.dialogTypeOptions.info;
+      this.$refs.dialogRef.show();
+    },
+    /**[加入黑名单] */
+    onToBlacklist(row) {
+      this.dialogType = this.dialogTypeOptions.blacklist;
+      this.$refs.dialogRef.show();
+    },
+    /**[数据导入] */
+    dataImport() {},
+    /**[模板下载] */
+    downloadModel() {},
+    /**[生成二维码] */
+    createQRcode() {},
+    /**[实名制信息] */
+    onCertification() {
+      this.activeBtn = !this.activeBtn;
+    },
+    /**[黑名单] */
+    onBlacklist() {
+      this.activeBtn = !this.activeBtn;
+    },
+    //根据项目ID和是否黑名单获取全部班组列表以及各班组下总人数
+    getAll(){
+      this.Request(GetGroupListWithPersonCount({projectId:localStorage.getItem('projectid'),isBlackList:!this.activeBtn,keyword:this.filterForm.search})).then(res=>{
+          console.log(res);
+      })
+    },
+    //根据项目ID获班组下拉列表--开场调用
+    getGroup(){
+      this.Request(GetClassGroupToCbx({projectId:localStorage.getItem('projectid')})).then(res=>{
+          console.log(res);
+          
+      })
+    },
+    //添加班组--AddClassGroup
+    addGroup(){
+        console.log('110');
+    },
+
+
+
+
+
+  },
+  watch: {}
+};
+</script>

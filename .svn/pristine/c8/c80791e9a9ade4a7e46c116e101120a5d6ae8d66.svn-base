@@ -1,0 +1,1121 @@
+<!-- 质量管理 -->
+<!--<template lang="pug" src="./index.pug"></template>-->
+<template lang="pug" src="./detail2.pug"></template>
+<style lang="stylus" src="./index.styl"></style>
+
+<script type='textecmascript-6'>
+import { mapMutations } from "vuex";
+import {
+  GetQCManage,
+  GetQCSchedulePlan,
+  GetBuilding,
+  GetSpecialtybyBuilding,
+  GetFloorbyBuilding,
+  GetElementTypebyBuilding,
+  UploadFiles,
+  UploadImages,
+  SaveQCManage,
+  DelQCManage,
+  GetCategoryTypeByInfo,
+  GetElementByTask,
+  GetElementIDByInfo,
+  GetQCElementIdListBySelect
+} from "@/api/api.js";
+export default {
+  components: {},
+  created() {
+    this.initQCSchedulePlanData();
+    this.initModel();
+    this.getElementIDs()
+    // this.$watch('textinput', this.$util.debounce((newQuery) => {
+    //             // newQuery为输入的值
+    //             console.log("延时=", newQuery)
+    //         }, 3000))
+  },
+  mounted() {
+    // let self = this
+    // self.loadStatisticData()
+  },
+  data() {
+    return {
+      elementIDs: [],  //构件数组
+      highLightElementIDs: [],  //需要高亮显示的构件
+      loading: false, //局部loading
+      /**[当前选项卡]
+       *  @ture   采购列表
+       *  @false  变更列表
+       */
+      activeTab: true,
+      /**[当前折叠面板] */
+      nowCollapse: ["1", "2", "3"],
+      house1Options: [], //模型的楼栋
+      house2Options: [], //模型的专业
+      house3Options: [], //模型的楼层
+      house4Options: [], //模型的构件类型
+      /**[筛选表单] */
+      filterForm: {
+        house1: "",
+        house2: "",
+        house3: "",
+        house4: "",
+        custom: ""
+      },
+      textinput: "",
+      /**[筛选表单规则] */
+      filterRules: {},
+      /**[进行中] */
+      dataIng: [
+        {
+          code: "1.1",
+          building: "1F主体结构",
+          major: "2018.01.01",
+          floor: "10",
+          change_them: "0/3"
+        },
+        {
+          code: "1.1",
+          building: "2F主体结构",
+          major: "2018.01.01",
+          floor: "11",
+          change_them: "0/3"
+        },
+        {
+          code: "1.1",
+          building: "3F主体结构",
+          major: "2018.01.01",
+          floor: "10",
+          change_them: "0/3"
+        }
+      ],
+      /**[处理中] */
+      dataHandle: [
+        {
+          code: "2.1",
+          building: "1F主体结构",
+          major: "2018.01.01",
+          floor: "11",
+          change_them: "0/3"
+        },
+        {
+          code: "2.3",
+          building: "2F主体结构",
+          major: "2018.01.01",
+          floor: "10",
+          change_them: "0/3"
+        }
+      ],
+      /**[已处理] */
+      dataOver: [
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        },
+        {
+          code: "编码",
+          building: "楼栋",
+          major: "专业",
+          floor: "楼层",
+          change_them: "变更主题",
+          date_end: "截止时间",
+          status: "状态"
+        }
+      ],
+
+      statisticDatas: [], //进度计划数据
+      constructionPlan: [], //施工方案数据
+      technicalDisclosure: [], //技术交底数据
+      processAcceptance: [], //工序验收数据
+      filesList: [], //文件对象
+      accept: "", //上传时可接受的文件类型
+      accepts: []
+    };
+  },
+  computed: {
+    tableHeight(){
+      return (Number(document.documentElement.clientHeight) - 200) + 'px';
+    },
+    gkxqHeight(){
+      return (Number(document.documentElement.clientHeight) - 165) + 'px';
+    }
+  },
+  methods: {
+    /**
+     * @name 获取质量进度表
+     * @param {string} ProjectID 项目ID
+     * @param {string} Builing 楼栋
+     * @param {string} Specialty 专业
+     * @param {string} Floor 楼层
+     * @param {string} CategoryName 构建名
+     * @param {string} QueryInfo 手输参数
+     */
+    initQCSchedulePlanData() {
+      this.load(); //调用加载中蒙层
+      let params = {
+        ProjectID: localStorage.getItem("projectid"),
+        Builing: this.filterForm.house1,
+        Specialty: this.filterForm.house2,
+        Floor: this.filterForm.house3,
+        CategoryName: this.filterForm.house4,
+        QueryInfo: this.filterForm.custom
+      };
+      this.Request(GetQCSchedulePlan(params)).then(data => {
+        if (data.StatusCode === 200) {
+          if (data.Detiel.length != 0) {
+            let result = data.Detiel;
+            let resultArray = this._processLevelStatisticData(result);
+            this.statisticDatas = resultArray;
+          } else {
+            this.statisticDatas = [];
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+        this.$toast.clear(); //关闭加载中蒙层
+      });
+    },
+    /**
+     * @name 获取模型的楼栋信息
+     */
+    getBuildingData() {
+      this.Request(
+        GetBuilding({ projectid: localStorage.getItem("projectid") })
+      ).then(data => {
+        if (data.StatusCode === 200) {
+          this.house1Options = [];
+          this.house1Options.push({label: "全部", value: ""})
+          for (let i = 0; i < data.Detiel.length; i++) {
+            let Option1 = {};
+            Option1.label = data.Detiel[i].text;
+            Option1.value = data.Detiel[i].id;
+            this.house1Options.push(Option1);
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+      });
+    },
+    /**
+     * @name 根据楼栋获取模型的专业
+     */
+    getSpecialtybyBuildingData() {
+      if (
+        typeof this.filterForm.house1 == "undefined" ||
+        this.filterForm.house1 === ""
+      ) {
+        this.$message({
+          message: "请先选择楼栋！",
+          type: "warning"
+        });
+        return;
+      }
+      this.Request(
+        GetSpecialtybyBuilding({
+          projectid: localStorage.getItem("projectid"),
+          building: this.filterForm.house1
+        })
+      ).then(data => {
+        if (data.StatusCode === 200) {
+          this.house2Options = [];
+          if (data.Detiel.length > 0) {
+            for (let i = 0; i < data.Detiel.length; i++) {
+              let Option1 = {};
+              Option1.label = data.Detiel[i].text;
+              Option1.value = data.Detiel[i].id;
+              this.house2Options.push(Option1);
+            }
+          } else {
+            this.filterForm.house2 = "";
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+      });
+    },
+    /**
+     * @name 根据楼栋获取模型的楼层
+     */
+    getFloorbyBuildingData() {
+      if (this.filterForm.house1 == "" || this.filterForm.house2 === "") {
+        this.$message({
+          message: "请先选择楼栋和专业！",
+          type: "warning"
+        });
+        return;
+      }
+      this.Request(
+        GetFloorbyBuilding({
+          projectid: localStorage.getItem("projectid"),
+          building: this.filterForm.house1,
+          specialty: this.filterForm.house2
+        })
+      ).then(data => {
+        if (data.StatusCode === 200) {
+          this.house3Options = [];
+          if (data.Detiel.length > 0) {
+            for (let i = 0; i < data.Detiel.length; i++) {
+              let Option1 = {};
+              Option1.label = data.Detiel[i].text;
+              Option1.value = data.Detiel[i].id;
+              this.house3Options.push(Option1);
+            }
+          } else {
+            this.filterForm.house3 = "";
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+      });
+    },
+    /**
+     * @name 根据楼栋获取模型的楼层的构件类别
+     */
+    getElementTypebyBuildingData() {
+      if (
+        this.filterForm.house1 == "" ||
+        this.filterForm.house2 == "" ||
+        this.filterForm.house3 == ""
+      ) {
+        this.$message({
+          message: "请先选择楼栋、专业、楼层！",
+          type: "warning"
+        });
+        return;
+      }
+      this.Request(
+        GetCategoryTypeByInfo({
+          projectid: localStorage.getItem("projectid"),
+          BuildName: this.filterForm.house1,
+          Specialty: this.filterForm.house2,
+          Floor: this.filterForm.house3
+        })
+      ).then(data => {
+        if (data.StatusCode === 200) {
+          this.house4Options = [];
+          if (data.Detiel.length > 0) {
+            for (let i = 0; i < data.Detiel.length; i++) {
+              let Option1 = {};
+              Option1.label = data.Detiel[i].text;
+              Option1.value = data.Detiel[i].id;
+              this.house4Options.push(Option1);
+            }
+          } else {
+            this.filterForm.house4 = "";
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+      });
+    },
+    /**
+     * @name 楼栋的值发生变化时触发
+     */
+    onSelectedBuilding(event, item) {
+      this.filterForm.house1 = item;
+      this.filterForm.house2 = ""
+      this.filterForm.house3 = ""
+      this.filterForm.house4 = ""
+      this.initQCSchedulePlanData();
+      this.getElementIDs()
+    },
+    /**
+     * @name 专业的值发生变化时触发
+     */
+    onSelectedMajor(event, item) {
+      this.filterForm.house2 = item;
+      this.filterForm.house3 = ""
+      this.filterForm.house4 = ""
+      this.initQCSchedulePlanData();
+      this.getElementIDs()
+    },
+    /**
+     * @name 楼层的值发生变化时触发
+     */
+    onSelectedFloor(event, item) {
+      this.filterForm.house3 = item;
+      this.filterForm.house4 = ""
+      this.initQCSchedulePlanData();
+      this.getElementIDs()
+    },
+    /**
+     * @name 构建类别的值发生变化时触发
+     */
+    onSelectedConstructionCategory(event, item) {
+      this.filterForm.house4 = item;
+      this.initQCSchedulePlanData();
+      this.getElementIDs()
+    },
+    /**
+     * @name 根据构件参数获取所有ElementID
+     * @param {string} ProjectID 项目ID
+     * @param {string} BuildName 楼栋
+     * @param {string} Specialty 专业
+     * @param {string} Floor 楼层
+     * @param {string} FamilyName 族名称
+     * @param {string} FamilyTypeName 族类型
+     */
+    // async getElementIDs(){
+    //   this.load()
+    //   let param = {
+    //     projectId: localStorage.getItem("projectid"),
+    //     BuildName: this.filterForm.house1,
+    //     Specialty: this.filterForm.house2,
+    //     Floor: this.filterForm.house3
+    //   }
+    //   let res = await this.Request(GetElementIDByInfo(param))
+    //   if(res.StatusCode === 200){
+    //     this.elementIDs = res.Detiel
+    //     this.chanageModel()
+    //   }else {
+    //     this.$message({
+    //       type: 'error',
+    //       message: res.Message,
+    //       center: 'true'
+    //     })
+    //   }
+    //   this.$toast.clear()
+    // },
+    /**
+     * @name 根据构件类别获取所有ElementID
+     * @param {string} ProjectID 项目ID
+     * @param {string} BuildName 楼栋
+     * @param {string} Specialty 专业
+     * @param {string} Floor 楼层
+     * @param {string} categoryname 构建类别
+     * @param {string} keyword 输入框内容
+     */
+    async getElementIDs(){
+      this.load()
+      let param = {
+        projectId: localStorage.getItem("projectid"),
+        building: this.filterForm.house1,
+        specialty: this.filterForm.house2,
+        floor: this.filterForm.house3,
+        categoryname: this.filterForm.house4,
+        keyword: this.filterForm.custom
+      }
+      let res = await this.Request(GetQCElementIdListBySelect(param))
+      if(res.StatusCode === 200){
+        this.elementIDs = res.Detiel
+        this.chanageModel()
+      }else {
+        this.$message({
+          type: 'error',
+          message: res.Message,
+          center: 'true'
+        })
+      }
+      this.$toast.clear()
+    },
+    /**
+     * @name 根据筛选条件显示构件隐藏不符合条件构件
+     */
+    chanageModel(){
+      this.modelBox({
+        isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+        isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+        zIndex: 100, //模型层级
+        background: "",
+        ElementIDs: this.elementIDs, // 所有要显示的构件数组，包括半隐藏构件
+        highLightElementIDs: [], // 高亮显示的构件
+        functionNumber: [30] // 需要模型调用的函数编号数组
+      });
+    },
+    /**
+     * 搜索输入框的值发生变化时触发
+     */
+    searchTxt() {
+      // console.log(this.filterForm.custom)
+      this.initQCSchedulePlanData();
+      // this.filterForm.custom = v;
+      // this.$util.debounce((v) => {
+      //   // newQuery为输入的值
+      //   console.log("延时：", v)
+      // }, 500)
+    },
+    // debounce (fn, delay) {
+    //   var timer = null
+    //   return function () {
+    //     var context = this
+    //     var args = arguments
+    //     clearTimeout(timer)
+    //     timer = setTimeout(function () {
+    //       fn.apply(context, args)
+    //       }, delay)
+    //   }
+    // },
+    /**[采购列表按钮] */
+    onPurchaseBtn() {
+      this.activeTab = !this.activeTab;
+    },
+    /**[变更列表按钮] */
+    onChangeBtn() {
+      this.activeTab = !this.activeTab;
+    },
+    /**[发起变更] */
+    startChange() {},
+    /**[表格处理]
+     *  @row  当前行的数据
+     */
+    onHandle(row) {
+      console.log(row);
+    },
+    /**
+     * @name 加载模型
+     */
+    initModel() {
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          // console.log(res)
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [41] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    }),
+
+    /**
+     * @name 遍历进度计划数据
+     */
+    _processLevelStatisticData(dataArray) {
+      let self = this;
+
+      let resultArray = []; // 一级栏目
+      let index = 1;
+      let level = 1;
+      for (let i = 0; i < dataArray.length; i++) {
+        let item = dataArray[i];
+        // 查找一级分类
+        if (!item.TaskParentId && typeof item.TaskParentId != "undefined") {
+          //item.TaskParentId === null
+          item["level"] = level;
+          item["index"] = index;
+          resultArray.push(item);
+          self._loadChildrenData(
+            resultArray,
+            dataArray,
+            item,
+            level + 1,
+            index++
+          );
+        }
+      }
+      return resultArray;
+    },
+    /**
+     * @name 递归输出子栏目
+     */
+    _loadChildrenData(resultArray, originArray, item, level, index) {
+      let self = this;
+
+      // let deployed = 0
+      // let undeployed = 0
+      // let edit = 0
+      // let completed = 0
+      let index2 = 1;
+
+      for (let i = 0; i < originArray.length; i++) {
+        let originItem = originArray[i];
+        // 判断是否是item项的子项
+        if (originItem.TaskParentId === item.TaskId) {
+          item["hasChildren"] = true;
+          item["showChildren"] = false;
+
+          originItem["index"] = index + "." + index2;
+          originItem["level"] = level;
+          originItem["visible"] = false; // 子项默认隐藏
+          originItem["hiddenByCategory"] = false;
+
+          resultArray.push(originItem);
+          self._loadChildrenData(
+            resultArray,
+            originArray,
+            originItem,
+            level + 1,
+            index + "." + index2++
+          );
+        }
+      }
+    },
+
+    rowClassNameHandler({ row, rowIndex }) {
+      let className = "pid-" + row.TaskParentId;
+      if (
+        row.TaskParentId !== null &&
+        (row["visible"] !== true || row["hiddenByCategory"] === true)
+      ) {
+        className += " hiddenRow";
+      }
+      return className;
+    },
+
+    onExpand(row) {
+      let self = this;
+
+      let isShowChildren = !row["showChildren"];
+      row["showChildren"] = isShowChildren;
+      self._loadAllSubItems(row, true, isShowChildren);
+    },
+
+    _loadAllSubItems(item, isFirstLevlChildren, isShowChilren) {
+      let self = this;
+      let dataArray = [];
+      for (let i = 0; i < self.statisticDatas.length; i++) {
+        let tempItem = self.statisticDatas[i];
+        if (tempItem.TaskParentId === item.TaskId) {
+          if (isFirstLevlChildren) {
+            tempItem["visible"] = !tempItem["visible"];
+          }
+          tempItem["hiddenByCategory"] = !isShowChilren;
+
+          dataArray.push(tempItem);
+          let subItemArray = self._loadAllSubItems(
+            tempItem,
+            false,
+            isShowChilren
+          );
+          dataArray = dataArray.concat(subItemArray);
+        }
+      }
+      return dataArray;
+    },
+    /**
+     * 格式化日期
+     */
+    formatterTime(row, column) {
+      if (!row.BaseFinishTime) return "";
+      return row.BaseFinishTime.substring(0, row.BaseFinishTime.indexOf("T"));
+    },
+    /**
+     * 格式化状态
+     */
+    formatterLevel(row, column) {
+      return row.qcauthcount + "/" + row.qcsumaunthcount;
+    },
+    /**
+     * @name 点击进度列表展示管控详情
+     * @name 根据任务获取构件ID
+     * @param {string} TaskID 任务ID
+     * @param {integer} userid 用户ID
+     */
+    async openDetail(row, event, column) {
+      let params = {
+        userid: localStorage.getItem("userId"),
+        TaskID: row.TaskId
+      };
+
+      let qcdata = await this.Request(GetQCManage(params));
+      let gjdata = await this.Request(GetElementByTask({TaskId: row.TaskId}));
+      
+      if (qcdata.StatusCode === 200) {
+          if (qcdata.Detiel.length != 0) {
+            this.constructionPlan = [];
+            this.technicalDisclosure = [];
+            this.processAcceptance = [];
+            qcdata.Detiel.forEach(element => {
+              switch (element.Mode) {
+                case 0:
+                  this.constructionPlan.push(Object.assign({accept: this.fileAccept(element.SchemeType)}, element));
+                  break;
+                case 1:
+                  this.technicalDisclosure.push(Object.assign({accept: this.fileAccept(element.SchemeType)}, element));
+                  break;
+                case 2:
+                  this.processAcceptance.push(Object.assign({accept: this.fileAccept(element.SchemeType)}, element));
+                  break;
+                default:
+                  break;
+              }
+            });
+            console.log("==constructionPlan==", this.constructionPlan)
+          } else {
+            this.constructionPlan = [];
+            this.technicalDisclosure = [];
+            this.processAcceptance = [];
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: qcdata.Message,
+            center: "true"
+          });
+        }
+
+        if (gjdata.StatusCode === 200) {
+          if(gjdata.Detiel.length > 0){
+            this.highLightElementIDs = []
+            gjdata.Detiel.forEach(element => {
+              this.highLightElementIDs.push(element.ElementID)
+            })
+            this.modelBox({
+              isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+              isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+              zIndex: 100, //模型层级
+              background: "",
+              ElementIDs: this.elementIDs, // 所有要显示的构件数组，包括半隐藏构件
+              highLightElementIDs: this.highLightElementIDs, // 高亮显示的构件
+              functionNumber: [33] // 需要模型调用的函数编号数组
+            });
+          }else{
+            this.$message({
+              type: "warning",
+              message: "暂无构件关联",
+              center: "true"
+            });
+            this.highLightElementIDs = []
+          }
+          // console.log("构件ID",gjdata,this.elementIDs)
+        } else {
+          this.$message({
+            type: "error",
+            message: gjdata.Message,
+            center: "true"
+          });
+        }
+      // this.Request(GetQCManage(params)).then(data => {
+      //   if (data.StatusCode === 200) {
+      //     if (data.Detiel.length != 0) {
+      //       this.constructionPlan = [];
+      //       this.technicalDisclosure = [];
+      //       this.processAcceptance = [];
+      //       data.Detiel.forEach(element => {
+      //         switch (element.Mode) {
+      //           case 0:
+      //             // this.constructionPlan.push(element);
+      //             this.constructionPlan.push(Object.assign({accept: this.fileAccept(element.SchemeType)}, element));
+      //             break;
+      //           case 1:
+      //             // this.technicalDisclosure.push(element);
+      //             this.technicalDisclosure.push(Object.assign({accept: this.fileAccept(element.SchemeType)}, element));
+      //             break;
+      //           case 2:
+      //             // this.processAcceptance.push(element);
+      //             this.processAcceptance.push(Object.assign({accept: this.fileAccept(element.SchemeType)}, element));
+      //             break;
+      //           default:
+      //             break;
+      //         }
+      //         // switch (element.SchemeType) {  //SchemeType：文件0、图片1、模型2
+      //         //   case 0:
+      //         //     this.accept = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, text/plain, application/vnd.ms-works, application/pdf, application/msword";
+      //         //     break;
+      //         //   case 1:
+      //         //     this.accept = "image/*";
+      //         //     break;
+      //         //   case 2:
+      //         //     this.accept = "";  //.rvt
+      //         //     break;
+      //         //   default:
+      //         //     break;
+      //         // }
+      //       });
+      //       console.log("==constructionPlan==", this.constructionPlan)
+      //     } else {
+      //       this.constructionPlan = [];
+      //       this.technicalDisclosure = [];
+      //       this.processAcceptance = [];
+      //     }
+      //   } else {
+      //     this.$message({
+      //       type: "error",
+      //       message: data.Message,
+      //       center: "true"
+      //     });
+      //   }
+      // });
+    },
+    /**
+     * @name 根据任务获取构件ID
+     * @param {string} tid 任务ID
+     */
+    async getElementIdByTask(tid){
+      let gjdata = await this.Request(GetElementByTask({TaskId: tid}));
+      if (gjdata.StatusCode === 200) {
+          if(gjdata.Detiel.length > 0){
+            this.elementIDs = []
+            gjdata.Detiel.forEach(element => {
+              this.elementIDs.push(element.ElementID)
+            })
+            this.modelBox({
+              isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+              isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+              zIndex: 100, //模型层级
+              background: "",
+              ElementIDs: this.elementIDs, // 所有要显示的构件数组，包括半隐藏构件
+              highLightElementIDs: [], // 高亮显示的构件
+              functionNumber: [30] // 需要模型调用的函数编号数组
+            });
+          }else{
+            this.$message({
+              type: "warning",
+              message: "暂无构件关联",
+              center: "true"
+            });
+            this.elementIDs = []
+          }
+          // console.log("构件ID",gjdata,this.elementIDs)
+        } else {
+          this.$message({
+            type: "error",
+            message: gjdata.Message,
+            center: "true"
+          });
+        }
+    },
+    fileAccept(schemeType){
+      // let accepts = []
+      switch (schemeType) {  //schemeType：文件0、图片1、模型2
+        case 0:
+          {
+            this.accept = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, text/plain, application/vnd.ms-works, application/pdf, application/msword"
+          }
+          break;
+        case 1:
+          {
+            this.accept = "image/*"
+          }
+          break;
+        case 2:
+          {
+            this.accept = ".rvt,.rfa,.dwg,.dxf,.skp,.ifc,.dgn,.obj,.stl,.3ds,.dae,.ply,.igms"
+          }
+          break;
+        default:
+          break;
+      }
+      return this.accept;
+    },
+    /**
+     * 文件上传时的钩子
+     */
+    progressFile(event, file, fileList) {
+      console.log("progress", event, file, fileList);
+      return;
+    },
+    /**
+     * 点击上传认证
+     */
+    async uploadFile(event, schemeType, authenSetId, taskId) {
+      // this.$nextTick(()=>{
+      //   console.log(this.$refs.schemeType);
+      // })
+      console.log("change", event.target.files[0], schemeType, authenSetId, taskId);
+      // return;
+      let params = [
+          {
+            key: "files",
+            value: event.target.files[0]
+          }
+        ],
+        data = "";
+      switch (schemeType) {  //schemeType：文件0、图片1、模型2
+        case 0:
+        case 2:
+          data = await this.Request(UploadFiles(params));
+          break;
+        case 1:
+          data = await this.Request(UploadImages(params));
+          break;
+        default:
+          break;
+      }
+      if (data.StatusCode == 200) {
+        // this.filesDetiel = data.Detiel
+        if (data.Detiel.length > 0) {
+          this.filesList.push({
+            Id: data.Detiel[0].Id, //上传后的文件名
+            URL: data.Detiel[0].URL, //文件地址
+            smallPhotoURL: data.Detiel[0].smallPhotoURL, //如果存在小图则返回小图地址
+            Type: data.Detiel[0].Type, //文件类型
+            TokenUrL: data.Detiel[0].TokenUrL //域名地址
+          });
+          this.saveQCManage(authenSetId, taskId);
+        } else {
+          this.$message({
+            type: "error",
+            message: "文件上传失败",
+            center: "true"
+          });
+        }
+      } else {
+        this.$message({
+          type: "error",
+          message: data.message ? data.message : "后台异常",
+          center: "true"
+        });
+      }
+    },
+    /**
+     * 保存质量管理信息
+     * @param {string} AuthenSetId 认证ID
+     * @param {string} Uploader 上传人
+     * @param {date} ConfirmDate 上传时间
+     * @param {string} FileName 文件名
+     * @param {string} FileUrl 文件路径
+     * @param {integer} iCreator 创建人（第二次上传认证文件不覆盖创建人数据）
+     */
+    async saveQCManage(authenSetId, taskId) {
+      this.load(); //调用加载中蒙层
+      let params = {
+          AuthenSetId: authenSetId,
+          Uploader: localStorage.getItem("userId"),
+          ConfirmDate: require("moment")(new Date()).format("YYYY-MM-DD"),
+          FileName: this.filesList[0].Id,
+          FileUrl: this.filesList[0].URL,
+          iCreator: Number(localStorage.getItem("userId"))
+        };
+      let data = await this.Request(SaveQCManage(params));
+      if (data.StatusCode == 200) {
+        this.$message({
+          type: "success",
+          message: "上传成功！",
+          center: "true"
+        });
+        this.openDetail({TaskId: taskId})
+      } else {
+        this.$message({
+          type: "error",
+          message: data.Message,
+          center: "true"
+        });
+      }
+      this.filesList = []
+      this.$toast.clear(); //关闭加载中蒙层
+    },
+    /**
+     * 查看认证文件
+     * @param {string} url 图片URL
+     */
+    see(url) {
+      if (url != "" && url != null) {
+        this.$alert(
+          '<img src="http://47.112.21.206:8006' + url + '" style="width:100%; height:auto;">', "",
+          {
+            dangerouslyUseHTMLString: true,
+            distinguishCancelAndClose: false,
+            showCancelButton: false,
+            showConfirmButton: false,
+            closeOnClickModal: true
+          }
+        ).then(
+          action => {
+            this.$message({
+              type: "info",
+              message: "action: " + action
+            });
+          },
+          () => {
+            // 点击取消 ----- 加入这部分就可以了
+          }
+        );
+      } else {
+        this.$message({
+          type: "warning",
+          message: "请先上传文件",
+          center: "true"
+        });
+      }
+    },
+    /**
+     * 删除认证文件
+     * @param {integer} id 
+     * @param {string} tid 任务ID
+     */
+    deleteScheme(id, tid) {
+      if(id=="" || id == null){
+        this.$message({
+          type: "error",
+          message: "ID不能为空",
+          center: "true"
+        });
+        return;
+      }
+      this.$confirm("此操作将永久删除该文件, 是否继续?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      })
+        .then(() => {
+          this.Request(DelQCManage({ id })).then(data => {
+            if (data.StatusCode == 200) {
+              this.$message({
+                type: "success",
+                message: "删除成功！",
+                center: "true"
+              });
+              this.openDetail({TaskId: tid})
+            } else {
+              this.$message({
+                type: "error",
+                message: data.Message,
+                center: "true"
+              });
+            }
+          });
+        })
+        .catch(() => {
+          this.$message({
+            type: "info",
+            message: "已取消删除"
+          });
+        });
+    }
+  },
+  watch: {
+    // filterForm: {
+    //   handler(val, oldVal){
+    //       // console.log("watch楼栋: "+val.house1, oldVal.house1);
+    //       this.$util.debounce((val) => {
+    //             // newQuery为输入的值
+    //             console.log("延时=", val)
+    //         }, 200)
+    //   },
+    //   deep:true
+    // }
+    // textinput: function (val, oldVal) {
+    //   console.log('new: %s, old: %s', val, oldVal)
+    //   this.$util.debounce(function(val) {
+    //       // newQuery为输入的值
+    //       console.log("延时=", val)
+    //   }, 600)
+    // }
+  },
+  filters: {
+    filterDate(v) {
+      if (!v) return "";
+      return v.substring(0, v.indexOf("T"));
+    }
+  },
+  directives: {
+    /**
+     * 节流指令
+     */
+    debounce: {
+      inserted: function(el, binding) {
+        let timer;
+        el.addEventListener("keyup", () => {
+          if (timer) {
+            clearTimeout(timer);
+          }
+          timer = setTimeout(() => {
+            binding.value();
+          }, 500);
+        });
+      }
+    }
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-quality {
+  width: 100%;
+  height: 100%;
+}
+</style>
+<style scoped>
+.model-container {
+  width: 100%;
+  height: 100%;
+  padding: 0 !important;
+  z-index: 100;
+}
+.scr {
+  font-size: 14px;
+}
+.rzsj {
+  font-size: 14px;
+  margin-left: 10px;
+}
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gk-detail {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.not-data {
+  font-size: 14px;
+  text-align: center;
+  color: lightgray;
+}
+.scheme-button {
+  position: relative;
+  cursor: pointer;
+}
+.scheme-uplod {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  max-width: 110px;
+  cursor: pointer;
+}
+</style>
+<style>
+.container-quality .hiddenRow {
+  display: none;
+}
+
+.container-quality .is-scrolling-none{
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
+  box-sizing: border-box;
+}
+.container-quality .is-scrolling-none::-webkit-scrollbar {
+  width: 8px;
+  }
+.container-quality .is-scrolling-none::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+  border-radius: 10px;
+  background-color: #F5F5F5;
+} 
+
+/*定义滑块 内阴影+圆角*/
+.container-quality .is-scrolling-none::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3);
+  background-color: #555;
+}
+</style>
+

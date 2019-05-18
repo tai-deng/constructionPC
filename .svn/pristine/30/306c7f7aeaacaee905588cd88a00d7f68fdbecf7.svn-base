@@ -1,0 +1,74 @@
+<!-- 物资需求-按进度计划 -->
+
+<el-form :model="form" label-width="100px">
+  <el-form-item label-width="40px" class="radio-color">
+    <el-radio-group v-model="form.check" text-color="#FDA143" fill="#FDA143">
+      <el-radio label="审核"></el-radio>
+      <el-radio label="无需审核"></el-radio>
+    </el-radio-group>
+  </el-form-item>
+  <div class="flex">
+    <el-form-item label="采购批次">
+      <el-input v-model="form.purchase" :disabled="true"></el-input>
+    </el-form-item>
+    <el-form-item label="模型选择">
+      <div class="originator">
+        <el-select v-model="form.people" class="select-david">
+          <el-option label="aa" value="1"></el-option>
+          <el-option label="bb" value="2"></el-option>
+        </el-select>
+      </div>
+    </el-form-item>
+  </div>
+  <div class="flex">
+    <el-form-item label="时间" class="time">
+      <div class="flex">
+        <el-date-picker
+          v-model="form.start"
+          type="date"
+          placeholder="开始时间">
+        </el-date-picker>
+        <span class="line">~</span>
+        <el-date-picker
+          v-model="form.end"
+          type="date"
+          placeholder="结束时间">
+        </el-date-picker>
+      </div>
+    </el-form-item>
+    <el-form-item label-width="54px">
+      <el-button icon="el-icon-refresh" type="text">模型同步</el-button>
+    </el-form-item>
+  </div>
+  <el-form-item label-width="40px">
+    <div class="teble-wrapper">
+      <el-table :data="tableData" border :span-method="arraySpanMethod">
+        <el-table-column align="center" label="任务名称" prop="task_name"></el-table-column>
+        <el-table-column align="center" label="物资名称" prop="name"></el-table-column>
+        <el-table-column align="center" label="规格型号" prop="type"></el-table-column>
+        <el-table-column align="center" label="施工预算量" prop="budget"></el-table-column>
+        <el-table-column align="center" label="已采购量" prop="yet_purchasing"></el-table-column>
+        <el-table-column align="center" label="本次采购量">
+          <template slot-scope="scope">
+            <el-input class="table-input" v-model="scope.row.buy"></el-input>
+          </template>
+        </el-table-column>
+        <el-table-column align="center" label="选择" width="50px">
+          <template slot-scope="scope">
+            <el-checkbox class="table-checkbox" size="medium" v-model="scope.row.isOk"></el-checkbox>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+  </el-form-item>
+  <el-form-item label="需求时间" class="time">
+      <el-date-picker
+      v-model="form.start1"
+      type="date"
+      placeholder="需求时间">
+    </el-date-picker>
+  </el-form-item>
+  <el-form-item label="采购审核">
+    <Timeline v-model="audit"/>
+  </el-form-item>
+</el-form>

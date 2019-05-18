@@ -1,0 +1,93 @@
+
+import { GetFiveDSchedulePlanList, GetBuilding } from '../../../api/api';
+
+
+const projectid = localStorage.getItem("projectid");
+
+// 获取项目楼栋信息
+export const getBuil = (that) => {
+    that.load();
+    GetBuilding({ projectid }).then(res => {
+        that.$toast.clear();
+        if (res.StatusCode == 200) {
+            that.modeList = res.Detiel;
+        }
+    })
+}
+
+// 获取列表
+export const getFiveList = (that, init) => {
+    let par = {
+        ProjectID: projectid,
+        BuildingName: that.fiveList.modelName,
+        BaseStartTime: that.fiveList.date[0],
+        BaseFinishTime: that.fiveList.date[1]
+    }
+    that.load();
+    GetFiveDSchedulePlanList(par).then(res => {
+        that.$toast.clear();
+        let data = [];
+        if (res.StatusCode == 200 && res.Detiel.length > 0) {
+            res.Detiel.forEach((el, index) => {
+                data.push({
+                    id: el.TaskId,
+                    text: el.TaskName,
+                    type: "task",
+                    start_date: el.BaseStartTime,
+                    duration: el.Duration,
+                    parent: el.TaskParentId,
+                    progress: el.PercenTage,
+                    open: false
+                });
+            });
+            // data.push({
+            //     id: 1,
+            //     text: "一级菜单",
+            //     type: "project",
+            //     progress: 0.4,
+            //     open: true,
+            //     start_date: "16-04-2019",
+            //     duration: 17,
+            //     parent: 0
+            //   },
+            //   {
+            //     id: 2,
+            //     text: "一级菜单子菜单",
+            //     type: "project",
+            //     start_date: "02-04-2018 00:00",
+            //     duration: 5,
+            //     progress: 0.6,
+            //     parent: 0,
+            //     open: true
+            //   },
+            //   {
+            //     id: 5,
+            //     text: "子菜单的子菜单",
+            //     type: "task",
+            //     start_date: "02-04-2018 00:00",
+            //     duration: 3,
+            //     parent: 0,
+            //     progress: 0.6,
+            //     open: true
+            //   },
+            //   {
+            //     id: 6,
+            //     text: "Air conditioners check",
+            //     type: "task",
+            //     start_date: "05-04-2018 00:00",
+            //     duration: 2,
+            //     parent: 0,
+            //     progress: 0.29,
+            //     open: true
+            //   },)
+            init({ data, links: [] })
+            console.log(data)
+        } else {
+            that.$message({
+                type: "warning",
+                message: res.Message,
+                center: "true"
+            });
+        }
+    })
+}

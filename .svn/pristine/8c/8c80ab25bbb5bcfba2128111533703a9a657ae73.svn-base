@@ -1,0 +1,39 @@
+/**
+ * 所有状态，请用注释区分
+ */
+export default {
+  ElementIDs:[],//模型的所有构件ID数组
+  //模型状态
+  modelBox: {
+    isShowModel: false,//是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+    isLoadModel: false,//是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+    top: 0,//距离顶部距离‘px'
+    left: 0,//距离左边距离‘px'
+    width: 0,//模型宽‘px'
+    height: 0,//模型高 ‘px'
+    zIndex: 100,//模型层级
+    background: 'white',
+    ElementIDs: [],// 所有要显示的构件数组，包括半隐藏构件
+    highLightElementIDs: [],// 高亮显示的构件
+    functionNumber: [],// 需要模型调用的函数编号数组
+  },
+  viewer3d:{},//模型实例
+  // 甘特图模块
+  ganttState: {
+    deleteTaskItem: null,   // 进度规划删除选定
+    addScheme: null,        //  新增方案
+    inputFile:null,         //  导入文件
+    dateShape:null,         //  日期显示形式
+    isDelBtn:null,          //  选中
+    addBtn:null,            //  新增按钮
+
+    selModel: null,         // 5D 选择模型
+    pause: false,           //  暂停播放效果图
+    play: false,            //  播放效果图
+    educe: false,           //  导施工图
+    showMode: false,        //  显示模型
+    selDate: null,          //  筛选日期
+  },
+  isViewAdded: false,//模型是否加载完成
+  toPageNum: 0, // 清单导入页面 跳转到哪个页面 0 --plan1 , 2 --plan2 ,  3-- plan3
+}

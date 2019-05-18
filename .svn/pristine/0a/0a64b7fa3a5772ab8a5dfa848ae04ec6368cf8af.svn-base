@@ -1,0 +1,32 @@
+/* button begin */
+.my-button.el-button{
+    font-size: 16px
+}
+/* button end */
+
+/* collapse begin */
+.my-collapse .el-collapse-item__header{
+    height: 40px;
+    line-height: 40px;
+}
+/* collapse end */
+
+/* table begin */
+.my-table.el-table thead{
+    font-size: 18px;
+    font-weight: 500;
+}
+.my-table.el-table td{
+    font-size: 16px;
+    font-weight: 400;
+}
+.my-table .my-button{
+    padding: 0;
+}
+/* table end */
+
+/* dialog begin */
+.my-dialog .el-dialog__headerbtn .el-dialog__close{
+    font-size: 16px;
+    color: white;
+}

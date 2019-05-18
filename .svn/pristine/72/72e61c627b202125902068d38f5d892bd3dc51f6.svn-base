@@ -1,0 +1,1334 @@
+<!-- 集成管理integration -->
+<template>
+  <div class="container-integration">
+    <div class="leftBox">
+      <div class="box-card">
+
+         <!-- 模型box -->
+          <div class="model-container">
+            <div ref="modelContainer" class="model-container"></div>
+        </div>
+
+        <!-- <div class="title">
+          <i class="el-icon-menu icon"></i>
+        </div> -->
+        <!-- 弹框 -->
+        <!-- <div class="modelInfo">
+          <span>某某的问题</span>
+          <ul>
+            <li>上传人:</li>
+            <li>上传时间:</li>
+          </ul>
+        </div> -->
+        <ul class="statisticsList">
+          <li @click="onMarkerShowOrHide(1)">
+            <span>
+              <img src="../../../assets/imgs/img2.png" alt>
+            </span>
+            <span>待接收</span>
+            <span>({{ingPageTotal}})</span>
+          </li>
+          <li @click="onMarkerShowOrHide(2)">
+            <span>
+              <img src="../../../assets/imgs/img3.png" alt>
+            </span>
+            <span>进行中</span>
+            <span>({{handlePageTotal}})</span>
+          </li>
+          <li @click="onMarkerShowOrHide(3)">
+            <span>
+              <img src="../../../assets/imgs/img4.png" alt>
+            </span>
+            <span>已完成</span>
+            <span>({{overPageTotal}})</span>
+          </li>
+        </ul>
+        <!-- 模型box -->
+        <!-- <div class="model-container">
+            <div ref="modelContainer" class="model-container"></div>
+        </div> -->
+      </div>
+    </div>
+    <div class="rightBox">
+      <div class="box-card">
+        <!-- 我的数据 -->
+        <div class="myData">
+          <el-row>
+            <el-col :span="24">
+              <i class="icon">
+                <img src="../../../assets/imgs/data.png" alt>
+              </i>
+              <span class="title">我的数据</span>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="8">
+              <div class="list">
+                <div class="clearfix myDataTitle">任务</div>
+                <div class="content">
+                  <div>
+                    <span class="num">
+                      <span class="numColor1">{{ingPageTotal}}</span>项
+                    </span>
+                    <span class="info">待接收</span>
+                  </div>
+                  <div class="center">
+                    <span class="num">
+                      <span class="numColor2">{{handlePageTotal}}</span>项
+                    </span>
+                    <span class="info">进行中</span>
+                  </div>
+                  <div>
+                    <span class="num">
+                      <span class="numColor3">{{overPageTotal}}</span>项
+                    </span>
+                    <span class="info">已完成</span>
+                  </div>
+                </div>
+              </div>
+            </el-col>
+            <el-col :span="8">
+              <div class="list">
+                <div class="clearfix myDataTitle">预警</div>
+                <div class="content">
+                  <div>
+                    <span class="num">
+                      <span class="numColor1">{{lagging}}</span>项
+                    </span>
+                    <span class="info">滞后任务</span>
+                  </div>
+                  <div class="center">
+                    <span class="num">
+                      <span class="numColor2">{{normal}}</span>项
+                    </span>
+                    <span class="info">正常任务</span>
+                  </div>
+                  <div>
+                    <span class="num">
+                      <span class="numColor3">{{totalWarning}}</span>项
+                    </span>
+                    <span class="info">总报警</span>
+                  </div>
+                </div>
+              </div>
+            </el-col>
+            <el-col :span="8">
+              <div class="list">
+                <div class="clearfix myDataTitle">动态</div>
+                <div class="content">
+                  <div>
+                    <span class="num">
+                      <span class="numColor1">2</span>项
+                    </span>
+                    <span class="info">浏览量</span>
+                  </div>
+                  <div class="center">
+                    <span class="num">
+                      <span class="numColor2">10</span>项
+                    </span>
+                    <span class="info">评论量</span>
+                  </div>
+                  <div>
+                    <span class="num">
+                      <span class="numColor3">20</span>项
+                    </span>
+                    <span class="info">点赞量</span>
+                  </div>
+                </div>
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+        <!-- 日常管理 -->
+        <div class="dayManagement">
+          <el-row>
+            <el-col :span="24">
+              <i class="icon">
+                <img src="../../../assets/imgs/everyday.png" alt>
+              </i>
+              <span class="title">日常管理</span>
+            </el-col>
+          </el-row>
+          <div class="dayManagemenContent">
+            <div class="missionState">
+              <!-- 系统公告 -->
+                <!-- <div class="titleBg notice">系统公告</div>
+                <ul class="noticeList" v-loading="noticeLoading">
+                  <li v-for="(item,index) in noticeList" v-bind:key="index">
+                    <span>
+                      {{item.Message}}
+                      <b>责任人：{{item.UserName}}</b>
+                    </span>
+                    <span>{{item.Time.substring(0, item.Time.indexOf(" "))}}</span>
+                  </li>
+                </ul> -->
+          
+              <!-- 任务状态 -->
+              <ul>
+                <li :ref="item.refName" v-for="(item,index) in collapseData" v-bind:key="index">
+                  <div class="titleBg notice" :id="item.id" @click="collapse(item)">
+                    <span>{{item.name}}({{item.statistics}})</span>
+                    <span>
+                      <i v-if="!item.show" class="el-icon-arrow-down"></i>
+                      <i v-if="item.show" class="el-icon-arrow-up"></i>
+                    </span>
+                  </div>
+                  <!-- 系统公告 begin -->
+                  <div class="itemWidth" v-if="item.show" v-show="item.status == 0">
+                    <ul class="noticeList" v-loading="noticeLoading">
+                      <li v-for="(i,index) in noticeList" v-bind:key="index">
+                        <span>
+                          {{i.Message}}
+                          <b>责任人：{{i.UserName}}</b>
+                        </span>
+                        <span>{{i.Time.substring(0, i.Time.indexOf(" "))}}</span>
+                      </li>
+                      <!-- <el-pagination 
+                        :total="noticePageTotal" 
+                        @current-change="noticeCurrentChange" 
+                        :current-page.sync="noticeCurrentPage"
+                        :page-size="pageSize0" 
+                        background 
+                        layout="prev, pager, next" 
+                        v-show="item.flag && noticePageTotal > pageSize0" 
+                        class="text-center" >
+                      </el-pagination> -->
+                      <el-pagination 
+                        :total="noticePageTotal" 
+                        @current-change="noticeCurrentChange" 
+                        :current-page.sync="noticeCurrentPage"
+                        :page-size="pageSize0" 
+                        background 
+                        layout="prev, pager, next" 
+                        v-show="noticePageTotal > pageSize0" 
+                        class="text-center" >
+                      </el-pagination>
+                    </ul>
+                    <div class="seeMore" v-show="noticePageTotal > 3 && !item.flag"
+                      slot="append"
+                      style="text-align:center; line-height:26px;border-bottom:1px solid #EBEEF5;"
+                    >
+                      <a href="javascript:;" @click=" seeMore(item)" class="blue01">查看更多</a>
+                    </div>
+                  </div>
+                  <!-- 系统公告 end -->
+                  <!-- 待接收 begin -->
+                  <div class="itemWidth" v-if="item.show" v-show="item.status == 1">
+                    <!-- :header-cell-style="{padding: '5px'}"  -->
+                    <el-table
+                      :data="dataIng"
+                      :row-style="{height: '28px'}" 
+                      :cell-style="{padding: '0px', borderBottom: 'none'}"
+                      style="width: 100%;"
+                      align="center"
+                      header-align="center"
+                      v-loading="ingLoading"
+                      @row-click="openDetail"
+                    >
+                      <el-table-column type="index" label="序号" width="60"></el-table-column>
+                      <el-table-column prop="NAME" label="名称"></el-table-column>
+                      <el-table-column prop="TypeName" label="类型名称"></el-table-column>
+                      <el-table-column prop="dCreateTime" :formatter="formatterTime" label="创建时间"></el-table-column>
+                      <el-table-column label="处理">
+                        <template slot-scope="scope">
+                          <el-button
+                            @click="receive(scope.$index, scope.row)"
+                            type="text"
+                            size="small"
+                          >接收</el-button>
+                          <el-button
+                            type="text"
+                            class="rejection"
+                            @click="dispose(scope.$index, scope.row)"
+                            size="small"
+                          >拒收</el-button>
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                    <div class="seeMore" v-show="ingPageTotal > 2 && !item.flag"
+                      slot="append"
+                      style="text-align:center; line-height:26px;border-bottom:1px solid #EBEEF5;"
+                    >
+                      <a href="javascript:;" @click=" seeMore(item)" class="blue01">查看更多</a>
+                    </div>
+                    <el-pagination 
+                        :total="ingPageTotal" 
+                        @current-change="ingCurrentChange" 
+                        :current-page.sync="ingCurrentPage"
+                        :page-size="pageSize" 
+                        background 
+                        layout="prev, pager, next" 
+                        v-show="item.flag && ingPageTotal > pageSize" 
+                        class="text-center" >
+                      </el-pagination>
+                  </div>
+                  <!-- 待接收 end -->
+                  <!-- 进行中 begin -->
+                  <div class="itemWidth" v-if="item.show" v-show="item.status == 2">
+                    <el-table :data="dataHandle" :row-style="{height: '28px'}" :cell-style="{padding: '0px', borderBottom: 'none'}" style="width: 100%;" v-loading="handleLoading" @row-click="openDetail">
+                      <el-table-column type="index" label="序号" width="60"></el-table-column>
+                      <el-table-column prop="NAME" label="名称"></el-table-column>
+                      <el-table-column prop="TypeName" label="类型名称"></el-table-column>
+                      <el-table-column prop="dCreateTime" :formatter="formatterTime" label="创建时间"></el-table-column>
+                      <el-table-column label="处理">
+                        <template slot-scope="scope">
+                          <el-button
+                            @click="receive(scope.$index, scope.row)"
+                            type="text"
+                            size="small"
+                          >审核</el-button>
+                          <!-- <el-button
+                            type="text"
+                            @click="dispose(scope.$index, scope.row)"
+                            size="small"
+                          >认证</el-button>-->
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                    <div class="seeMore" v-show="handlePageTotal > 2 && !item.flag"
+                      slot="append"
+                      style="text-align:center; line-height:26px;border-bottom:1px solid #EBEEF5;"
+                    >
+                      <a href="javascript:;" @click="seeMore(item)" class="blue01">查看更多</a>
+                    </div>
+                    <el-pagination 
+                        :total="handlePageTotal" 
+                        @current-change="handleCurrentChange" 
+                        :current-page.sync="handleCurrentPage"
+                        :page-size="pageSize" 
+                        background 
+                        layout="prev, pager, next" 
+                        v-show="item.flag && handlePageTotal > pageSize" 
+                        class="text-center" >
+                      </el-pagination>
+                  </div>
+                  <!-- 进行中 end -->
+                  <!-- 已完成 begin -->
+                  <div class="itemWidth" v-if="item.show" v-show="item.status == 3">
+                    <el-table :data="dataOver" :row-style="{height: '28px'}" :cell-style="{padding: '0px', borderBottom: 'none'}" style="width: 100%;" v-loading="overLoading" @row-click="openDetail">
+                      <el-table-column type="index" label="序号" width="60"></el-table-column>
+                      <el-table-column prop="NAME" label="名称"></el-table-column>
+                      <el-table-column prop="TypeName" label="类型名称"></el-table-column>
+                      <el-table-column prop="dCreateTime" :formatter="formatterTime" label="创建时间"></el-table-column>
+                      <el-table-column label="处理">
+                        <template slot-scope="scope">
+                          <el-button
+                            @click="receive(scope.$index, scope.row)"
+                            type="text"
+                            size="small"
+                          >已完成</el-button>
+                          <!-- <el-button
+                            type="text"
+                            @click="dispose(scope.$index, scope.row)"
+                            size="small"
+                          >已拒接</el-button>-->
+                          <!-- <el-button
+                            @click="receive(scope.$index, scope.row)"
+                            type="text"
+                            size="small"
+                          >已完成</el-button>-->
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                      <div class="seeMore" v-show="overPageTotal > 2 && !item.flag"
+                        slot="append"
+                        style="text-align:center; line-height:26px;border-bottom:1px solid #EBEEF5;"
+                      >
+                        <a href="javascript:;" @click="seeMore(item)" class="blue01">查看更多</a>
+                      </div>
+                      <el-pagination 
+                        :total="overPageTotal" 
+                        @current-change="overCurrentChange" 
+                        :current-page.sync="overCurrentPage"
+                        :page-size="pageSize" 
+                        background 
+                        layout="prev, pager, next" 
+                        v-show="item.flag && overPageTotal > pageSize"
+                        class="text-center" >
+                      </el-pagination>
+                  </div>
+                  <!-- 已完成 end -->
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script type='textecmascript-6'>
+import { mapMutations } from "vuex";
+import { GetThisMonthCount, GetRiskList, QueryWorkList, QueryNoticeList, QuerySumNoticeList, QueryNoticeView } from "@/api/api.js";
+import { pubInterface } from "./util/util.js";
+export default {
+  data() {
+    return {
+      data: "集成管理integration",
+      noticeLoading: false,
+      ingLoading: false,
+      handleLoading: false,
+      overLoading: false,
+      pageSize0: 7,
+      pageSize: 7,
+      ingCurrentPage: 1,
+      ingPageTotal: 0,  //待接收数
+      handleCurrentPage: 1,
+      handlePageTotal: 0,  //进行中数
+      overCurrentPage: 1,
+      overPageTotal: 0,  //已完成数
+      activeNames: ["1", "2", "3"],
+      dataIng: [],
+      dataHandle: [],
+      dataOver: [],
+      collapseData: [
+         {
+          id: "0",
+          name: "系统公告",
+          statistics: "0",
+          status: "0",
+          refName: 'first',
+          show: true,
+          flag: false
+
+        },
+        //折叠面板
+        {
+          id: "1",
+          name: "待接收",
+          statistics: "0",
+          status: "1",
+          refName: 'second',
+          show: true,
+          flag: false
+        },
+        {
+          id: "2",
+          name: "进行中",
+          statistics: "0",
+          status: "2",
+          refName: 'third',
+          show: true,
+          flag: false
+
+        },
+        {
+          id: "3",
+          name: "已完成",
+          statistics: "0",
+          status: "3",
+          refName: 'fourth',
+          show: true,
+          flag: false
+
+        }
+      ],
+      noticeList: [],
+      noticePageTotal: 0,
+      noticeCurrentPage: 1,
+      lagging: 0,  //滞后任务数
+      normal: 0,  //正常任务数
+      totalWarning: 0, //总报警次数
+      collapseModle: false,
+      flag0: false,
+      flag1: false,
+      flag2: false,
+      noMarkers: [],  //未整改标签
+      ingMarkers: [],  //整改中标签
+      overMarkers: [],  //已整改标签
+      allAarkers: [],
+      noModelID: [],  //未整改标签ID
+      ingModelID: [],  //整改中标签ID
+      overModelID: [],  //已整改标签ID
+      noModelShow: false,
+      ingModelShow: false,
+      overModelShow: false
+    };
+  },
+  created() {
+    this._initData()
+    this.getWorkIng();  //待接收
+    this.getWorkHandle();  //进行中
+    this.getWorkOver();  //已完成
+    this.getNoticeList()  //系统公告
+    this.getEarlyWarning()  //获取预警数据
+    this.getMarkers()
+  },
+  methods: {
+    _initData() {
+      /**
+       * 模型状态管理
+       */
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [41] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+
+    /**
+     * 在模型上添加标签
+     */
+    async getMarkers(){
+      this.noMarkers = []
+      this.ingMarkers = []
+      this.overMarkers = []
+      this.noModelID = []
+      this.ingModelID = []
+      this.overModelID= []
+      let noMarker = await pubInterface(this, QueryNoticeView, {projectId: localStorage.getItem("projectid"), Type: 1, UserId: localStorage.getItem("userId")})
+      if(noMarker.StatusCode === 200){
+        if(noMarker.Detiel.length > 0){
+          noMarker.Detiel.forEach(element => {
+            this.noModelID.push(element.WorkType.toString() + element.ID.toString())
+            let initiateTime = element.UploadTime == "" ? "" : element.UploadTime.substring(0, element.UploadTime.indexOf("T"))
+            this.noMarkers.push({
+                imgTag: require("./img/img2.png"),
+                position: JSON.parse(element.State).camera.position,
+                markerID: element.WorkType.toString() + element.ID.toString(),
+                tooltips: "<div style='padding: 15px; background: rgba(0,0,0,0.6); text-align: left; color:#fff; max-width: 200px'><p style='margin-bottom: 10px'>"+ element.Subject +"</p><p>上传人："+ element.UserName +"</p><p>上传时间："+ initiateTime +"</p></div>"
+            })
+              // let initiateTime = element.Risk.InitiateTime == "" ? "" : element.Risk.InitiateTime.substring(0, element.Risk.InitiateTime.indexOf("T"))
+              // let markerTag = require("moment")(new Date(initiateTime)).format("YYYY-MM") == require("moment")(new Date()).format("YYYY-MM") ? require("./img/img5.png") : require("./img/img2.png")
+              // if(element.listViewpoints.length > 0){
+              //     this.noModelID.push(element.Risk.ID)
+              //     element.listViewpoints.forEach(ele => {
+              //         this.noMarkers.push({
+              //             imgTag: markerTag,
+              //             position: JSON.parse(ele.State).camera.position,
+              //             markerID: element.Risk.ID,
+              //             tooltips: "【问题】：" + element.Risk.Problem + " 【发起人】：" + element.Risk.Initiator + " 【发起时间】：" + initiateTime
+              //         })
+              //     })
+              // }
+          })
+        }else{
+          this.noMarkers = []
+        }
+      }else{
+        this.$message({
+            type: "error",
+            message: noMarker.Message,
+            center: "true"
+        });
+      }
+      let ingMarker = await pubInterface(this, QueryNoticeView, {projectId: localStorage.getItem("projectid"), Type: 2, UserId: localStorage.getItem("userId")})
+      if(ingMarker.StatusCode === 200){
+        if(ingMarker.Detiel.length > 0){
+          ingMarker.Detiel.forEach(element => {
+            this.ingModelID.push(element.WorkType.toString() + element.ID.toString())
+            let initiateTime = element.UploadTime == "" ? "" : element.UploadTime.substring(0, element.UploadTime.indexOf("T"))
+            this.ingMarkers.push({
+                imgTag: require("./img/img3.png"),
+                position: JSON.parse(element.State).camera.position,
+                markerID: element.WorkType.toString() + element.ID.toString(),
+                tooltips: "<div style='padding: 15px; background: rgba(0,0,0,0.6); text-align: left; color:#fff; max-width: 200px'><p style='margin-bottom: 10px'>"+ element.Subject +"</p><p>上传人："+ element.UserName +"</p><p>上传时间："+ initiateTime +"</p></div>"
+            })
+              // let initiateTime = element.Risk.InitiateTime == "" ? "" : element.Risk.InitiateTime.substring(0, element.Risk.InitiateTime.indexOf("T"))
+              // let markerTag = require("moment")(new Date(initiateTime)).format("YYYY-MM") == require("moment")(new Date()).format("YYYY-MM") ? require("./img/img5.png") : require("./img/img3.png")
+              // if(element.listViewpoints.length > 0){
+              //     this.ingModelID.push(element.Risk.ID)
+              //     element.listViewpoints.forEach(ele => {
+              //         this.ingMarkers.push({
+              //             imgTag: markerTag,
+              //             position: JSON.parse(ele.State).camera.position,
+              //             markerID: element.Risk.ID,
+              //             tooltips: "【问题】：" + element.Risk.Problem + " 【发起人】：" + element.Risk.Initiator + " 【发起时间】：" + initiateTime
+              //         })
+              //     })
+              // }
+          })
+        }else{
+          this.ingMarkers = []
+        }
+      }else{
+        this.$message({
+            type: "error",
+            message: ingMarker.Message,
+            center: "true"
+        });
+      }
+      let overMarker = await pubInterface(this, QueryNoticeView, {projectId: localStorage.getItem("projectid"), Type: 3, UserId: localStorage.getItem("userId")})
+      if(overMarker.StatusCode === 200){
+        if(overMarker.Detiel.length > 0){
+          overMarker.Detiel.forEach(element => {
+            this.overModelID.push(element.WorkType.toString() + element.ID.toString())
+            let initiateTime = element.UploadTime == "" ? "" : element.UploadTime.substring(0, element.UploadTime.indexOf("T"))
+            this.overMarkers.push({
+                imgTag: require("./img/img4.png"),
+                position: JSON.parse(element.State).camera.position,
+                markerID: element.WorkType.toString() + element.ID.toString(),
+                tooltips: "<div style='padding: 15px; background: rgba(0,0,0,0.6); text-align: left; color:#fff; max-width: 200px'><p style='margin-bottom: 10px'>"+ element.Subject +"</p><p>上传人："+ element.UserName +"</p><p>上传时间："+ initiateTime +"</p></div>"
+            })
+              // let initiateTime = element.Risk.InitiateTime == "" ? "" : element.Risk.InitiateTime.substring(0, element.Risk.InitiateTime.indexOf("T"))
+              // let markerTag = require("moment")(new Date(initiateTime)).format("YYYY-MM") == require("moment")(new Date()).format("YYYY-MM") ? require("./img/img5.png") : require("./img/img4.png")
+              // if(element.listViewpoints.length > 0){
+              //     this.overModelID.push(element.Risk.ID)
+              //     element.listViewpoints.forEach(ele => {
+              //         this.overMarkers.push({
+              //             imgTag: markerTag,
+              //             position: JSON.parse(ele.State).camera.position,
+              //             markerID: element.Risk.ID,
+              //             tooltips: "【问题】：" + element.Risk.Problem + " 【发起人】：" + element.Risk.Initiator + " 【发起时间】：" + initiateTime
+              //         })
+              //     })
+              // }
+          })
+        }else{
+          this.overMarkers = []
+        }
+        this.allAarkers = this.noMarkers.concat(this.ingMarkers, this.overMarkers)
+        this.setModelMarker()
+      }else{
+        this.$message({
+            type: "error",
+            message: overMarker.Message,
+            center: "true"
+        });
+      }
+    },
+    /**
+     * @name 显示\隐藏标签操作
+     * @param state 状态
+     */
+    onMarkerShowOrHide(state){
+      switch (state) {
+        case 1:
+          {
+            this.noModelShow = !this.noModelShow;
+            let nofun = this.noModelShow ? 37 : 38
+            this.marksHideOrShow(this.noModelID, nofun)
+          }
+          break;
+        case 2:
+          {
+            this.ingModelShow = !this.ingModelShow;
+            let ingfun = this.ingModelShow ? 37 : 38
+            this.marksHideOrShow(this.ingModelID, ingfun) 
+          }
+          break;
+        case 3:
+          {
+            this.overModelShow = !this.overModelShow;
+            let overfun = this.overModelShow ? 37 : 38
+            this.marksHideOrShow(this.overModelID, overfun)
+          }
+          break;
+        default:
+          break;
+      }
+    },
+    /**
+     * @name 设置模型标签
+     */
+    setModelMarker(){
+      // console.log("=====setModelMarker=====",  this.noMarkers.concat(this.ingMarkers, this.overMarkers))
+      this.modelBox({
+        isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+        isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+        zIndex: 100, //模型层级
+        background: "",
+        ElementIDs: this.allAarkers,  //this.noMarkers.concat(this.ingMarkers, this.overMarkers),  //Object.assign(this.noMarkers, this.ingMarkers, this.overMarkers), // 所有要显示的构件数组，包括半隐藏构件
+        highLightElementIDs: [], // 高亮显示的构件
+        functionNumber: [27] // 需要模型调用的函数编号数组
+      });
+    },
+    /**
+     * @name 隐藏或显示模型标签
+     * @param {Array} makid 需要显示或隐藏的标签ID集合
+     * @param {Number} fun 函数代号 37隐藏标签 38显示标签
+     */
+    marksHideOrShow(makid, fun){
+      this.modelBox({
+        isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+        isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+        zIndex: 100, //模型层级
+        background: "",
+        ElementIDs: makid, // 需要显示或隐藏的标签ID集合
+        highLightElementIDs: [], // 高亮显示的构件
+        functionNumber: [fun] // 需要模型调用的函数编号数组
+      });
+    },
+
+
+
+
+
+
+
+    /**
+     * @name 获取工作列表（待接收）
+     * @param {integer} Type 类型 查询类型 1.待接收 2.进行中 3.已完成
+     * @param {integer} UserId 用户ID
+     * @param {string} ProjectId 项目ID
+     * @param {integer} page 第几页
+     * @param {integer} rows 每页条数
+     * @param {integer} start 开始行,自动计算
+     * @param {integer} end 结束行,自动计算
+     */
+    async getWorkIng(){
+      this.ingLoading = true;
+      let params = {
+        ProjectID: localStorage.getItem('projectid'),
+        Type: 1,
+        UserId: localStorage.getItem('userId'),
+        page: this.ingCurrentPage,
+        rows: this.pageSize
+      }
+      try{
+        let data = await this.Request(QueryWorkList(params))
+        if (data.StatusCode === 200) {
+          if(data.Detiel.length != 0){
+            this.ingPageTotal = parseInt(data.Count);
+            this.collapseData[1].statistics = parseInt(data.Count);
+            console.log(data.Detiel)
+            this.dataIng = data.Detiel;
+
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+        this.ingLoading = false;
+      }catch(err){
+        console.log('%c函数 %s 抛出异常：%s', 'color: red;', 'getWorkIng', err);
+      }
+    },
+    /**
+     * @name 获取工作列表（进行中）
+     * @param {integer} Type 类型 查询类型 1.待接收 2.进行中 3.已完成
+     * @param {integer} UserId 用户ID
+     * @param {string} ProjectId 项目ID
+     * @param {integer} page 第几页
+     * @param {integer} rows 每页条数
+     * @param {integer} start 开始行,自动计算
+     * @param {integer} end 结束行,自动计算
+     */
+    async getWorkHandle(){
+      this.handleLoading = true;
+      let params = {
+        ProjectID: localStorage.getItem('projectid'),
+        Type: 2,
+        UserId: localStorage.getItem('userId'),
+        page: this.handleCurrentPage,
+        rows: this.pageSize
+      }
+      try{
+        let data = await this.Request(QueryWorkList(params))
+        if (data.StatusCode === 200) {
+          if(data.Detiel.length != 0){
+            this.handlePageTotal = parseInt(data.Count);
+            this.collapseData[2].statistics = parseInt(data.Count);
+            this.dataHandle = data.Detiel;
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+        this.handleLoading = false;
+      }catch(err){
+        console.log('%c函数 %s 抛出异常：%s', 'color: red;', 'getWorkHandle', err);
+      }
+    },
+    /**
+     * @name 获取工作列表（已完成）
+     * @param {integer} Type 类型 查询类型 1.待接收 2.进行中 3.已完成
+     * @param {integer} UserId 用户ID
+     * @param {string} ProjectId 项目ID
+     * @param {integer} page 第几页
+     * @param {integer} rows 每页条数
+     * @param {integer} start 开始行,自动计算
+     * @param {integer} end 结束行,自动计算
+     */
+    async getWorkOver(){
+      this.overLoading = true;
+      let params = {
+        ProjectID: localStorage.getItem('projectid'),
+        Type: 3,
+        UserId: localStorage.getItem('userId'),
+        page: this.overCurrentPage,
+        rows: this.pageSize
+      }
+      try{
+        let data = await this.Request(QueryWorkList(params))
+        if (data.StatusCode === 200) {
+          if(data.Detiel.length != 0){
+            this.overPageTotal = parseInt(data.Count);
+            this.collapseData[3].statistics = parseInt(data.Count);
+            this.dataOver = data.Detiel;
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+        this.overLoading = false;
+      }catch(err){
+        console.log('%c函数 %s 抛出异常：%s', 'color: red;', 'getWorkOver', err);
+      }
+    },
+    /**
+     * @name 点击打开详情
+     * @param {integer} WorkType 类型 1.变更 2.采购 3.沟通 4.风险
+     */
+    openDetail(row, event, column){
+      switch (row.WorkType) {
+        case 1:
+          {
+            this.$router.push({
+              path: "ChangeDetail",
+              query: {
+                data:JSON.stringify({ID: row.ID, state: row.state})
+              }
+            });
+          }
+          break;
+        case 2:
+          {
+            this.$router.push({
+              path: "scope-detail",
+              query: {purchaseDetailId: row.ID, state: row.state}
+            }); 
+          }
+          break;
+        case 3:
+          {
+            this.$router.push({
+              path: "communication1",
+              query: {id: row.ID, state: row.state}
+            });
+          }
+          break;
+        case 4:
+          {
+            this.$router.push({
+              path: "questionDetail",
+              query: {riskID: row.ID, state: row.state}
+            });
+          }
+          break;
+        default:
+          break;
+      }
+    },
+    /**
+     * @name 获取公告列表
+     * @param {integer} UserId 用户ID
+     * @param {string} ProjectId 项目ID
+     * @param {integer} page 第几页
+     * @param {integer} rows 每页条数
+     */
+    async getNoticeList(){
+      this.noticeLoading = true;
+      let params = {
+        ProjectID: localStorage.getItem('projectid'),
+        UserId: localStorage.getItem('userId'),
+        page: this.noticeCurrentPage,
+        rows: this.pageSize0
+      }
+      try{
+        let data = await this.Request(QueryNoticeList(params))
+        if (data.StatusCode === 200) {
+          if(data.Detiel.length != 0){
+            
+            this.noticePageTotal = parseInt(data.Count);
+            this.collapseData[0].statistics = parseInt(data.Count);
+            this.noticeList = data.Detiel;
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+        this.noticeLoading = false;
+      }catch(err){
+        console.log('%c函数 %s 抛出异常：%s', 'color: red;', 'getNoticeList', err);
+      }
+    },
+    /**
+     * @name 获取预警统计数据
+     * @param {integer} UserId 用户ID
+     * @param {string} ProjectId 项目ID
+     */
+    async getEarlyWarning(){
+      let params = {
+        ProjectID: localStorage.getItem('projectid'),
+        UserId: localStorage.getItem('userId')
+      }
+      try{
+        let data = await this.Request(QuerySumNoticeList(params))
+        if (data.StatusCode === 200) {
+          if(data.Detiel.length != 0){
+            this.lagging = data.Detiel[0].overedcount
+            this.normal = data.Detiel[0].normodel
+            this.totalWarning = data.Detiel[0].alertcount
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+      }catch(err){
+        console.log('%c函数 %s 抛出异常：%s', 'color: red;', 'getEarlyWarning', err);
+      }
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    }),
+    noticeCurrentChange(val){
+      console.log(val);
+      this.noticeCurrentPage = val
+      this.getNoticeList()
+    },
+    ingCurrentChange(val) {
+      console.log(val);
+      this.ingCurrentPage = val
+      this.getWorkIng()
+    },
+    handleCurrentChange(val) {
+      console.log(val);
+      this.handleCurrentPage = val
+      this.getWorkHandle()
+    },
+    overCurrentChange(val) {
+      console.log(val);
+      this.overCurrentPage = val
+      this.getWorkOver()
+
+    },
+    collapse(item) {
+      console.log(item.show)
+      if (item.show) {
+        this.$set(item, "down", false);
+        this.$set(item, "up", false);
+        
+      } else {
+        this.$set(item, "up", true);
+        this.$set(item, "down", true);
+        console.log(item)
+      }
+      if(item.statistics != 0){
+        item.flag = true
+      }
+      item.show = true
+      console.log(this.$refs[item.refName])
+      this.$refs[item.refName][0].classList.add('activeWidth')
+      this.$refs[item.refName][0].classList.remove('other')
+      this.collapseData.forEach((i)=>{
+        if(i.refName != item.refName){
+          i.show = false
+          this.$refs[i.refName][0].classList.remove('activeWidth')
+          this.$refs[i.refName][0].classList.add('other')
+        }
+      })
+    },
+    seeMore(item) {
+      item.flag = !item.flag
+      this.collapse(item)
+    },
+    // formatterWorkType(row, column, cellValue, index){
+    //   switch (cellValue) {
+    //     case 1:
+    //       {
+    //         return "变更"
+    //       }
+    //       break;
+    //     case 2:
+    //       {
+    //         return "采购"
+    //       }
+    //       break;
+    //     case 3:
+    //       {
+    //         return "沟通"
+    //       }
+    //       break;
+    //     case 4:
+    //       {
+    //         return "风险"
+    //       }
+    //       break;
+    //     default:
+    //       break;
+    //   }
+    // },
+    formatterTime(row, column, cellValue, index){
+      if(typeof(cellValue) != "undefined"){
+        return cellValue.substring(0, cellValue.indexOf("T"));
+      }
+    }
+  },
+  mounted() {
+    //  this._initData()
+  }
+};
+</script>
+<style lang='stylus' rel='stylesheet/stylus'>
+.container-integration {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+.container-integration .modelInfo {
+  width: 248px;
+  height: 138px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #F5F6FA;
+  padding: 20px; 
+  opacity:0.7;
+  border-radius:2px;
+  position absolute
+  z-index 110
+}
+
+.container-integration .title {
+  font-weight: bold;
+  font-size:20px;
+  position absolute
+  z-index 110
+}
+
+.container-integration .rejection {
+  color: red;
+}
+
+.container-integration .modelInfo span {
+  font-size: 16px;
+}
+
+.container-integration .statisticsList {
+  position: absolute;
+  bottom: 50px;
+  right: 20px;
+  z-index 110
+}
+
+.container-integration .statisticsList li {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.container-integration .statisticsList li span {
+  font-size: 12px;
+  color: #353535;
+  margin-right: 10px;
+}
+
+.container-integration .statisticsList li span:first-child {
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+}
+
+.container-integration .statisticsList li span:first-child img {
+  width: 100%;
+  height: 100%;
+  display: inline-block;
+}
+
+.container-integration .modelInfo ul {
+  font-size: 16px;
+  margin-top: 55px;
+}
+
+.container-integration .icon img {
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+}
+
+// 我的数据title bg
+.container-integration .myDataTitle {
+  background: #4775ca;
+  font-size: 18px;
+  height: 40px;
+  line-height: 40px;
+}
+
+.container-integration .titleBg {
+  background: #44508a;
+}
+
+.container-integration .myData .clearfix {
+  color: #fff;
+  text-align: center;
+}
+
+.container-integration .dayManagement {
+  height: calc(100% - 169px)
+  // margin-bottom: 20px;
+  
+}
+.container-integration .dayManagement .dayManagemenContent{
+  height: calc(100% - 58px)
+}
+.container-integration .dayManagement .dayManagemenContent .missionState,
+.container-integration .dayManagement .dayManagemenContent .missionState>ul {
+  height: 100%;
+}
+.container-integration .dayManagement .missionState>ul>li {
+  height: 25%
+  .itemWidth {
+    position: relative
+    height: calc(100% - 60px)
+    padding-bottom: 20px;
+    overflow-y: hidden
+    background: white
+    div.seeMore {
+      position:absolute
+      bottom: 0px;
+      left: 50%;
+      transform: translateX(-50%)
+      // line-height: 10px!important;
+      width: 100%;
+      height: 27px;
+      background-color: #fff;
+    }
+    div {
+      div.seeMore {
+        position:absolute
+        bottom: 0px;
+        left: 50%;
+        transform: translateX(-50%)
+        // line-height: 10px!important;
+      }
+    }
+    .blue01{
+      font-size: 12px;
+      vertical-align: top;
+    }
+  }
+}
+.container-integration .dayManagement .missionState>ul>li.activeWidth {
+   height: calc(100% - 120px)!important;
+}
+.container-integration .dayManagement .missionState>ul>li.other {
+  height: 40px!important;
+}
+.container-integration .numColor1 {
+  color: #396fd1;
+}
+
+.container-integration .numColor2 {
+  color: #fda951;
+}
+
+.container-integration .numColor3 {
+  color: #4572cf;
+}
+
+.container-integration .content {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.container-integration .content div {
+  width: 33.33%;
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.container-integration .num {
+  color: #353535;
+  font-size: 12px;
+}
+
+.container-integration .num span {
+  font-size: 24px !important;
+  padding-right: 10px;
+}
+
+.container-integration .info {
+  color: #434343;
+  font-size: 14px;
+  padding-top: 10px;
+}
+
+.container-integration .list {
+  background: #fff;
+  border-radius: 6px;
+}
+
+.container-integration .el-row .el-col-24 {
+  font-size: 22px;
+  color: #28292b;
+}
+
+.container-integration .myData .el-row .el-col-24 {
+  margin: 0px 0 24px 0;
+}
+
+.container-integration .dayManagement .el-row .el-col-24 {
+  margin: 15px 0px;
+}
+
+.container-integration .el-row .el-col-24 i {
+  margin-right: 25px;
+}
+
+.container-integration .notice {
+  color: #fff;
+  font-size: 18px;
+  padding-left: 20px;
+  height: 40px;
+  line-height: 40px;
+  display: flex;
+}
+
+.container-integration .notice span {
+  width: 50%;
+}
+
+.container-integration .notice span:last-child {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-right: 20px;
+}
+
+.container-integration .noticeList {
+  background: #fff;
+  color: #353535;
+  font-size: 12px;
+  padding: 16px 20px;
+}
+
+.container-integration .noticeList>li {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  line-height: 28px;
+  font-size: 14px;
+}
+
+.container-integration .el-table th{
+  padding 5px 0
+}
+
+.container-integration .has-gutter th {
+  color: #333333;
+  font-size: 16px;
+  text-align: center;
+  border-bottom: 1px dashed #EBEEF5 !important;
+}
+
+.container-integration .el-table__row td {
+  padding: 0.01rem !important;
+  color: #333333;
+  font-size: 14px;
+  text-align: center;
+}
+
+.container-integration .noticeList li span:first-child {
+  width: 85%;
+}
+
+.container-integration .noticeList li span:first-child b {
+  margin-left: 30px;
+}
+
+.container-integration .noticeList li span:last-child {
+  width: 15%;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.container-integration .center {
+  border-left: 1px solid #e3e3e3;
+  border-right: 1px solid #e3e3e3;
+}
+
+.container-integration .rightBox .el-collapse-item {
+  max-height: 222px;
+}
+
+.container-integration .box-card .el-card__body {
+  padding: 0 !important;
+}
+
+.container-integration .el-table td, .el-table th.is-leaf {
+  border-bottom: none;
+}
+
+.container-integration .leftBox, .container-integration .rightBox {
+  width: 50%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  background: #f5f6fa;
+}
+
+.container-integration .leftBox {
+  left: 0;
+}
+
+.container-integration .rightBox {
+  right: 0;
+}
+
+.container-integration .leftBox .box-card {
+  width: calc(100% - 30px);
+  height: calc(100% - 42px);
+  margin: 20px 10px 20px 20px;
+  background: #fff;
+  position relative
+}
+
+.container-integration .rightBox .box-card {
+  width: calc(100% - 30px);
+  height: calc(100% - 42px);
+  padding: 20px 20px 20px 10px;
+  background: #f5f6fa;
+  border: none;
+  box-shadow: none;
+  overflow: auto;
+}
+.container-integration .rightBox .text-center {
+  text-align: center;
+}
+.container-integration .rightBox .itemWidth .el-pagination{
+  margin-top: 10px
+}
+</style>
+<style scoped>
+.model-container {
+  width: 100%;
+  height: 100%;
+  padding: 0 !important;
+  z-index: 100;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+</style>

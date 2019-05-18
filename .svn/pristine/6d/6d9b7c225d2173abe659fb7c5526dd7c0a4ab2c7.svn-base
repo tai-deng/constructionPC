@@ -1,0 +1,400 @@
+      <!-- 基施 -->
+
+<template>
+  <div class="infrastructure-container">
+    <div class="content-top">
+      <!-- 新增按钮 -->
+      <button @click="addFunc()">
+        <img src="@/assets/imgs/add_model.png">
+        <span>新增</span>
+      </button>
+      <!-- 搜索按钮 -->
+      <!-- <div class="search-container">
+        <input type="text" value="名称">
+        <i class="el-icon-search"></i>
+      </div> -->
+    </div>
+    <!-- 内容 -->
+    <div class="content-bottom">
+      <mainmodel :list="newData" :dataList="dataList" :flag="1" :dataNameList="titleName"></mainmodel>
+    </div>
+    <!-- 模态框 -->
+    <div class="layer-container" v-show="model_show">
+      <div class="contentBox">
+        <div class="model_title">
+          新增
+          <i>
+            <img
+              class="model_show_time_img"
+              src="../../../../assets/imgs/close_model.png"
+              alt="关闭模态框"
+              @click="closeUploadModel()"
+            >
+          </i>
+        </div>
+
+        <div class="model_content">
+          <ul>
+            <li>
+              <span>
+                <b>*</b>
+                {{titleName[0]}}
+              </span>
+
+              <input v-model="formStatus.FoundationType" type="text" name="FoundationType">
+            </li>
+            <li>
+              <span>
+                <b>*</b>
+                {{titleName[1]}}
+              </span>
+
+              <input class="others" type="number" v-model="formStatus.ConstructionDay" name="ConstructionDay">
+              <span>天</span>
+            </li>
+            <li>
+              <span>
+                <b>*</b>
+                {{titleName[2]}}
+              </span>
+
+              <input class="others" type="number" v-model="formStatus.PileDetectionDay" name="PileDetectionDay">
+              <span>天</span>
+            </li>
+          </ul>
+        </div>
+        <div class="model_bottom">
+          <span class="cancelBtn" @click="model_show = false">取消</span>
+          <span class="commitBtn" @click="addDataCommit()">提交</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import mainmodel from "./subcomponents/mainmodel";
+import {
+  GetFoundationFormList,
+  AddFoundationForm
+} from "../../../../api/api.js";
+
+export default {
+  data() {
+    return {
+      model_show: false,
+
+      formStatus: {
+        FoundationType: "",
+        ConstructionDay: "",
+        PileDetectionDay: ""
+      },
+      dataList: [
+        { id: 0, itemName: "天然地基基础", limitTime: "——", time: "25天" },
+        { id: 1, itemName: "管桩", limitTime: "20天", time: "25天" },
+        {
+          id: 2,
+          itemName: "长螺旋灌注桩（不配筋）",
+          limitTime: "60天",
+          time: "25天"
+        },
+        {
+          id: 3,
+          itemName: "长螺旋灌注桩（配筋）",
+          limitTime: "70天",
+          time: "25天"
+        },
+        {
+          id: 4,
+          itemName: "非熔岩地区灌注桩",
+          limitTime: "70天",
+          time: "25天"
+        },
+        {
+          id: 5,
+          itemName: "熔岩地区灌注桩",
+          limitTime: "100天",
+          time: "25天"
+        },
+        {
+          id: 6,
+          itemName: "熔岩地区灌注桩",
+          limitTime: "100天",
+          time: "25天"
+        },
+        {
+          id: 7,
+          itemName: "熔岩地区灌注桩",
+          limitTime: "100天",
+          time: "25天"
+        },
+        {
+          id: 8,
+          itemName: "熔岩地区灌注桩",
+          limitTime: "100天",
+          time: "25天"
+        },
+        {
+          id: 9,
+          itemName: "熔岩地区灌注桩",
+          limitTime: "100天",
+          time: "25天"
+        }
+      ],
+      titleName: ["基础类型", "施工+静载工期", "桩身检测及垫底工期", "操作"],
+      newData: null
+    };
+  },
+  components: {
+    mainmodel
+  },
+  created() {
+    this.getData();
+  },
+  methods: {
+    // 获取数据
+    getData() {
+      GetFoundationFormList({}).then(res => {
+        this.newData = res.Detiel;
+        console.log(res);
+      });
+    },
+    //新增按钮
+    addFunc() {
+      this.model_show = true;
+    },
+    // 取消模态框函数
+    closeUploadModel() {
+      this.model_show = false;
+    },
+    // 字符串去空格符
+    trim(str) {
+      return str.replace(/(^\s*)|(\s*$)/g, "");
+    },
+    //添加数据函数
+    addDataCommit() {
+      let data = this.formStatus;
+      if (!this.trim(data.FoundationType)) {
+        this.$toast({
+          duration: 500,
+          message: "请输入正确楼层"
+        });
+        return;
+      }
+      if (!this.trim(data.ConstructionDay)) {
+        this.$toast({
+          duration: 500,
+          message: "请输入红线工期"
+        });
+        return;
+      }
+      if (!this.trim(data.PileDetectionDay)) {
+        this.$toast({
+          duration: 500,
+          message: "请输入工期"
+        });
+        return;
+      }
+
+      AddFoundationForm({
+        FoundationType:data.FoundationType,
+        ConstructionDay:data.ConstructionDay,
+        PileDetectionDay:data.PileDetectionDay
+      }).then(res=>{
+        this.model_show = false;
+        this.getData();
+      })
+      
+    }
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+@import '../../../../assets/stylus/variable.styl';
+
+.infrastructure-container {
+  width: 100%;
+  height: 100%;
+  background-color: #eff3ff;
+
+  // 头部样式
+  .content-top {
+    margin: 20px;
+    overflow: hidden;
+    zoom: 1;
+
+    button {
+      width: 120px;
+      height: 40px;
+      margin-left: 20px;
+      color: #fff;
+      font-size: 16px;
+      background-color: #4775CA;
+      border: none;
+      border-radius: 4px;
+
+      img {
+        float: left;
+        width: 18px;
+        height: 18px;
+        margin-left: 20px;
+        vertical-align: middle;
+        background-size: cover;
+      }
+
+      span {
+        margin-right: 30px;
+      }
+    }
+
+    // 搜索模块样式
+    .search-container {
+      position: relative;
+      float: right;
+      height: 100%;
+
+      input {
+        width: 340px;
+        height: 40px;
+        padding-left: 60px;
+        color: #999999;
+        font-size: $font-size-16;
+        box-shadow: 0px 1px 7px 0px rgba(216, 223, 238, 0.75);
+        border-radius: 20px;
+      }
+
+      i {
+        position: absolute;
+        top: 10px;
+        left: 20px;
+        font-size: $font-size-20;
+        color: #999999;
+      }
+    }
+  }
+
+  .content-top:after {
+    content: '';
+    height: 0;
+    inline-height: 0;
+    display: block;
+    visibility: hidden;
+    clear: both;
+  }
+
+  .content-bottom {
+    height: 100%;
+  }
+
+  // 模态框样式
+  .layer-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: rgba(121, 121, 121, 0.4);
+    z-index: 99;
+
+    .contentBox {
+      position: relative;
+      margin: 270px 0 0 460px;
+      width: 1000px;
+      height: 540px;
+      background-color: #ffffff;
+
+      .model_title {
+        height: 30px;
+        background: -webkit-gradient(linear, left center, right center, from(#548AFF), to(#6956FF));
+        text-align: center;
+        color: #fff;
+        font-size: 18px;
+        padding-top: 10px;
+
+        .model_show_time_img {
+          float: right;
+          display: inline-block;
+          width: 18px;
+          height: 18px;
+          margin-right: 25px;
+          margin-top: 5px;
+          cursor: pointer;
+        }
+      }
+
+      .model_content {
+        margin-top: 40px;
+
+        ul {
+          li {
+            margin-bottom: 20px;
+
+            span {
+              display: inline-block;
+              height: 40px;
+              line-height: 40px;
+              text-align: right;
+              font-size: $font-size-18;
+              padding: 0 10px;
+            }
+
+            span:first-child {
+              width: 230px;
+            }
+
+            b {
+              position: relative;
+              top: -0.06rem;
+              left: 0;
+              color: #FC605C;
+              font-size: $font-size-10;
+            }
+
+            input {
+              display: inline-block;
+              padding-left: 10px;
+              height: 40px;
+              width: 600px;
+              font-size: $font-size-18;
+              background-color: #E5E5E5;
+            }
+
+            .others {
+              width: 200px !important;
+            }
+          }
+        }
+      }
+
+      .model_bottom {
+        position: absolute;
+        bottom: 85px;
+        left: 390px;
+
+        span, submit {
+          display: inline-block;
+          width: 100px;
+          height: 34px;
+          line-height: 34px;
+          color: #fff;
+          text-align: center;
+          box-shadow: 0px 1px 7px 0px rgba(188, 188, 188, 0.65);
+          border-radius: 4px;
+          font-size: $font-size-18;
+        }
+
+        .cancelBtn {
+          background: rgba(153, 153, 153, 1);
+          margin-right: 20px;
+        }
+
+        .commitBtn {
+          background: rgba(71, 117, 202, 1);
+        }
+      }
+    }
+  }
+}
+</style>
+<style >
+</style>

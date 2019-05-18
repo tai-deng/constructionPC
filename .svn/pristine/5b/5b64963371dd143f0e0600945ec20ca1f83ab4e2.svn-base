@@ -1,0 +1,62 @@
+
+import { GetFiveDSchedulePlanList, GetBuilding } from '../../../api/api';
+
+
+const projectid = localStorage.getItem("projectid");
+
+// 获取项目楼栋信息
+export const getBuil = (that) => {
+    that.load();
+    GetBuilding({ projectid }).then(res => {
+        that.$toast.clear();
+        if (res.StatusCode == 200) {
+            that.modeList = res.Detiel;
+        }
+    })
+}
+
+// 获取列表
+export const getFiveList = (that, init) => {
+    let par = {
+        ProjectID: projectid,
+        BuildingName: that.fiveList.modelName,
+        BaseStartTime: that.fiveList.date[0],
+        BaseFinishTime: that.fiveList.date[1]
+    }
+    that.load();
+    GetFiveDSchedulePlanList(par).then(res => {
+        that.$toast.clear();
+        let data = [];
+        let links = [];
+        if (res.StatusCode == 200 && res.Detiel.length > 0) {
+            res.Detiel.forEach((el, index) => {
+                // data.push({
+                //     id: el.TaskId,
+                //     text: el.TaskName,
+                //     type: "task",
+                //     start_date: el.BaseStartTime,
+                //     // end_date:el.BaseFinishTime,  // 结束时间处理
+                //     duration: el.Duration,
+                //     parent: el.TaskParentId ? el.TaskParentId : 0,
+                //     progress: el.PercenTage,
+                //     open: false
+                // });
+                // if (el.PredecessorsId) {
+                //     links.push({
+                //         id: links.length + 1,
+                //         source: el.TaskId,
+                //         target: el.PredecessorsId,
+                //         type: "0"
+                //     });
+                // }
+            });
+            init({ data, links })
+        } else {
+            that.$message({
+                type: "warning",
+                message: res.Message,
+                center: "true"
+            });
+        }
+    })
+}

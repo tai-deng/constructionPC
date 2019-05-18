@@ -1,0 +1,190 @@
+<!-- 采购详情 -->
+<template lang="html" src="./index.html"></template>
+<style lang="stylus" src="./index.styl" scoped></style>
+
+<script type='textecmascript-6'>
+import {
+  GetBuilding,
+  GetSpecialtybyBuilding,
+  GetFloorbyBuilding,
+  QueryPurchaseInfoItems,
+  PurcahseApprove,
+  GetLoginUserInfo
+} from "../../../../../../api/api.js";
+import {
+  dataResetBSF,
+  getBuildList,
+  getSpecialtyList,
+  getFloorList
+} from "../../../util/util.js";
+
+export default {
+  props: {
+    purchaseDetailId: {
+      type: Number,
+      default: null
+    }
+  },
+  data() {
+    return {
+      userID: localStorage.getItem("userId"), //用户ID
+      projectid: localStorage.getItem("projectid"),
+      BuildNameList: [], // 楼栋下拉
+      SpecialtyList: [], // 专业下拉
+      FloorbyList: [], // 楼层下拉
+      paging: { page: 1, rows: 5 }, // [采购列表分页]
+      filterForm: {
+        BuildName: "", // 楼栋
+        Specialty: "", // 专业
+        Floor: "" // 楼层
+      },
+      data: [],
+      par: {
+        Priority: "",
+        OrgId: "",
+        DepId: "",
+        Person: "",
+        Status: 1
+      }
+    };
+  },
+  methods: {
+    // 详情列表
+    getPurchaseListDetil() {
+      this.load();
+      QueryPurchaseInfoItems({
+        ID: this.$props.purchaseDetailId,
+        BuildName: this.filterForm.BuildName,
+        Specialty: this.filterForm.Specialty,
+        Floor: this.filterForm.Floor
+      }).then(res => {
+        this.$toast.clear();
+        if (res.StatusCode == 200) {
+          this.active = "";
+          res.Result.StartTime = res.Result.StartTime
+            ? require("moment")(res.Result.StartTime).format("YYYY/MM/DD")
+            : "/";
+          res.Result.DemandTime = res.Result.DemandTime
+            ? require("moment")(res.Result.DemandTime).format("YYYY/MM/DD")
+            : "/";
+          res.Result.listFlow.forEach((element, index) => {
+            if (this.active == "" && element.Status == 0) {
+              this.active = index + 1;
+              this.par = {
+                Priority: element.Priority,
+                OrgId: element.OrgId,
+                DepId: element.DepId,
+                Person: element.Person,
+                Status: 1
+              };
+            }
+          });
+
+          this.data = res.Result;
+        }
+      });
+    },
+    // 确认审核
+    onAudit() {
+      console.log(this.userID ,this.par.Person)
+      if (this.userID == this.par.Person) {
+        this.load();
+        PurcahseApprove(this.par).then(res => {
+          this.$toast.clear();
+          if (res.StatusCode == 200) {
+            this.$emit("close");
+            this.$message({
+              type: "success",
+              message: "处理成功！",
+              center: "true"
+            });
+          }
+        });
+      } else {
+        this.$message({
+          type: "warning",
+          message: "流程还未到你",
+          center: "true"
+        });
+      }
+    },
+    /**
+     * 获取当前登录用户详情
+     */
+    getLoginUserInfoDate() {
+      this.load();
+      GetLoginUserInfo({ curUserId: this.userID }).then(data => {
+        this.$toast.clear();
+        if (data.StatusCode === 200) {
+          let item = data.Detiel[0].loginUserInfo;
+          this.UserInfo = item;
+        }
+      });
+    }
+  },
+  computed: {
+    id() {
+      return this.$props.purchaseDetailId;
+    }
+  },
+
+  created() {
+    // 楼栋下拉
+    getBuildList(this, GetBuilding);
+    this.getPurchaseListDetil();
+    this.getLoginUserInfoDate();
+  },
+  watch: {
+    id(val, oldval) {
+      // 获取采购列表详情
+      if (val != "") this.getPurchaseListDetil();
+    },
+    // 楼层
+    "filterForm.Floor": {
+      handler(val, oldval) {
+        if (val != "") {
+          dataResetBSF(this, "Floor");
+          this.getPurchaseListDetil();
+        }
+      }
+    },
+    // 专业
+    "filterForm.Specialty": {
+      handler(val, oldval) {
+        if (val != "") {
+          dataResetBSF(this, "Specialty");
+          getFloorList(this, GetFloorbyBuilding);
+          this.getPurchaseListDetil();
+        }
+      }
+    },
+    // 楼栋
+    "filterForm.BuildName": {
+      handler(val, oldval) {
+        if (val != "") {
+          dataResetBSF(this, "BuildName");
+          getSpecialtyList(this, GetSpecialtybyBuilding);
+          this.getPurchaseListDetil();
+        }
+      }
+    }
+  }
+};
+</script>
+<style>
+.container-scope-detail .el-step.is-horizontal .el-step__line{
+  top: 20px;
+}
+/* 滚动条的宽度 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background-color: transparent;
+}
+
+/* 滚动条的滑块 */
+::-webkit-scrollbar-thumb {
+  background-color: #a1a3a9;
+  border-radius: 6px;
+}
+</style>

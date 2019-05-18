@@ -1,0 +1,587 @@
+<!-- 时间管理-施工员 time -->
+<template lang="pug" src="./index.pug"></template>
+<style lang="stylus" src="./index.styl" scoped></style>
+
+<script type="textecmascript-6">
+  import {
+    GetBuilding, //获取楼栋模型
+    GetHomeSchedulePlan, //根据项目id 和选择模型获取进度信息
+    GetACSchedulePlanList,  // 获取认证任务列表接口
+    GetAuthenticationInfoByTaskId,  //查看认证详情接口
+    AddModelAuthentication, //新增认证接口
+    UploadImages, //上传图片
+    GetDefaultModelId,  //获取默认模型ID
+    GetStatesColorList,  // 获取颜色列表
+    GetElementByTaskState,
+    GetAllElementID,
+    GetElementIDByInfo
+  } from '@/api/api.js'
+  import { mapMutations, mapGetters } from "vuex"
+  import apiResponse from "@/common/mixins/apiResponse"
+
+  export default {
+    data () {
+      return {
+        projectId: localStorage.getItem('projectid'), //项目ID
+        defaultModelID: [],  //模型ID
+        isProgressDetail: false,
+        progressDetailStyle: { left: "160px" },
+        /**[当前模型] */
+        type: '',
+        /**[所有模型] 可选项 */
+        typeOptions: [],
+        allProgress: 0, //整体进度
+        lagging: 0,  // 滞后天数
+        /**[进度所有数据] */
+        porgressOptions: [],
+        dialogType: "add",
+        /**[表单] */
+        dialogForm: { time: "", progress: "", name: "" },
+        imgList1: [],
+        // imgList2: [{ name: "11", url: require("./img2.jpg") }],
+        index: -1, //记录点击列表的索引值
+        flag: false,  //控制是新增还是修改的开关
+        isChange: false, //确认是否修改了
+        ElementList: [], // 模型构建结构ID列表
+        highLightElementIDs: [], // 进度达到100% 高亮
+        // loading: true,
+        colorList: [], // 颜色列表
+        dialogImageUrl: '',
+        dialogVisible: false,
+        showImg: [],
+        loadingModel: false,
+        isloadingModel: false
+      };
+    },
+    mixins: ['apiResponse'],
+    async created () {
+      this.loading = true
+      this.loadingModel = true
+      this.GetBuildingInfo()  //建筑模型列表信息
+      this.getDefaultModelId()  //获取默认模型ID
+      this.GetStatesColorList()
+      // 获取所有构件
+      // this.ElementList = await this.getDataByVuex(GetAllElementID, { projectid: this.projectId }, 'GET_ELEMENT_IDS', 'getElementIDs')
+    },
+    computed: {
+      ...mapGetters(['getIsViewAdded'])
+    },
+    mounted() {
+      if(this.getIsViewAdded){
+          document.getElementsByClassName("bf-toolbar-bottom")[0].style.display = "none"
+          document.getElementsByClassName("bf-tree-toolbar")[0].style.display = "none"
+      }
+    },
+    methods: {
+      ...mapMutations({
+        modelBox: "GET_MODEL_BOX"
+      }),
+      listenWrapper () {
+        this.isProgressDetail = false;
+      },
+      onEditProgress (item, index) {
+        // 获取对应的TaskID值
+        let taskid = item.TaskId || ''
+        // 如果isAdd为true 则进行添加认证操作
+        if (item.isAdd) {
+          setTimeout(() => {
+            this.imgList1 = []
+            this.showImg = []
+          }, 400)
+          this.dialogForm = {}
+          this.flag = true   //打开新增开关
+        } else {
+          //关闭新增开关 调用认证详情借口
+          this.flag = false
+          // 调用查询认证详情接口
+          this.AuthenticationInfoByTaskId(taskid)
+        }
+        this.progressDetailStyle = {
+          left: 160 + index * (250 - index * 30) + "px"
+        };
+        this.index = index
+        this.$nextTick(() => {
+          this.toggleDetail();
+        }, 400);
+      },
+      /**
+       * 切换详情面板函数
+       */
+      toggleDetail () {
+        this.isProgressDetail = !this.isProgressDetail;
+      },
+      handlePictureCardPreview (file) {
+        this.dialogImageUrl = file.url
+        this.dialogVisible = true
+      },
+      /**
+       * 获取图片上传URL
+       * 文件状态改变时的钩子，添加文件、上传成功和上传失败时都会被调用	function(file, fileList)
+       */
+      async handleAvatarSuccess (file, fileList) {
+        //  设置参数对象列表
+        let params = [{ key: 'files', value: file.raw }]
+        // 上传图片
+        let upload_images = await this.Request(UploadImages(params))
+        if (upload_images.StatusCode === 200) {
+          // 如果是新增就将地址URL添加进去
+          // if (this.flag) {
+          let url = `${upload_images.Detiel[0].TokenUrL}${upload_images.Detiel[0].URL}`
+          this.imgList1.push(url)
+          // }
+        }
+      },
+      handleRemove (file, fileList) {
+        let arr = []
+        this.imgList1.forEach(item => {
+          if (item !== file.url) {
+            arr.push(item)
+          }
+        })
+        this.imgList1 = arr
+      },
+      /**
+       * 确认提交按钮
+       */
+      submit () {
+        // 根据index 获取相应数据 用来调用接口
+        let data = {}
+        data.TaskId = this.porgressOptions[this.index].TaskId
+        data.Percentage = this.dialogForm.progress
+        let nowTime = new Date()
+        let nTime = new Date(this.dialogForm.time).toLocaleDateString().replace(/\//g, '-')
+        data.UploadTime = nTime + ' ' + nowTime.getHours() + ':' + nowTime.getMinutes() + ':' + nowTime.getSeconds()
+        if (this.imgList1.length) {
+          //  获取URL
+          //  let URL = `${this.imgList1[0].url},${this.imgList1[1]}`
+          let URL = []
+          this.imgList1.forEach((item) => {
+            // URL += `${item.url},`
+            let len = item.indexOf('U')
+            let url = item.substring(len - 1)
+            URL.push(url)
+          })
+          // URL = URL.substr(0, (URL.length - 1))
+          data.PicturePath = URL.toString()
+        }
+        if (this.flag) {
+          // 新增
+          this.GetAddModelAuthentication(data)
+        } else if (this.isChange) {
+          // 修改任务进度
+          this.GetAddModelAuthentication(data)
+        }
+        // this.$nextTick(() => {
+        //   this.toggleDetail();
+        // }, 400);
+      },
+      /**
+       * 页面跳转
+       */
+      lookDetail () {
+        this.$router.push({
+          name: '5D模拟',
+          params: {
+            modelName: this.type,
+            isTime: 1
+          }
+        })
+      },
+      /** 
+       * 获取建筑模型列表信息
+       */
+      async GetBuildingInfo () {
+        let res = await this.Request(GetBuilding({ projectid: localStorage.getItem('projectid') }))
+        if (res.StatusCode == 200) {
+          this.typeOptions = res.Detiel
+          this.typeOptions.unshift({
+            id: "",
+            text: "全部"
+          })
+          this.ACSchedulePlanList(this.type)
+          this.GetElementIDByInfo()
+          // this.type = res.Detiel[0].text
+        } else {
+          this.$message({
+            type: "error",
+            message: res.Message,
+            center: "true"
+          })
+        }
+      },
+      /**
+       * 查看认证任务列表
+       */
+      async ACSchedulePlanList (B_Name) {
+        this.loading = true
+        // if (!B_Name) return this.$toast('没有选择模型')
+        let res = await this.Request(GetACSchedulePlanList({ ProjectID: localStorage.getItem("projectid"), BuildingName: B_Name }))
+        if (res.StatusCode === 200) {
+          this.allProgress = parseInt(res.Detiel[0].OverallProgress)
+          this.lagging = res.Detiel[0].lagging
+          let progressInfo = res.Detiel[0].ACSchedulePlanList
+          this.porgressOptions = []
+          progressInfo.forEach((item) => {
+            let option = {}
+            option.progress = item.PercenTage
+            option.title = item.TaskName
+            option.start_time = item.BaseStartTime.substr(0, 10)
+            option.ElementList = item.ElementList
+            let arr = []
+            // 完成状态
+            switch (item.TaskState) {
+              case '1':
+                option.TaskState = '未开始'
+                // arr = []
+                // item.ElementList.forEach(obj => {
+                //   arr.push(obj.ElementId)
+                // })
+                // this.highLightElementIDs.push({
+                //   isShow: true,
+                //   colorCode: item.StateColor,
+                //   ElementList: arr
+                // })
+                break
+              case '2':
+                option.TaskState = '已完成'
+                // arr = []
+                // item.ElementList.forEach(obj => {
+                //   arr.push(obj.ElementId)
+                // })
+                // this.highLightElementIDs.push({
+                //   isShow: true,
+                //   colorCode: item.StateColor,
+                //   ElementList: arr
+                // })
+                break
+              case '3':
+                option.TaskState = '提前开始'
+                break
+              case '4':
+                option.TaskState = '提前完成'
+                break
+              case '5':
+                option.TaskState = '正常开始'
+                break
+              case '6':
+                option.TaskState = '正常完成'
+                break
+              case '7':
+                option.TaskState = '延迟开始'
+                break
+              case '8':
+                option.TaskState = '延迟完成'
+                break
+              case '9':
+                option.TaskState = '进行中'
+                arr = []
+                item.ElementList.forEach(obj => {
+                  arr.push(obj.ElementId)
+                })
+                this.highLightElementIDs.push({
+                  isShow: true,
+                  colorCode: item.StateColor,
+                  ElementList: arr
+                })
+                break
+            }
+            if (!item.UploadTime) {
+              option.message = "success add"
+              option.isAdd = true
+            } else if (item.states == "正常" || item.states == null) {
+              option.message = "success reverse"
+              option.isAdd = false
+            } else {
+              option.message = " error"
+              option.isAdd = false
+            }
+            option.end_time = item.UploadTime ? item.UploadTime.substr(0, 10) : ''
+            option.PicturePath = item.UploadTime ? item.PicturePath : ''
+            option.TaskId = item.TaskId
+            // option.message
+            this.porgressOptions.push(option)
+          })
+          this.loading = false
+          // this.$toast.clear()
+        } else {
+          this.$message({ type: 'error', message: res.Message, center: "true" })
+          this.loading = false
+          // this.$toast.clear()
+        }
+      },
+      /**
+       * 查询认证详情
+       */
+      async AuthenticationInfoByTaskId (id) {
+        if (!id) return this.$toast('传入数据有误')
+        let res = await this.Request(GetAuthenticationInfoByTaskId({ TaskId: id }))
+        if (res.StatusCode === 200) {
+          let imgObj = res.Detiel[0].PicturePath
+          if (imgObj) {
+            this.imgList1 = imgObj.split(',')
+            this.showImg = []
+            this.imgList1.forEach(item => {
+              this.showImg.push({
+                name: '',
+                url: item
+              })
+            })
+          } else {
+            this.imgList1 = []
+            this.showImg = []
+          }
+          this.dialogForm.time = res.Detiel[0].UploadTime
+          this.dialogForm.name = res.Detiel[0].cName
+          this.dialogForm.progress = `${parseInt(res.Detiel[0].Percentage)}`
+          // 将监听开关重置为false
+          this.isChange = false
+        } else {
+          this.$message({ type: 'error', message: res.Message, center: 'true' })
+        }
+      },
+      /**
+       * 新增认证
+       */
+      async GetAddModelAuthentication (data = {}) {
+        let TaskId = data.TaskId
+        let Percentage = parseInt(data.Percentage)
+        let PicturePath = data.PicturePath
+        let UploadTime = data.UploadTime
+        let userId = parseInt(localStorage.getItem('userId'))
+        let res = await this.Request(AddModelAuthentication({ TaskId, Percentage, PicturePath, UploadTime, userId }))
+        if (res.StatusCode === 200) {
+          this.$message({ type: 'success', message: res.Message, center: 'true' })
+          this.porgressOptions[this.index].message = 'success reverse'
+          this.porgressOptions[this.index].isAdd = false
+          if (this.isChange) {
+            // 如果是编辑 则从新调用模块进度
+            this.ACSchedulePlanList(this.type)
+          }
+          this.toggleDetail()
+        } else {
+          this.$message({ type: 'error', message: res.Message, center: 'true' })
+        }
+      },
+      /**
+       * 加载模型
+       */
+      initModel () {
+        this.$nextTick(() => {
+          this.$util.getDomLocation(this, "modelContainer").then(res => {
+            this.modelBox({
+              isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+              isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+              top: res.top, //距离顶部距离‘px'
+              left: res.left, //距离左边距离‘px'
+              width: res.width, //模型宽‘px'
+              height: res.height, //模型高 ‘px'
+              zIndex: 100, //模型层级
+              background: "",
+              ElementIDs: this.ElementList, // 所有要显示的构件数组，包括半隐藏构件
+              highLightElementIDs: this.highLightElementIDs, // 高亮显示的构件
+              functionNumber: [88] // 需要模型调用的函数编号数组
+            })
+          })
+        })
+        this.isloadingModel = true
+      },
+      /**
+       * 模型ID
+       */
+      async getDefaultModelId () {
+        //获取默认模型ID
+        let defaultModelId = await this.Request(GetDefaultModelId({ projectId: this.projectId }))
+        if (defaultModelId.StatusCode == 200) {
+          this.defaultModelID = defaultModelId.Result
+        } else {
+          this.$message({ type: 'error', message: defaultModelId.message ? defaultModelId.message : '后台异常', center: 'true' })
+        }
+      },
+      /**
+       * 获取颜色列表
+       * @param {String} ProjectID 项目id
+       */
+      GetStatesColorList () {
+        GetStatesColorList({ ProjectID: this.projectId }).then(data => {
+          data.Detiel.forEach(item => {
+            if (item.States === '9') {
+              item.isShow = true
+              this.GetElementByTaskState(item, true)
+            } else {
+              item.isShow = false
+            }
+          })
+          this.colorList = data.Detiel
+        })
+      },
+      // 处理状态颜色样式
+      handleColor (item) {
+        if (item.isShow) {
+          return 'background-color: ' + item.ColorName
+        }
+      },
+      // 根据状态切换模型构件的显示
+      tabElementByState (item) {
+        this.loadingModel = true
+        this.GetElementByTaskState(item)
+      },
+      /**
+       * 根据进度状态获取构件集合
+       * @param {String} TaskState 任务状态
+       */
+      GetElementByTaskState (item, isFirst) {
+        let param = {
+          ProjectID: this.projectId,
+          TaskState: item.States,
+          BuildingName: this.type
+        }
+        GetElementByTaskState(param).then(data => {
+          this.colorList.forEach(cItem => {
+            if (cItem.ID !== item.ID) {
+              cItem.isShow = false
+            }
+          })
+          if (!isFirst) item.isShow = !item.isShow
+          this.highLightElementIDs = []
+          if (item.isShow) {
+            // 设置构件的颜色
+            let hightArray = {
+              isShow: item.isShow,
+              colorCode: item.ColorName,
+              ElementList: []
+            }
+            data.forEach(obj => {
+              // 将选择的状态下的构件添加到构件对象集合
+              hightArray.ElementList.push(obj.ElementId)
+            })
+            // 将处理好的构件对象添加到构件集合
+            this.highLightElementIDs.push(hightArray)
+          } else {
+            // // 根据状态下构件集合删除对应的构件
+            // this.highLightElementIDs.forEach(hItem => {
+            //   hItem.ElementList = hItem.ElementList.filters((heItem) => {
+            //     let templist = []
+            //     data.forEach(dItem => {
+            //       // 将相等的构件从构件集合中移除
+            //       if (dItem.ElementId !== heItem) {
+            //         templist.push(heItem)
+            //       }
+            //     })
+            //     return templist
+            //   })
+            // })
+            // // 判断集合下对象的构件集合是否有值，若无则删除此对象
+            // this.highLightElementIDs = this.highLightElementIDs.filters(hItem => hItem.ElementList.length > 0)
+          }
+          this.loadingModel = false
+          if (this.isloadingModel) {
+            this.modelBox({
+              isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+              isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+              ElementIDs: this.ElementList, // 所有要显示的构件数组，包括半隐藏构件
+              highLightElementIDs: this.highLightElementIDs, // 高亮显示的构件
+              functionNumber: [88] // 需要模型调用的函数编号数组
+            })
+          } else {
+            this.initModel()
+          }
+          // this.$toast.clear()
+        }).catch(e => {
+          // this.$message({ type: 'error', message: '服务器超时，请稍后再试。' })
+          // this.$toast.clear()
+          this.loadingModel = false
+        })
+      },
+      /**
+       * 根据楼栋获取当前楼栋下所有ElementID
+       * @param {String} ProjectID
+       * @param {String} BuildName 楼栋名称
+       */
+      GetElementIDByInfo () {
+        let param = {
+          ProjectID: this.projectId,
+          BuildName: this.type
+        }
+        GetElementIDByInfo(param).then(data => {
+          this.ElementList = data.Detiel
+          if (this.isloadingModel) {
+            this.modelBox({
+              isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+              isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+              ElementIDs: this.ElementList, // 所有要显示的构件数组，包括半隐藏构件
+              highLightElementIDs: this.highLightElementIDs, // 高亮显示的构件
+              functionNumber: [88] // 需要模型调用的函数编号数组
+            })
+          } else {
+            this.initModel()
+          }
+          this.loadingModel = false
+        })
+      },
+      slideRight () {
+        this.$nextTick(() => {
+          let inputStyWidth = this.$refs.slideWidth.$el.clientWidth
+          let width = (inputStyWidth - 230 - 40) + 'px'
+          console.log(width)
+        })
+      }
+    },
+    watch: {
+      type (data) {
+        // 根据type值变化获取进度
+        // this.schedulePlan(data)
+        // 根据type值查询认证任务列表
+        this.loadingModel = true
+        this.ACSchedulePlanList(data)
+        this.GetElementIDByInfo()
+      },
+      dialogForm: {
+        // form数据变化了 isChange 为true
+        handler (newValue) {
+          this.isChange = true
+        },
+        deep: true
+
+      },
+      imgList1: {
+        // imgList1 isChange 为true
+        handler (newList) {
+          this.ischange = true
+        },
+        deep: true
+      },
+      getIsViewAdded(val){
+        if(val){
+          document.getElementsByClassName("bf-toolbar-bottom")[0].style.display = "none"
+          document.getElementsByClassName("bf-tree-toolbar")[0].style.display = "none"
+
+        }
+      }
+    },
+    destroyed () {
+      this.modelBox({
+        isShowModel: false, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+        isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+      })
+    }
+  };
+</script>
+<style>
+  /* .model-container .bf-toolbar {
+    display: none !important;
+  } */
+</style>
+
+<style scoped>
+  .model-container1 {
+    width: 98%;
+    height: 95%;
+    padding: 0 !important;
+    z-index: 90;
+    margin-top: 50px;
+  }
+  .model-container {
+    width: 100%;
+    height: 100%;
+  }
+</style>

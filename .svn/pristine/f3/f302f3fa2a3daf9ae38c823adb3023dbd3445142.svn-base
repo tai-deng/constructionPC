@@ -1,0 +1,92 @@
+.flex-between
+  display flex
+  justify-content space-between
+
+.flex
+  display flex
+
+.container-scope-detail
+  height 100%
+  overflow-y auto
+  .btn 
+    padding 20px 25% 20px 5%
+    display flex
+    align-items center
+    justify-content center
+  
+  .avatar-uploader .el-upload 
+    border: 1px dashed #d9d9d9;
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  .tip 
+    color: #999999;
+    font-size: 18px;
+    padding-left: 10px;
+    display: inline-block;
+    vertical-align: bottom;
+
+  .el-upload--picture-card 
+    background: #F8F8F8 !important;
+    width: 132px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+
+  .avatar-uploader .el-upload:hover 
+    border-color: #409EFF;
+
+  .teble-wrapper
+    >>>
+      tr th
+        background #435089
+
+        .cell
+          color #fff
+
+  .select
+    >>>
+      .el-select .el-input__inner
+        border 1px solid #ecedf1
+        border-radius 5px
+        overflow hidden
+
+      .el-input__suffix
+        right 0
+        width 50px
+        background #44508a
+        border-radius 0 5px 5px 0
+
+      .el-input--suffix
+        overflow hidden
+
+      .el-select .el-input .el-select__caret
+        color #fff
+
+  >>>
+    .el-icon-dot
+      width 18px
+      height 18px
+      background #4775CA
+      border-radius 50%
+
+  .title
+    position relative
+    background #4775CA
+    height 48px
+    line-height 48px
+    font-size 20px
+    color #fff
+    text-align center
+
+    span
+      position absolute
+      right 10px
+      top 50%
+      transform translateY(-50%)
+
+  .content
+    padding 30px

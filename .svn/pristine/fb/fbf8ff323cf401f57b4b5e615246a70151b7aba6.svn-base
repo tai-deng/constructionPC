@@ -1,0 +1,59 @@
+/**
+ * 同步
+ */
+import types from './mutation-types.js'
+export default{
+  /**
+   * 设置模型所有数据列表
+   * @param {*} state 
+   * @param {模型所有构件列表} ElementIDs 
+   */
+    [types.GET_ELEMENT_IDS](state,ElementIDs){
+        state.ElementIDs = ElementIDs
+    },
+    /**
+     * 模型状态
+     * @param {*} state 
+     * @param {*} model 模型对象
+     */
+    [types.GET_MODEL_BOX](state,model){
+       state.modelBox = model
+    },
+    // gantt 状态
+    [types.GET_GANTT_STATE](state,model){
+        state.ganttState = model
+    },
+    /**
+     * 模型是否加载完成
+     * @param {*} state 
+     * @param {true：加载完成} isViewAdded 
+     */
+    [types.IS_VIEW_ADDED](state,isViewAdded){
+       state.isViewAdded = isViewAdded
+    },
+    /**
+     * // 清单导入页面 跳转到哪个页面 0 --plan1 , 2 --plan2 ,  3-- plan3
+     * @param {*} state 
+     * @param {*} num 
+     */
+    [types.GET_TO_PAGE_NUM](state,num){
+      state.toPageNum = num
+    },
+    //模型实例
+    [types.VIEWER_3D](state,view){
+      state.viewer3d = view
+    },
+    [types.SELECT_ALLID](state,view){
+      state.selAllID = view
+    },
+    [types.GET_OPTION_OBJ](state, obj){
+      let arr = state.optionsObjList
+      if(arr.length){
+        if(state.optionsObjList.indexOf(obj)=== -1){
+          state.optionsObjList.push(obj)
+        }
+      }else {
+        state.optionsObjList.push(obj)
+      }
+    }
+}

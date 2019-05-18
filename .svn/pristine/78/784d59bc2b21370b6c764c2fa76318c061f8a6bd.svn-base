@@ -1,0 +1,605 @@
+<template>
+  <div class="container-procurement container-procurement-list">
+    <el-form :inline="true" :model="formInline" class="demo-form-inline" style="text-align: right;">
+      <el-form-item>
+        <el-select v-model="formInline.BuildName" placeholder="楼栋">
+          <el-option
+            v-for="item in BuildNameList"
+            :key="item.id"
+            :label="item.text"
+            :value="item.text"
+          ></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-select v-model="formInline.Specialty" placeholder="专业">
+          <el-option
+            v-for="item in SpecialtyList"
+            :key="item.id"
+            :label="item.text"
+            :value="item.text"
+          ></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-select v-model="formInline.Floor" placeholder="楼层">
+          <el-option
+            v-for="item in FloorbyList"
+            :key="item.id"
+            :label="item.text"
+            :value="item.text"
+          ></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-select v-model="formInline.CatagoryName" placeholder="物资类别">
+          <el-option
+            v-for="item in ResorceNameList"
+            :key="item.id"
+            :label="item.text"
+            :value="item.text"
+          ></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item class="ser-bg">
+        <el-input
+          placeholder="楼栋、专业、楼层、物资"
+          prefix-icon="el-icon-search"
+          v-model="formInline.Name"
+          validate-event
+        ></el-input>
+      </el-form-item>
+      <el-form-item class="bgeee">
+        <el-button type="warning" class @click="onSubmit">导出</el-button>
+      </el-form-item>
+    </el-form>
+
+    <el-table :data="tableData" :span-method="objectSpanMethod" style="width: 100%">
+      <el-table-column prop="num" label="序号" width="50"></el-table-column>
+      <el-table-column prop="ResourceName" label="物资名称"></el-table-column>
+      <el-table-column prop="Spec" label="规格型号"></el-table-column>
+      <el-table-column prop="BuildName" label="楼栋"></el-table-column>
+      <el-table-column prop="AdjustBOQ" label="施工预算量"></el-table-column>
+      <el-table-column label="入库" align="right">
+        <template slot="header" slot-scope="scope">
+          <div class="box">
+            <span class="tableBox" @click="put(scope.row)">
+              <i class="el-icon-circle-plus-outline"></i>
+            </span>
+            <span class="tableBox">入库</span>
+          </div>
+        </template>
+        <el-table-column prop="InDate" label="入库时间"></el-table-column>
+        <el-table-column label="入库量" prop="CurrentInNum">
+          <!-- <template slot-scope="scope">
+            <el-input v-model="scope.row.quantity"></el-input>
+            <div class="bgeee" style="padding: 5px;border-radius: 5px;">{{scope.row.quantity}}</div>
+          </template> -->
+        </el-table-column>
+        <el-table-column prop="InSumNum" label="总量"></el-table-column>
+      </el-table-column>
+
+      <el-table-column label="出库">
+        <template slot="header" slot-scope="scope">
+          <div class="box">
+            <span class="tableBox" @click="out(scope.row)">
+              <i class="el-icon-circle-plus-outline"></i>
+            </span>
+            <span class="tableBox">出库</span>
+          </div>
+        </template>
+        <el-table-column prop="deliveryTime" label="出库时间"></el-table-column>
+        <el-table-column label="出库量" class="bgeee">
+          <template slot-scope="scope">
+            <el-input v-model="scope.row.bgeee"></el-input>
+            <!--<template slot-scope="scope">
+            <div class="bgeee" style="padding: 5px;border-radius: 5px;">{{scope.row.bgeee}}</div>
+            </template>-->
+          </template>
+        </el-table-column>
+        <el-table-column prop="name1" label="总量"></el-table-column>
+      </el-table-column>
+      <el-table-column label="退还">
+        <template slot="header" slot-scope="scope">
+          <div class="box">
+            <span class="tableBox" @click="back(scope.row)">
+              <i class="el-icon-circle-plus-outline"></i>
+            </span>
+            <span class="tableBox">退还</span>
+          </div>
+        </template>
+        <el-table-column prop="returnTime" label="退还时间"></el-table-column>
+        <el-table-column label="退还量" class="bgeee">
+          <template slot-scope="scope">
+            <el-input v-model="scope.row.returnQuantity"></el-input>
+            <!--<template slot-scope="scope">
+            <div class="bgeee" style="padding: 5px;border-radius: 5px;">{{scope.row.returnQuantity}}</div>
+            </template>-->
+          </template>
+        </el-table-column>
+        <el-table-column prop="gross" label="总量"></el-table-column>
+      </el-table-column>
+      <el-table-column prop="inventory">
+        <template slot="header" slot-scope="scope">
+          <div class="line0" style="margin-bottom:10px">库存</div>
+          <div class="line0">入库－出库＋退还</div>
+        </template>
+      </el-table-column>
+      <el-table-column prop="section" label="节超" width="130">
+        <template slot="header" slot-scope="scope">
+          <div class="line0" style="margin-bottom:10px">
+            节超
+            <el-tooltip class="item" effect="dark" content="出库－退还－预算" placement="bottom">
+              <span>
+                差额
+                <i @click="view(scope.row)" class="el-icon-question"></i>
+              </span>
+            </el-tooltip>
+          </div>
+          <div class="line0">出库－退还－预算</div>
+        </template>
+      </el-table-column>
+      <el-table-column label="定位">
+        <template slot-scope="scope">
+          <i class="el-icon-location" @click="location(scope.row)"></i>
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-pagination
+      class="pagination"
+      background
+      layout="prev, pager, next"
+      :total="total"
+      :page-size="paging.rows"
+      prev-text="上一页"
+      next-text="下一页"
+      @current-change="onCurrentChange"
+      @prev-click="onPrev"
+      @next-click="onNext"
+    ></el-pagination>
+  </div>
+</template>
+<script type='textecmascript-6'>
+import {
+  GetBuilding,
+  GetSpecialtybyBuilding,
+  GetFloorbyBuilding,
+  GetAllElementName,
+  QueryPurchaseSumList
+} from "../../../api/api.js";
+
+export default {
+  data() {
+    return {
+      paging: { page: 1, rows: 6 },
+      projectid: localStorage.getItem("projectid"),
+      BuildNameList: [], // 楼栋下拉
+      SpecialtyList: [], // 专业下拉
+      FloorbyList: [], // 楼层下拉
+      ResorceNameList: [], // 物资名称下拉
+      formInline: {
+        BuildName: "", // 楼栋
+        Specialty: "", // 专业
+        Floor: "", // 楼层
+        CatagoryName: "", // 物资类别
+        Name: "" // 查询内容
+      },
+      tableData: [
+        {
+          num: "1",
+          name: "混凝土",
+          type: "C20",
+          building: "A1栋",
+          budget: "44.00m³",
+          time: "2018.05.01",
+          quantity: "10.00m³",
+          total: "50.00m³",
+          deliveryTime: "2018.05.05",
+          bgeee: "6.00m³",
+          name1: "38.00m³",
+          returnTime: "2018.05.10",
+          returnQuantity: "2.00m³",
+          gross: "38.00m³",
+          inventory: "14.00m³",
+          section: "14.00m³"
+        },
+        {
+          num: "2",
+          name: "混凝土",
+          type: "C20",
+          building: "A1栋",
+          budget: "44.00m³",
+          time: "2018.05.01",
+          quantity: "10.00m³",
+          total: "50.00m³",
+          deliveryTime: "2018.05.05",
+          bgeee: "6.00m³",
+          name1: "38.00m³",
+          returnTime: "/",
+          returnQuantity: "/",
+          gross: "38.00m³",
+          inventory: "2.00m³",
+          section: "14.00m³"
+        },
+        {
+          num: "3",
+          name: "混凝土",
+          type: "C20",
+          building: "A1栋",
+          budget: "44.00m³",
+          time: "2018.05.01",
+          quantity: "10.00m³",
+          total: "50.00m³",
+          deliveryTime: "2018.05.05",
+          bgeee: "6.00m³",
+          name1: "38.00m³",
+          returnTime: "/",
+          returnQuantity: "/",
+          gross: "38.00m³",
+          inventory: "14.00m³",
+          section: "14.00m³"
+        },
+        {
+          num: "4",
+          name: "混凝土",
+          type: "C20",
+          building: "A1栋",
+          budget: "44.00m³",
+          time: "2018.05.01",
+          quantity: "10.00m³",
+          total: "50.00m³",
+          deliveryTime: "2018.05.05",
+          bgeee: "6.00m³",
+          name1: "38.00m³",
+          returnTime: "2018.05.10",
+          returnQuantity: "2.00m³",
+          gross: "38.00m³",
+          inventory: "14.00m³",
+          section: "14.00m³"
+        },
+        {
+          num: "5",
+          name: "混凝土",
+          type: "C20",
+          building: "A1栋",
+          budget: "44.00m³",
+          time: "2018.05.01",
+          quantity: "10.00m³",
+          total: "50.00m³",
+          deliveryTime: "2018.05.05",
+          bgeee: "6.00m³",
+          name1: "38.00m³",
+          returnTime: "/",
+          returnQuantity: "/",
+          gross: "38.00m³",
+          inventory: "2.00m³",
+          section: "14.00m³"
+        },
+      ]
+    };
+  },
+  created() {
+    // 楼栋下拉
+    this.getBuildingSel();
+    // 获取采购汇总列表
+    this.getCollectList();
+  },
+  computed: {
+    total() {
+      return this.tableData.length;
+    }
+  },
+  watch: {
+    formInline: {
+      handler(val, oldval) {
+        this.getCollectList(val);
+      },
+      deep: true
+    },
+    // 楼层
+    "formInline.Floor": {
+      handler(val, oldval) {
+        this.getCatagoryNameSel(
+          this.formInline.BuildName,
+          this.formInline.Specialty,
+          val
+        );
+      }
+    },
+    // 专业
+    "formInline.Specialty": {
+      handler(val, oldval) {
+        this.getFloorbySel(this.formInline.BuildName, val);
+      }
+    },
+    // 楼栋
+    "formInline.BuildName": {
+      handler(val, oldval) {
+        this.getSpecialtySel(val);
+      }
+    }
+  },
+  methods: {
+    // 选中页
+    onCurrentChange(p) {
+      console.log(p);
+    },
+    // 上一页
+    onPrev(p) {
+      console.log(p);
+    },
+    // 下一页
+    onNext(p) {
+      console.log(p);
+    },
+    // 物资类别下拉
+    getCatagoryNameSel(buildname, specialty, floor) {
+      GetAllElementName({
+        projectid: this.projectid,
+        buildname,
+        specialty,
+        floor
+      }).then(res => {
+        if (res.StatusCode == 200) {
+          this.ResorceNameList = res.Detiel;
+        }
+      });
+    },
+    // 楼层下拉
+    getFloorbySel(building, Specialty) {
+      GetFloorbyBuilding({
+        projectid: this.projectid,
+        building,
+        Specialty
+      }).then(res => {
+        if (res.StatusCode == 200) {
+          this.FloorbyList = res.Detiel;
+        }
+      });
+    },
+    // 专业下拉
+    getSpecialtySel(building) {
+      GetSpecialtybyBuilding({ projectid: this.projectid, building }).then(
+        res => {
+          if (res.StatusCode == 200) {
+            this.SpecialtyList = res.Detiel;
+          }
+        }
+      );
+    },
+    // 楼栋下拉
+    getBuildingSel() {
+      GetBuilding({ projectid: this.projectid }).then(res => {
+        if (res.StatusCode == 200) {
+          this.BuildNameList = res.Detiel;
+        }
+      });
+    },
+    // 获取采购汇总列表
+    getCollectList(par = {}) {
+      QueryPurchaseSumList(Object.assign(par, this.paging)).then(res => {
+        if (res.StatusCode == 200) {
+          console.log(res.Detiel);
+          this.tableData = res.Detiel;
+        }
+      });
+    },
+    // 材料入库
+    put() {
+      this.$router.push({
+        path: "putStorage"
+      });
+    },
+    // 材料出库
+    out() {
+      this.$router.push({
+        path: "outStorage"
+      });
+    },
+    // 退还
+    back() {
+      this.$router.push({
+        path: "returnStorage"
+      });
+    },
+    onSubmit() {
+      console.log("submit!");
+    },
+    objectSpanMethod({ row, column, rowIndex, columnIndex }) {
+      if (columnIndex === 0) {
+        if (rowIndex % 4 === 0) {
+          return {
+            rowspan: 4,
+            colspan: 1
+          };
+        } else {
+          return {
+            rowspan: 0,
+            colspan: 0
+          };
+        }
+      } else if (columnIndex === 1) {
+        if (rowIndex % 4 === 0) {
+          return {
+            rowspan: 4,
+            colspan: 1
+          };
+        } else {
+          return {
+            rowspan: 0,
+            colspan: 0
+          };
+        }
+      } else if (columnIndex === 2) {
+        if (rowIndex % 4 === 0) {
+          return {
+            rowspan: 3,
+            colspan: 1
+          };
+        } else {
+          return {
+            rowspan: 0,
+            colspan: 0
+          };
+        }
+      } else if (columnIndex === 3) {
+        if (rowIndex % 4 === 0) {
+          return {
+            rowspan: 3,
+            colspan: 1
+          };
+        } else {
+          return {
+            rowspan: 0,
+            colspan: 0
+          };
+        }
+      } else if (columnIndex === 4) {
+        if (rowIndex % 4 === 0) {
+          return {
+            rowspan: 3,
+            colspan: 1
+          };
+        } else {
+          return {
+            rowspan: 0,
+            colspan: 0
+          };
+        }
+      }
+    }
+  }
+};
+</script>
+<style lang='stylus' rel='stylesheet/stylus'>
+.container-procurement {
+  width: 100%;
+  height: 100%;
+  background: #f0f2f5;
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.container-procurement-list {
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.container-procurement-list .box {
+  display: flex;
+  flex-flow: row;
+  justify-content: flex-start;
+  align-items: center;
+  line-height: 0 !important;
+}
+
+.container-procurement-list .box .tableBox {
+  width: 50%;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.container-procurement-list .box .tableBox i {
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.container-procurement-list .el-input__suffix {
+  width: 0.666667rem;
+  background: #44508a;
+  right: 0;
+  border-radius: 0 0.066667rem 0.066667rem 0;
+}
+
+.container-procurement-list .el-table thead.is-group th {
+  background: #44508a;
+  color: #fff;
+  text-align: center;
+}
+
+.container-procurement-list .el-select .el-input .el-select__caret {
+  color: #fff;
+}
+
+.container-procurement-list .el-table--enable-row-transition .el-table__body td {
+  text-align: center;
+}
+
+.container-procurement-list .el-button--warning {
+  color: #FFF;
+  background-color: #E6A23C;
+  border-color: #E6A23C;
+  padding: 8px 30px;
+}
+
+.container-procurement-list .bgeee {
+  background: #eee;
+}
+
+.container-procurement-list .el-form--inline .el-form-item__content {
+  width: 160px;
+  height: 40px;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0px 1px 7px 0px rgba(216, 223, 238, 0.75);
+  border-radius: 4px;
+  font-size: 18px;
+  font-family: SourceHanSansCN-Normal;
+  font-weight: 400;
+}
+
+.container-procurement-list .el-select .el-input__inner::placeholder {
+  color: rgba(51, 51, 51, 1);
+}
+
+.container-procurement-list .ser-bg .el-form-item__content {
+  width: 340px;
+  height: 40px;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0px 1px 7px 0px rgba(216, 223, 238, 0.75);
+  border-radius: 20px;
+}
+
+.container-procurement-list .ser-bg .el-form-item__content .el-input__inner {
+  border-radius: 20px;
+}
+
+.container-procurement-list .bgeee .el-form-item__content {
+  background: #f0f2f5;
+  box-shadow: none;
+  width: auto;
+}
+
+.container-procurement-list .el-button--warning {
+  padding: 0;
+  width: 100px;
+  height: 40px;
+  line-height: 40px;
+  background: rgba(253, 161, 67, 1);
+  box-shadow: 0px 1px 7px 0px rgba(176, 148, 119, 0.75);
+  border-radius: 4px;
+}
+
+.container-procurement-list .el-icon-location {
+  color: #4775ca;
+  box-shadow: 0px 1px 7px 0px rgba(216, 223, 238, 0.5);
+}
+
+.el-select .el-input__suffix-inner .el-select__caret::before {
+  content: '\E60C';
+  font-size: 0.32rem;
+}
+
+.container-procurement-list .el-table__body-wrapper .el-input__inner {
+  background: #f0f0f0;
+  text-align: center;
+}
+
+.line0 {
+  line-height: 1 !important;
+  display: block;
+}
+</style>

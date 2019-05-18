@@ -1,0 +1,312 @@
+
+<template>
+  <div class="main-container">
+    <div class="list_4" v-if="dataNameList.length === 4">
+      <div class="table-header">
+        <span v-for="(item, index) in dataNameList" :key="index">{{item}}</span>
+      </div>
+      <div class="table-body">
+        <ul v-if="flag==1">
+          <li v-for="(item,index) in dataList" :key="item.ID">
+            <span>{{item.FoundationType}}</span>
+            <span>
+              <input type="number" v-model="item.ConstructionDay" @blur="onBlur(index)">
+            </span>
+            <span>
+              <input type="number" v-model="item.PileDetectionDay" @blur="onBlur(index)">
+            </span>
+            <span class="del-btn" @click="delData(item.ID)">删除</span>
+          </li>
+        </ul>
+        <ul v-else-if="flag==2">
+          <li v-for="(item,index) in dataList" :key="item.ID">
+            <span>{{item.Basement}}</span>
+            <span>
+              <input type="text" v-model="item.Support" @blur="onBlur(index)">
+            </span>
+            <span>
+              <input type="number" v-model="item.LimitTime" @blur="onBlur(index)">
+            </span>
+            <span class="del-btn" @click="delData(item.ID)">删除</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- <span>施工+静载工期</span>
+      <span>桩身检测及垫底工期</span>
+      <span>操作</span>-->
+    </div>
+
+    <div class="list_3" v-else-if="dataNameList.length === 3">
+      <div class="table-header">
+        <span v-for="(item, index) in dataNameList" :key="index">{{item}}</span>
+      </div>
+      <div class="table-body">
+        <ul>
+          <li v-for="(item,i) in dataList" :key="item.id">
+            <span>{{item.SpecialCase}}</span>
+            <span>
+              <input type="text" :value="item.LimitTime"  @blur="onBlur(i)">
+            </span>
+            <span class="del-btn" @click="delData(item.ID)">删除</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import {
+  DelFoundationForm,
+  EditFoundationForm,
+  DelSupportingEarthwork,
+  EditSupportingEarthwork,
+  EditSpecial,
+  DelSpecial,
+} from "../../../../../api/api.js";
+export default {
+  data() {
+    return {
+      dataList: []
+    };
+  },
+  props: {
+    dataNameList: {
+      type: Array,
+      default: function() {
+        return ["", "", "", ""];
+      }
+    },
+    flag: {
+      type: Number,
+      default: 1
+    },
+    list: {
+      type: Array,
+      default: function() {
+        return null;
+      }
+    }
+  },
+  watch: {
+    list(val) {
+      if (val) {
+        this.dataList = val;
+      }
+    }
+  },
+  methods: {
+    // 失去焦点事件
+    onBlur(index) {
+      let d = this.dataList[index];
+      if (this.$props.flag == 1) {
+        EditFoundationForm(d).then(res => {});
+      } else if (this.$props.flag == 2) {
+        EditSupportingEarthwork(d).then(res => {});
+      }else if(this.$props.flag == 3){
+        EditSpecial(d).then(res=>{});
+      }
+    },
+    // 删除基施
+    delData(ids) {
+      if (this.$props.flag == 1) {
+        DelFoundationForm({ ids }).then(res => {
+          if (res.StatusCode == 200) {
+            this.delhandle(ids);
+          }
+        });
+      } else if (this.$props.flag == 2) {
+        DelSupportingEarthwork({ids}).then(res => {
+          if (res.StatusCode == 200) {
+            this.delhandle(ids);
+          }
+        });
+      }else if(this.$props.flag==3){
+        DelSpecial({ids}).then(res=>{
+          if(res.StatusCode==200){
+            this.delhandle(ids)
+          }
+        })
+      }
+    },
+    // 删除处理
+    delhandle(ids) {
+      let arr = [];
+      arr = this.dataList.filter(i => {
+        return i.ID !== ids;
+      });
+      this.dataList = arr;
+    }
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+@import '../../../../../assets/stylus/variable.styl';
+
+.main-container {
+  width: 100%;
+  height: 100%;
+  padding-left: 20px;
+
+  .list_4 {
+    .table-header {
+      margin-top: 20px;
+      background-color: #435089;
+
+      span {
+        display: inline-block;
+        height: 60px;
+        line-height: 60px;
+        text-align: center;
+        font-size: 18px;
+        color: #FFFEFE;
+        border-right: 1px solid #E5E5E5;
+      }
+
+      span:first-child {
+        width: 335px;
+      }
+
+      span:nth-child(2) {
+        width: 260px;
+      }
+
+      span:nth-child(3) {
+        width: 260px;
+      }
+
+      span:last-child {
+        width: 143px;
+      }
+    }
+
+    .table-body {
+      height: 100%;
+      background-color: #fff;
+
+      ul {
+        li {
+          span {
+            display: inline-block;
+            height: 39px;
+            line-height: 39px;
+            text-align: center;
+            font-size: $font-size-18;
+            color: $font-color-10;
+            border-right: 1px solid #fff;
+            border-bottom: 1px solid #E5E5E5;
+
+            input {
+              display: inline-block;
+              width: 100%;
+              height: 39px;
+              line-height: 39px;
+              text-align: center;
+              vertical-align: top;
+              background-color: #fff;
+            }
+          }
+
+          span:first-child {
+            width: 335px;
+          }
+
+          span:nth-child(2) {
+            width: 260px;
+          }
+
+          span:nth-child(3) {
+            width: 260px;
+          }
+
+          span:last-child {
+            width: 143px;
+          }
+
+          .del-btn {
+            color: $font-color-13;
+          }
+        }
+      }
+    }
+  }
+
+  .list_3 {
+    .table-header {
+      margin-top: 20px;
+      background-color: #435089;
+
+      span {
+        display: inline-block;
+        height: 60px;
+        line-height: 60px;
+        text-align: center;
+        font-size: 18px;
+        color: #FFFEFE;
+        border-right: 1px solid #E5E5E5;
+      }
+
+      span:first-child {
+        width: 595px;
+      }
+
+      span:nth-child(2) {
+        width: 260px;
+      }
+
+      span:last-child {
+        width: 143px;
+      }
+    }
+
+    .table-body {
+      height: 100%;
+      background-color: #fff;
+
+      ul {
+        li {
+          span {
+            display: inline-block;
+            height: 39px;
+            line-height: 39px;
+            text-align: center;
+            font-size: $font-size-18;
+            color: $font-color-10;
+            border-right: 1px solid #fff;
+            border-bottom: 1px solid #E5E5E5;
+
+            input {
+              display: inline-block;
+              width: 100%;
+              height: 39px;
+              line-height: 39px;
+              text-align: center;
+              vertical-align: top;
+              background-color: #fff;
+            }
+          }
+
+          span:first-child {
+            width: 595px;
+          }
+
+          span:nth-child(2) {
+            width: 260px;
+          }
+
+          span:last-child {
+            width: 143px;
+          }
+
+          .del-btn {
+            color: $font-color-13;
+          }
+        }
+      }
+    }
+  }
+}
+</style>
+<style >
+</style>

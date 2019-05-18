@@ -1,0 +1,67 @@
+.container-risk
+  .house-model
+    .model-container
+      .model-container(ref="modelContainer")
+    el-button.start-question(type="warning" @click="onStartQuestion" class="my-button") 发起问题
+    .infomations
+      p
+        img(:src="require('./img/img5.png')")
+        | 本月新增问题（{{thisMonthCount}}项）
+      p(@click="onMarkerShowOrHide(0)") 
+        img(:src="require('./img/img2.png')")
+        | 待接收（{{ingPageTotal}}项）
+      p(@click="onMarkerShowOrHide(1)")
+        img(:src="require('./img/img3.png')")
+        | 整改中（{{handlePageTotal}}项）
+      p(@click="onMarkerShowOrHide(2)")
+        img(:src="require('./img/img4.png')")
+        | 已整改（{{overPageTotal}}项）
+
+  .filter-wrapper
+    .table
+      .title
+        el-table
+          el-table-column(label="序号" align="center")
+          el-table-column(label="主题" align="center")
+          el-table-column(label="问题类型" align="center")
+          el-table-column(label="状态" align="center")
+          el-table-column(label="定位" align="center")
+      .content(:style="riskManageHeight")
+        el-collapse(v-model="nowCollapse" class="my-collapse")
+          el-collapse-item(:title="`待接收（${ingPageTotal}）`" name="1")
+            el-table(:data="dataIng" :show-header="false" v-loading="ingLoading" @row-click="openDetail" class="my-table")
+              el-table-column(prop="sort" align="center")
+              el-table-column(prop="title" align="center")
+              el-table-column(prop="question_type" align="center")
+              el-table-column(prop="state" align="center" :formatter="formatterState")
+              el-table-column(align="center")
+                template(slot-scope="scope")
+                  img(style="margin-left: -6px;" :src="require('./img/gps.png')" @click.stop="onHandle(scope.row)")
+            el-pagination(:total="ingPageTotal" @current-change="ingCurrentChange" :current-page.sync="ingCurrentPage"
+                :page-size="pageSize" background layout="prev, pager, next" v-show="this.ingPageTotal > this.pageSize" class="text-center" )
+
+          el-collapse-item(:title="`整改中（${handlePageTotal}）`" name="2")
+            el-table(:data="dataHandle" :show-header="false" v-loading="handleLoading" @row-click="openDetail" class="my-table")
+              el-table-column(prop="sort" align="center")
+              el-table-column(prop="title" align="center")
+              el-table-column(prop="question_type" align="center")
+              el-table-column(prop="state" align="center" :formatter="formatterState")
+              el-table-column(align="center")
+                template(slot-scope="scope")
+                  img(style="margin-left: -6px;" :src="require('./img/gps.png')" @click.stop="onHandle(scope.row)")
+            el-pagination(:total="handlePageTotal" @current-change="handleCurrentChange" :current-page.sync="handleCurrentPage"
+                :page-size="pageSize" background layout="prev, pager, next" v-show="this.handlePageTotal > this.pageSize" class="text-center" )
+
+          el-collapse-item(:title="`已整改（${overPageTotal}）`" name="3")
+            el-table(:data="dataOver" :show-header="false" v-loading="overLoading" @row-click="openDetail" class="my-table")
+              el-table-column(prop="sort" align="center")
+              el-table-column(prop="title" align="center")
+              el-table-column(prop="question_type" align="center")
+              el-table-column(prop="state" align="center" :formatter="formatterState")
+              el-table-column(align="center")
+                template(slot-scope="scope")
+                  img(:src="require('./img/gps.png')" @click.stop="onHandle(scope.row)")
+            el-pagination(:total="overPageTotal" @current-change="overCurrentChange" :current-page.sync="overCurrentPage"
+                :page-size="pageSize" background layout="prev, pager, next" v-show="this.overPageTotal > this.pageSize" class="text-center" )
+                  img(:src="require('./img/gps.png')" @click="onHandle(scope.row)")
+                  img(style="margin-left: -6px;" :src="require('./img/gps.png')" @click="onHandle(scope.row)")

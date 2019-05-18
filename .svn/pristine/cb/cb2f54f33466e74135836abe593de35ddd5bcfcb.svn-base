@@ -1,0 +1,147 @@
+<template>
+  <div class="containerss">
+    <gantt
+      class="left-container"
+      :tasks="tasks"
+      :changeDate="changeDate"
+      @delBtn="delBtn"
+      @deleteItem="onDeleteItem"
+      @updataGt="updataGt"
+      v-if="isShowGanttm"
+    ></gantt>
+    <!-- :deleteItem="del" -->
+  </div>
+</template>
+
+<script>
+import Gantt from "../components/gantt/planGantt";
+import { Get_JDGH_List } from "../../../../api/api.js";
+import { constants } from "fs";
+import { getDateFormatting } from "../base/util.js";
+
+export default {
+  name: "fiveD_modules",
+  components: { Gantt },
+  props: ["changeDate", "deleteItem", "isupdataGt"],
+  data() {
+    return {
+      updateTasks: false, // 是否更新数据
+      isShowGanttm: false,
+      tasks: {
+        data: [],
+        links: [
+          // { id: 1, source: "2", target: "3", type: "0" },
+          // { id: 2, source: "3", target: "4", type: "0" },
+        ]
+      }
+    };
+  },
+  mounted() {
+    this.getData();
+  },
+  computed: {
+    // del:{
+    //   get(){
+    //     return this.$props.deleteItem;
+    //   },
+    //   set(v){
+    //     console.log(v)
+    //   }
+    // }
+  },
+  methods: {
+    // 删除按钮
+    delBtn(v) {
+      this.$emit("delBtn", v);
+    },
+    // 删除事件还原
+    onDeleteItem(v) {
+      this.$emit("deleteItem", v);
+    },
+
+    // 获取列表
+    getData() {
+      let data = [];
+      let links = [];
+      this.load();
+      this.Request(
+        Get_JDGH_List({ ProjectID: localStorage.getItem("projectid") })
+      )
+        .then(res => {
+          this.$toast.clear();
+          if (res.StatusCode == 200 && res.Detiel.length > 0) {
+            // let BaseStartTime = "";
+            res.Detiel.forEach((el, index) => {
+              // if (el.TaskName == "艺术中心") {
+              //   console.log(el.BaseStartTime);
+              // }
+              // BaseStartTime = el.BaseStartTime;
+              data.push({
+                id: el.TaskId,
+                text: el.TaskName,
+                type: "task",
+                start_date: el.BaseStartTime, // 开始时间还原成 y/m/d
+                // start_date: BaseStartTime, // 开始时间还原成 y/m/d
+                // end_date:el.BaseFinishTime,  // 结束时间处理
+                duration: el.Duration,
+                parent: el.TaskParentId ? el.TaskParentId : 0,
+                progress: el.PercenTage,
+                open: false
+              });
+              if (el.PredecessorsId) {
+                links.push({
+                  id: links.length + 1,
+                  source: el.TaskId,
+                  target: el.PredecessorsId,
+                  type: "0"
+                });
+              }
+            });
+            this.isShowGanttm = true;
+            this.tasks = { data, links };
+            this.$emit("onIsupdataGt", false);
+          } else {
+            this.$message({
+              type: "error",
+              message: e.Message,
+              center: "true"
+            });
+          }
+          this.updateTasks = false;
+          this.$toast.clear();
+        })
+        .catch(e => {
+          this.$message({ type: "error", message: e.Message, center: "true" });
+          this.$toast.clear();
+        });
+    },
+
+    updataGt() {
+      this.updateTasks = true;
+    }
+  },
+  watch: {
+    isupdataGt(c, o) {
+      console.log(c);
+      this.updateTasks = c;
+    },
+    updateTasks(c, o) {
+      if (c) {
+        this.getData();
+      }
+    }
+  }
+};
+</script>
+
+<style scope>
+.containerss {
+  height: 88.6%;
+  width: 100%;
+  /* padding: 0 40px; */
+  background-color: #f0f2f5;
+}
+.left-container {
+  height: 100%;
+}
+</style>

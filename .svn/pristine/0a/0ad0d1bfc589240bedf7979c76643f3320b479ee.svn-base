@@ -1,0 +1,101 @@
+
+import { QueryAllPurchaseUnit } from "../../../../api/api.js";
+
+//采购管理 楼栋 --> 专业 --> 楼层
+const projectid = localStorage.getItem("projectid");
+export const dataResetBSF = (that, category) => {
+    if (category == 'BuildName') {
+        that.FloorbyList = []; // 楼层下拉
+        that.SpecialtyList = []; // 专业下拉
+        that.ResorceNameList = []; // 物资类别下拉
+
+        that.formInline.Specialty = ""; // 专业
+        that.formInline.Floor = ""; // 楼层
+        that.formInline.CatagoryName = "", // 物资类别
+            that.formInline.Name = ""; // 查询内容
+
+    } else if (category == 'Specialty') {
+        that.FloorbyList = []; // 楼层下拉
+        that.ResorceNameList = []; // 物资类别下拉
+
+        that.formInline.Floor = ""; // 楼层
+        that.formInline.CatagoryName = "", // 物资类别
+            that.formInline.Name = ""; // 查询内容
+
+    } else if (category == 'Floor') {
+        that.ResorceNameList = []; // 物资类别下拉
+
+        that.formInline.CatagoryName = "", // 物资类别
+            that.formInline.Name = ""; // 查询内容
+
+    } else if (category == 'CatagoryName') {
+        that.formInline.Name = ""; // 查询内容
+    }
+}
+
+// 获取楼栋
+export const getBuildList = (that, GetBuilding) => {
+    // that.load();
+    that.buildLoading = true;
+    GetBuilding({ projectid: projectid }).then(res => {
+        // that.$toast.clear();
+        that.buildLoading = false;
+        if (res.StatusCode == 200) {
+            that.BuildNameList = res.Detiel;
+        }
+    }, () => { that.buildLoading = false });
+}
+
+// 楼栋 -> 获取专业
+export const getSpecialtyList = (that, GetSpecialtybyBuilding) => {
+    // that.load();
+    that.specLoading = true;
+    GetSpecialtybyBuilding({ projectid: projectid, building: that.formInline.BuildName }).then(
+        res => {
+            // that.$toast.clear();
+            that.specLoading = false;
+            if (res.StatusCode == 200) {
+                that.SpecialtyList = res.Detiel;
+            }
+        }, () => { that.specLoading = false }
+    );
+}
+
+// 楼栋 -> 专业 -> 获取模型楼层
+export const getFloorList = (that, GetFloorbyBuilding) => {
+    // that.load();
+    that.floorLoading = true;
+    GetFloorbyBuilding({ projectid: projectid, building: that.formInline.BuildName, Specialty: that.formInline.Specialty }).then(
+        res => {
+            // that.$toast.clear();
+            that.floorLoading = false;
+            if (res.StatusCode == 200) {
+                that.FloorbyList = res.Detiel;
+            }
+        }, () => { that.floorLoading = false; }
+    );
+}
+
+// 楼栋 -> 专业 -> 模型楼层 ->  获取物资
+export const getResourceList = (that, GetResourceBySpInfo) => {
+    // that.load();
+    that.resorceLoading = true;
+    GetResourceBySpInfo({ projectid: projectid, building: that.formInline.BuildName, Specialty: that.formInline.Specialty, Specialty: that.formInline.Specialty }).then(
+        res => {
+            // that.$toast.clear();
+            that.resorceLoading = false;
+            if (res.StatusCode == 200) {
+                that.FloorbyList = res.Detiel;
+            }
+        }, () => { that.resorceLoading = false; }
+    );
+}
+
+// 单位
+export const getUnit = (that) => {
+    QueryAllPurchaseUnit({}).then(res => {
+        if (res.StatusCode == 200) {
+            that.units = res.Detiel
+        }
+    })
+}

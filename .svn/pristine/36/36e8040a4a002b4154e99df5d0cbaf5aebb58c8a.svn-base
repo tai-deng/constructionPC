@@ -1,0 +1,1517 @@
+<!-- artifactsAssociated任务关联 -->
+<template>
+  <div class="container-artifacts-associated">
+    <el-row>
+      <el-col :span="12">
+        <div>
+          <el-button @click="tabList(false)" :class="{selected:!selected}">清单关联</el-button>
+          <el-button @click="tabList(true)" :class="{selected:selected}">任务关联</el-button>
+          <el-button type="warning" @click="getCheckedKeys" style="float:right">确认关联</el-button>
+        </div>
+        <el-row :gutter="20">
+          <el-col :span="10" v-loading="loading">
+            <header>构件清单</header>
+            <el-select v-model="floorId" placeholder="请选择" id="select1" @change="GetElementTree">
+              <el-option v-for="item in options" :key="item.id" :label="item.text" :value="item.id"></el-option>
+            </el-select>
+            <el-tree ref="tree" node-key="id" class="tree_height" show-checkbox :default-expanded-keys="expandedKeys" :default-checked-keys="checkedKeys" highlight-current :data="array" :props="defaultProps" @check-change="handleCheckChange"></el-tree>
+          </el-col>
+          <el-col :span="14" v-show="!selected" v-loading="loading">
+            <div v-if="listType===2">
+              <el-col :span="12" :gutter="0" style="padding: 0">
+                <el-select v-model="floorByModel" placeholder="请选择" @change="GetProjectName">
+                  <el-option v-for="(item, idx) in floorByModelList" :key="idx" :label="item.text" :value="item.id"></el-option>
+                </el-select>
+              </el-col>
+              <el-col :span="12" :gutter="0" style="padding: 0">
+                <el-select v-model="pro" placeholder="请选择" @change="GetAllCostList">
+                  <el-option v-for="(item, idx) in projectList" :key="idx" :label="item.text" :value="item.id"></el-option>
+                </el-select>
+              </el-col>
+            </div>
+            <!-- 施工图清单 -->
+            <el-col :span="24" v-if="listType === 1" style="padding: 0">
+              <el-select v-model="value2" placeholder="请选择" @change="GetBOQList">
+                <el-option v-for="(item, idx) in options2" :key="idx" :label="item.ImportType" :value="item.ImportType"></el-option>
+              </el-select>
+            </el-col>
+            <el-editable v-if="listType === 1" ref="editable" height="590" :edit-config="{trigger: 'manual', mode: 'row'}" :edit-rules="validRules" :data.sync="list" @row-click="rowClickEvent">
+              <el-editable-column label width="45" v-if="list.length">
+                <template slot-scope="scope">
+                  <i class="cursor" :class="treeIcons(scope.row)" @click="toggleCollapseNode(scope.row)"></i>
+                  <el-checkbox v-show="scope.row.parentId" v-model="scope.row.isCheck" :indeterminate="scope.row.indeterminate" @change="treeNodeChange(scope.row)"></el-checkbox>
+                </template>
+              </el-editable-column>
+              <el-editable-column v-for="(item, idx) in columnList" :key="idx" :prop="item" :label="item" :edit-render="{name: item === '构件名称' ? 'ElInput' : 'ElInputNumber'}">
+              </el-editable-column>
+              <el-editable-column width="50" fixed="right" v-if="list.length">
+                <template slot-scope="scope">
+                  <!-- hasActiveRow 判断当前是否活动行 -->
+                  <template v-if="$refs.editable.hasActiveRow(scope.row)">
+                    <i class="el-icon-check cursor" @click="saveRowEvent(scope.row,'editable')"></i>
+                    <i class="el-icon-close cursor" @click="cancelRowEvent(scope.row,'editable')"></i>
+                  </template>
+                  <!-- 新增一行 -->
+                  <template v-else>
+                    <i class="el-icon-plus cursor" v-show="!scope.row.parentId" @click="insertEvent(scope.row,'editable')"></i>
+                  </template>
+                </template>
+              </el-editable-column>
+            </el-editable>
+            <!-- 全费用清单 -->
+            <el-editable v-if="listType === 2" ref="editable2" height="590" :edit-config="{trigger: 'dblclick'}" :edit-rules="validRules2" :data.sync="list" @clear-active="clearActiveEvent" @selection-change="handleSelectionChange">
+              <el-editable-column label width="45">
+                <template slot-scope="scope">
+                  <i :class="treeIcons(scope.row)" @click="toggleCollapseNode(scope.row)"></i>
+                  <el-checkbox v-model="scope.row.isCheck" :indeterminate="scope.row.indeterminate" :disabled="scope.row.isDisabled" @change="treeNodeChange(scope.row)"></el-checkbox>
+                </template>
+              </el-editable-column>
+              <el-editable-column prop="ProjectCode" label="项目编码"></el-editable-column>
+              <el-editable-column prop="ProjectName" label="项目名称"></el-editable-column>
+              <el-editable-column prop="Quantities" label="工程量" :edit-render="{name: 'ElInputNumber'}"></el-editable-column>
+              <el-editable-column width="50">
+                <template slot-scope="scope">
+                  <template v-if="$refs.editable2.hasActiveRow(scope.row)">
+                    <i class="el-icon-check" @click="saveRowEventForR(scope.row,'editable2')"></i>
+                    <i class="el-icon-close" @click="cancelRowEventForR(scope.row,'editable2')"></i>
+                  </template>
+                  <template v-else>
+                    <i class="el-icon-more-outline cursor" v-show="listType === 2 && !scope.row.parentId" @click="split(scope.row,'editable')"></i>
+                    <!-- <i class="el-icon-plus" @click="insertEvent(scope.row,'editable2',1)" v-show="scope.row.type==1&scope.row.expandNode&!scope.row.parentId"></i> -->
+                    <!-- <i class="el-icon-more-outline" @click="split(scope.row,'editable2')" v-show="scope.row.type==1&~~scope.row.parentId!=0"></i> -->
+                    <!-- <i class="el-icon-delete" @click="removeEvent(scope.row,'editable2')" v-show="~~scope.row.type==0"></i> -->
+                  </template>
+                </template>
+              </el-editable-column>
+            </el-editable>
+          </el-col>
+          <!-- 任务关联列表 -->
+          <el-col :span="14" v-show="selected">
+            <el-table id="relationTable" height="590" style="width: 100%" highlight-current-row :data="tableData2" header-cell-class-name="table-head-th" :cell-class-name="handleCellClassName" @row-click="clickItem">
+              <el-table-column label width="45" align="center">
+                <template slot-scope="scope">
+                  <el-radio v-model="radio" :label="scope.row.ID" :disabled="scope.row.isRelation">
+                    <i></i>
+                  </el-radio>
+                </template>
+              </el-table-column>
+              <el-table-column prop="TaskName" label="任务名称" align="center"></el-table-column>
+              <el-table-column prop="BaseFinishTime" :formatter="handleTime" label="计划完成时间" align="center"></el-table-column>
+              <el-table-column prop="Duration" label="工期" width="45" show-overflow-tooltip align="center"></el-table-column>
+            </el-table>
+          </el-col>
+        </el-row>
+      </el-col>
+      <el-col :span="12">
+        <div class="one_key_matching clearfix">
+          <el-button type="primary" @click="showDialog" style="float:right;">
+            <img src="../../../assets/icons/match.png"> 清单一键匹配
+          </el-button>
+        </div>
+        <!-- 模型box -->
+        <div class="model-container">
+          <div ref="modelContainer" class="model-container"></div>
+        </div>
+      </el-col>
+    </el-row>
+    <!-- 一键匹配 -->
+    <el-dialog title="字段映射" :visible.sync="centerDialogVisible" width="50%" center>
+      <div v-if="showMapping" class="center">
+        <el-row>
+          <el-col :offset="5" :span="9">
+            <div class="grid-content bg-purple">模型</div>
+          </el-col>
+          <el-col :span="10">
+            <div class="grid-content bg-purple-light">工程量清单</div>
+          </el-col>
+        </el-row>
+        <el-form ref="form" label-width="80px">
+          <el-form-item label="楼层匹配">
+            <el-select v-model="floorType.floor" placeholder="请选择" @change="GetFloorbyBuilding()">
+              <el-option v-for="(item, idx) in options" :key="idx" :label="item.text" :value="item.id"></el-option>
+            </el-select>
+            <el-select v-model="floorType.floor2" placeholder="请选择">
+              <el-option v-for="(item, idx) in options4" :key="idx" :label="item.text" :value="item.id"></el-option>
+            </el-select>
+            <div @click="addFloor()" class="add_btn"></div>
+          </el-form-item>
+          <!-- 新增的楼层匹配 -->
+          <el-form-item label v-for="(list, index) in addFloorType" :key="index">
+            <el-select v-model="list.ModelFloor" placeholder="请选择" @change="GetFloorbyBuilding(list)">
+              <el-option v-for="(item, idx) in ModelFloorList" :key="idx" :label="item.text" :value="item.id"></el-option>
+            </el-select>
+            <el-select v-model="list.ListFloor" placeholder="请选择">
+              <el-option v-for="(item, idx) in ListFloorList" :key="idx" :label="item.text" :value="item.id"></el-option>
+            </el-select>
+            <div @click="addFloorType.splice(index, 1)" class="delete_btn"></div>
+          </el-form-item>
+          <el-form-item label="构件匹配">
+            <el-select v-model="form.artifact" placeholder="请选择">
+              <el-option v-for="(item, idx) in elementTypeList" :key="idx" :label="item.text" :value="item.id"></el-option>
+            </el-select>
+            <el-select v-model="form.artifact2" placeholder="请选择">
+              <el-option v-for="(item, idx) in elementTypeNameList" :key="idx" :label="item.text" :value="item.id"></el-option>
+            </el-select>
+            <div @click="addArtifact()" class="add_btn"></div>
+          </el-form-item>
+          <!-- 新增的构件匹配 -->
+          <el-form-item label v-for="(list, index) in addArtifactType" :key="index">
+            <el-select v-model="list.ElementType" placeholder="请选择">
+              <el-option v-for="(item, idx) in newElementTypeList" :key="idx" :label="item.text" :value="item.id"></el-option>
+            </el-select>
+            <el-select v-model="list.ElementName" placeholder="请选择">
+              <el-option v-for="(item, idx) in ElementNameList" :key="idx" :label="item.text" :value="item.id"></el-option>
+            </el-select>
+            <div @click="addArtifactType.splice(index, 1)" class="delete_btn"></div>
+          </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="centerDialogVisible = false">取 消</el-button>
+          <el-button class="selected" @click="ConstructAutoRalation">一键匹配</el-button>
+        </span>
+      </div>
+      <div v-if="showProgress" class="progress center">
+        <el-progress type="circle" :percentage="percentage" :width="218" status="text">
+          <p>匹配字段</p>
+          <p>88/100</p>
+        </el-progress>
+        <p>正在进行字段匹配，请稍后</p>
+        <p>请勿进行其他操作，以免发生系统错误</p>
+      </div>
+      <div v-if="showResult" class="result center">
+        <div class="success"></div>
+        <p>本项目共
+          <span>{{totalCount}}</span> 个构件，本次您成功关联了
+          <span>{{relation}}</span> 个构件，失败
+          <span>{{fail}}</span> 个；</p>
+        <p style="margin-bottom: 64px;">您可以继续通过手动关联的方式，完成剩余构件的关联。</p>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="rematch">重新匹配</el-button>
+          <el-button class="selected" @click="sure">确认</el-button>
+        </span>
+      </div>
+    </el-dialog>
+    <!-- 拆分 -->
+    <el-dialog title="拆分" :visible.sync="splitDialogVisible" width="53%" center class="split">
+      <el-row type="flex" justify="center">
+        <el-col :span="8">项目编码 : {{splitProjectCode}}</el-col>
+        <el-col :span="8">项目名称 : {{splitProjectName}}</el-col>
+        <el-col :span="5">工作量 : {{splitWorkQuantity}}</el-col>
+      </el-row>
+      <el-row type="flex" justify="center">
+        <el-col :span="21">
+          <el-form ref="form" label-width="59px">
+            <el-form-item label="拆分项 : " class="fancy">
+              <el-radio-group v-model="splitForm.resource" @change="tabQuantity">
+                <el-radio label="按楼层拆分"></el-radio>
+                <el-radio label="按数量拆分"></el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <hr>
+            <!-- 按数量拆分 -->
+            <el-form-item label="数量 : " class="fancy" v-if="splitForm.resource === '按数量拆分'">
+              <el-input v-model="splitForm.quantity" type="number" placeholder="请输入拆分数量" @blur="setQuantity"></el-input>
+            </el-form-item>
+            <!-- 按楼层拆分 -->
+            <el-form-item v-for="(item, idx) in cfList" :key="idx" :label="item.text">
+              <el-input v-model="item.value" type="number" :placeholder="avg"></el-input>
+            </el-form-item>
+          </el-form>
+        </el-col>
+      </el-row>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="splitDialogVisible = false">取 消</el-button>
+        <el-button class="selected" @click="comfirmSplit">确认</el-button>
+      </span>
+    </el-dialog>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+  import Vue from "vue";
+  import VueElementExtends from "vue-element-extends";
+  import "vue-element-extends/lib/index.css";
+  import XEUtils from "xe-utils";
+  import { mapMutations } from "vuex";
+  Vue.use(VueElementExtends);
+
+  import {
+    GetBuilding,
+    GetElementTree,
+    // GetAllElementList,
+    GetCurrentListType,
+    GetBuildImportType,
+    GetBOQList,
+    GetFloorbyBuilding,
+    GetElementTypebyBuilding,
+    GetConstructElementNamebyBuilding,
+    ConstructAutoRalation,
+    GetDefaultModelId,
+    GetAllCostList,
+    GetProjectName,
+    Get_JDGH_List,
+    SplitElementByFloor,
+    SplitElementByNum,
+    ConstructRalation,
+    QueryRalationByElement,
+    QueryRalationByList
+  } from "@/api/api.js"
+
+  export default {
+    data () {
+      return {
+        splitArr: [], //拆分之后的数组
+        avg: 0,
+        valueArr: [], //存储拆分之后多个拆分值的数组 // 点击拆分之后的表格数据
+        floorType: {
+          floor: "", //楼层匹配 模型
+          floor2: "" //楼层匹配 工程量清单
+        },
+        artifactType: {
+          artifact: "", //构件匹配 模型
+          artifact2: "" //构件匹配 工程量清单
+        },
+        addFloorType: [], // 楼层匹配（增减部分）
+        addArtifactType: [], // 构件匹配（增减部分）
+        ModelFloorList: [],
+        ListFloorList: [],
+        newElementTypeList: [],
+        ElementNameList: [],
+        radio: "", //任务关联 单选
+        selected: false, //控制显示清单关联还是任务关联
+        centerDialogVisible: false, //控制一键匹配模态框显示与否
+        splitDialogVisible: false, //控制拆分模态框显示与否
+        loading: false,
+        currentRow: null,
+        validRules: {
+          //新增行验证规则
+          name: [{ required: true, message: "请输入构件名称", trigger: "blur" }],
+          m1: [{ required: true, message: "请输入混凝土砌块", trigger: "blur" }],
+          m2: [{ required: true, message: "请输入模板面积", trigger: "blur" }]
+        },
+        validRules2: {
+          //新增行验证规则
+          projectCode: [
+            { required: true, message: "请输入项目编码", trigger: "blur" }
+          ],
+          projectName: [
+            { required: true, message: "请输入项目名称", trigger: "blur" }
+          ],
+          workQuantity: [
+            { required: true, message: "请输入工程量", trigger: "blur" }
+          ]
+        },
+        list: [],
+        treeNode: [],
+        treeList: [],
+        array: [{
+          label: "整体模型",
+          children: []
+        }],
+        defaultProps: {
+          children: "children",
+          label: "label"
+        },
+        options: [],
+        tableData: [],
+        floorId: "",
+        projectid: '',  // 项目id
+        userid: '', // 用户id
+        options2: [],
+        value2: "",
+        tableData2: [],
+        options4: [],
+        form: {
+          floor: "",
+          artifact: "",
+          floor2: "",
+          artifact2: ""
+        },
+        splitRow: "",
+        splitProjectName: "", //拆分模态框
+        splitProjectCode: "", //拆分模态框
+        splitWorkQuantity: "", //拆分模态框
+        columnList: [],
+        elementTypeList: [], // 构件下拉列表
+        elementTypeNameList: [], // 构件下拉列表2
+        listType: 1, // 导入类型
+        floorByModel: '',
+        floorByModelList: [],
+        pro: '',
+        projectList: [],
+        splitForm: {
+          resource: '按楼层拆分',
+          quantity: ''
+        },
+        showMapping: true,
+        showProgress: false,
+        showResult: false,
+        cfList: [],
+        percentage: 0,
+        totalCount: 0,
+        relation: 0,
+        fail: 0,
+        expandedKeys: [],
+        checkedKeys: [],
+        sessionCheckedKeys: [],
+        elementId: [],
+        indexId: [],
+        flog: false
+      };
+    },
+    created () {
+      this.userid = Number(localStorage.getItem('userId'))
+      this.projectid = localStorage.getItem('projectid')
+      this.init()
+      // this.loadingModel()
+    },
+    methods: {
+      ...mapMutations({
+        modelBox: "GET_MODEL_BOX"
+      }),
+      init () {
+        this.loading = true
+        this.GetCurrentListType()
+      },
+      /** 
+       * 获取清单类型 
+       * @returns 0为未导入 1为施工图清单 2.全费用清单 3.构件生成清单
+       * */
+      GetCurrentListType () {
+        GetCurrentListType().then(data => {
+          this.listType = data.Result
+          this.GetBuilding()
+          if (this.listType === 1) {
+            this.GetBuildImportType()
+          } else if (this.listType === 2) {
+            this.GetProjectName()
+          } else if (this.listType === 3) {
+            // 
+          } else {
+            this.$message('未导入任务清单')
+          }
+        })
+      },
+      //点击拆分之后
+      split (row, ref) {
+        // console.log(row)
+        this.splitRow = row;
+        this.splitDialogVisible = true;
+        this.splitProjectName = row.ProjectName;
+        this.splitProjectCode = row.ProjectCode;
+        this.splitWorkQuantity = row.Quantities;
+        // 获取当前楼栋下所有楼层
+        GetFloorbyBuilding({ projectid: this.projectid, building: this.floorByModel }).then(data => {
+          this.splitArr = data.Detiel
+          this.avg = (row.Quantities / data.Detiel.length).toFixed(2)
+          this.tabQuantity()
+        })
+      },
+      // 统一设置拆分量
+      setQuantity () {
+        this.cfList = []
+        for (let i = 0; i < this.splitForm.quantity; i++) {
+          this.cfList.push({
+            text: '',
+            value: ''
+          })
+          this.avg = (this.splitRow.Quantities / this.splitForm.quantity).toFixed(2)
+        }
+      },
+      // 切换拆分类型
+      tabQuantity () {
+        if (this.splitForm.resource === '按楼层拆分') {
+          this.cfList = this.splitArr
+          this.avg = (this.splitRow.Quantities / this.splitArr.length).toFixed(2)
+        } else {
+          this.cfList = []
+          this.splitForm.quantity = ''
+        }
+      },
+      /**
+       * 根据楼层拆分工程量
+       * @param {Number} Id 要拆分的ID
+       * @param {Array} listBOQ 楼层工程量列表
+            Floor: 楼层,
+            BOQ: 工程量
+       * @param {Number} UserId 用户ID
+       */
+      SplitElementByFloor () {
+        let param = {
+          Id: this.splitRow.ID,
+          listBOQ: this.valueArr,
+          UserId: this.userid
+        }
+        SplitElementByFloor(param).then(data => {
+          if (data.StatusCode === 200) {
+            this.$message({ type: 'success', message: data.Message })
+            this.splitDialogVisible = false
+          } else {
+            this.$message({ type: 'error', message: data.Message })
+          }
+        })
+      },
+      /**
+      * 根据数量拆分工程量
+      * @param {Number} Id 要拆分的ID
+      * @param {Array} listBOQ 楼层工程量列表
+      * @param {Number} UserId 用户ID
+      */
+      SplitElementByNum () {
+        let param = {
+          Id: this.splitRow.ID,
+          listBOQ: this.valueArr,
+          UserId: this.userid
+        }
+        SplitElementByNum(param).then(data => {
+          if (data.StatusCode === 200) {
+            this.$message({ type: 'success', message: data.Message })
+            this.splitDialogVisible = false
+          } else {
+            this.$message({ type: 'error', message: data.Message })
+          }
+        })
+      },
+      //在拆分模态框内点击确定时校验数据
+      comfirmSplit () {
+        if (this.splitForm.resource === '按楼层拆分') {
+          this.valueArr = []
+          for (let i = 0; i < this.cfList.length; i++) {
+            if (!this.cfList[i].value) {
+              this.$message({ type: 'warning', message: '第' + (i + 1) + '项不能为空' })
+              return
+            }
+            this.valueArr.push({
+              Floor: this.cfList[i].id,
+              BOQ: this.cfList[i].value
+            })
+          }
+          this.SplitElementByFloor()
+        } else {
+          if (!this.splitForm.quantity) {
+            this.$message({ type: 'warning', message: '请分配拆分数量' })
+            return
+          }
+          this.valueArr = []
+          for (let i = 0; i < this.cfList.length; i++) {
+            if (!this.cfList[i].value) {
+              this.$message({ type: 'warning', message: '第' + (i + 1) + '项不能为空' })
+              return
+            }
+            this.valueArr.push(this.cfList[i].value)
+          }
+          this.SplitElementByNum()
+        }
+        // this.splitArr
+        //   .map(item => item.value) //动态添加属性值数组
+        //   .map((item, index) => {
+        //     this.valueArr.push(
+        //       Object.assign(
+        //         {},
+        //         {},
+        //         {
+        //           projectCode: this.splitProjectCode,
+        //           projectName: this.splitProjectName,
+        //           workQuantity: item
+        //         }
+        //       )
+        //     );
+        //   });
+        // console.log(this.valueArr);
+        // this.splitArr.map(item => (item.value = "")); //拆分之后,再次点击进入拆分模态框,表单
+        // this.splitDialogVisible = false; //关闭拆分模态框
+        // this.valueArr.map(item => {
+        //   console.log(item);
+        //   console.log(this.splitRow);
+        //   this.insertEvent(this.splitRow, "editable2", 0, item);
+        // });
+        // this.valueArr = [];
+        // return;
+      },
+      // 添加楼层匹配
+      addFloor () {
+        this.addFloorType.push({
+          ModelFloor: "", //楼层匹配 模型
+          ListFloor: "" //楼层匹配 工程量清单
+        })
+        this.ModelFloorList = this.options
+      },
+      // 添加构件匹配
+      addArtifact () {
+        this.addArtifactType.push({
+          ElementType: "", //楼层匹配 模型
+          ElementName: "" //楼层匹配 工程量清单
+        });
+      },
+      //获取选中的树节点组成的数组
+      getCheckedKeys () {
+        this.multipleSelection = this.$refs.tree.getCheckedNodes(true)
+        if (this.multipleSelection.length) {
+          if (this.indexId.length) {
+            let param = []
+            this.multipleSelection.forEach(item => {
+              this.indexId.forEach(obj => {
+                param.push({
+                  ElementID: item.elementId,
+                  IndexId: obj
+                })
+              })
+            })
+            this.ConstructRalation(param)
+          } else {
+            this.$message({ type: 'warning', message: '请选择清单' })
+          }
+        } else {
+          this.$message({ type: 'warning', message: '请选择构件' })
+        }
+      },
+      /**
+       *  构件的关联 
+       *  @param {Number} userid 用户ID
+       *  @param {Number} type 类型 1.为施工图的关联 2.为全费用清单的关联
+       *  @param {Number} ElementID 构件ID
+       *  @param {Number} IndexId 清单ID
+       */
+      ConstructRalation (param) {
+        let userid = this.userid
+        let type = this.listType
+        ConstructRalation(userid, type, param).then(data => {
+          this.$message({ type: 'success', message: data.Message })
+        })
+      },
+      /**
+       *  根据构件获取构件关联的信息
+       *  @param {Array} param 构件id集合
+       */
+      QueryRalationByElement () {
+        if (this.flog) return
+        this.flog = true
+        let param = []
+        let treeList = this.$refs.tree.getCheckedNodes(true)
+        if (treeList.length) {
+          treeList.forEach(item => {
+            param.push(item.elementId)
+          })
+          QueryRalationByElement(param).then(data => {
+            // console.log(this.array)
+            // data.Detiel
+            this.flog = false
+          })
+        }
+      },
+      /**
+      *  根据清单ID获取构件关联的信息
+      *  @param {Array} this.indexId 清单id集合
+      */
+      QueryRalationByList () {
+        QueryRalationByList(this.indexId).then(data => {
+          let res = data.Detiel
+          this.sessionCheckedKeys = JSON.parse(JSON.stringify(res))
+          this.checkedKeys = []
+          res.forEach(item => {
+            this.findLastChild(item, this.array)
+          })
+          console.log(this.checkedKeys)
+        })
+      },
+      /**
+       * 找到最后一级树节点
+       * 匹配上则选中且禁用
+       * @param {Array} item 需要匹配的对象
+       * @param {Array} arr 需要查找的数据集合
+       */
+      findLastChild (item, arr, isTrue) {
+        arr.forEach(obj => {
+          if (obj.children && obj.children.length) {
+            this.findLastChild(item, obj.children, isTrue)
+          } else {
+            if (item.ElementID === obj.elementId) {
+              if (isTrue) {
+                obj.disabled = false
+                // 清空默认选择节点
+                this.$refs.tree.setCheckedNodes([])
+              } else {
+                obj.disabled = true
+                this.checkedKeys.push(obj.id)
+              }
+            }
+          }
+        })
+      },
+      //获取选中表格中的数据组成的数组
+      handleSelectionChange (val) {
+        this.multipleSelection = val.map(val => val.id)
+        // console.log(this.multipleSelection);
+      },
+      setCurrent (row) {
+        this.$refs.singleTable.setCurrentRow(row);
+      },
+      // 当某一行被点击时会触发该事件
+      clickItem (row) {
+        if (row.isRelation) return
+        this.radio = row.ID
+      },
+      //获取该目录下所有文件
+      getChildren (row) {
+        return this.treeList.filter(item => item.parentId === row.id);
+      },
+      /**
+       * 重新渲染树表格
+       */
+      reloedTreeList (data) {
+        this.initTreeList(data, true);
+      },
+      /** 
+       * 将一个带层级的数据列表转成树结构
+       */
+      initTreeList (data, isReload) {
+        // toArrayTree ( array, options ) 一个高性能的树结构转换函数，将一个带层级的数据列表转成树结构
+        let treeNode = XEUtils.toArrayTree(data, { strict: true, key: 'id', parentKey: 'parentId', children: 'children' })
+        // toTreeArray ( array, options ) 将一个树结构转成数组列表
+        let treeList = XEUtils.toTreeArray(treeNode, { children: "children" })
+        if (!isReload) {
+          treeList.forEach(item => {
+            Object.assign(item, {
+              expandNode: false,
+              showNode: false,
+              isCheck: false,
+              indeterminate: false
+            });
+          });
+        }
+        this.treeNode = treeNode; // 目录节点
+        this.treeList = treeList; // 全部节点
+        if (!isReload) {
+          treeNode.forEach((item, index) => {
+            Object.assign(item, {
+              treeLevel: 0,
+              treeIndex: index,
+              showNode: true
+            });
+          });
+        }
+        this.loadTree();
+      },
+      loadTree () {
+        this.list = this.treeList.filter(item => item.showNode); // 目录 list
+      },
+      // 判断表格展开与否的图标样式
+      treeIcons (row) {
+        let clsName = row.parentId === null ? row.expandNode ? "el-icon-caret-bottom" : "el-icon-caret-top" : ""
+        return clsName
+      },
+      //判断一条数据是否被选中
+      treeNodeChange (row) {
+        if (row.isCheck) {
+          row.indeterminate = false
+          this.indexId.push(row.IndexId)
+          this.QueryRalationByList()
+        } else {
+          this.sessionCheckedKeys.forEach(item => {
+            this.findLastChild(item, this.array, true)
+          })
+          if (this.indexId.length > 0) {
+            this.indexId = this.indexId.filter(item => item !== row.IndexId)
+          }
+        }
+      },
+      // 切换 展开目录的逻辑
+      treeCollapseNode (parent, expand) {
+        let children = this.treeList.filter(item => item.parentId === parent.id);
+        parent.expandNode = !!(expand && children.length);
+        children.forEach((child, index) => {
+          child.treeIndex = index;
+          child.treeLevel = parent.treeLevel + 1;
+          child.showNode = expand !== null ? expand : false;
+          this.treeCollapseNode(child, null);
+        });
+      },
+      // 切换 目录的样式
+      treeRowClassName ({ row }) {
+        let clsName = `tree-level_${row.treeLevel}`;
+        if (this.currentRow && this.currentRow.id === row.id) {
+          clsName += " current-row";
+        }
+        return clsName;
+      },
+      // 切换 展开目录
+      toggleCollapseNode (row) {
+        this.treeCollapseNode(row, !row.expandNode);
+        this.loadTree();
+      },
+      rowClickEvent (row) {
+        this.currentRow = row;
+      },
+      /**
+       * selectRow:新增的一行数据的父级数据
+       * file:新增的一行数据
+       * type:0->目录,1->文件
+       */
+      insertEvent (selectRow, ref, type = 1, file) {
+        if (!this.$refs[ref].checkValid().error) {
+          let children = []
+          let isAppand = true
+          let index = selectRow ? XEUtils.findIndexOf(this.list, item => item.id === selectRow.id) : 0
+          let data = Object.assign(
+            {
+              isNew: true,
+              id: this.treeList.length + 1,
+              parentId: null,
+              treeLevel: 0,
+              treeIndex: 0,
+              expandNode: false,
+              showNode: true,
+              isCheck: false,
+              indeterminate: false
+            },
+            file
+          )
+          if (selectRow) {
+            children = this.getChildren(selectRow)
+            if (isAppand) {
+              selectRow.expandNode = true //展开
+              data.parentId = selectRow.id //被选中行数据的id就是插入数据的父id
+              data.treeLevel = selectRow.treeLevel + 1
+            } else {
+              data.parentId = selectRow.parentId
+              data.treeLevel = selectRow.treeLevel
+            }
+          }
+          //第二个参数如果是 row 或 $index 则在指定位置新增一条数据，如果是 -1 则从最后新增一条数据
+          let row = this.$refs[ref].insertAt(data, index)
+          this.currentRow = row;
+          this.$nextTick(() => {
+            if (selectRow) {
+              let dataIndex = XEUtils.findIndexOf(this.treeList, item => item.id === selectRow.id)
+              // 向数组添加新项目。
+              this.treeList.splice(isAppand ? dataIndex + children.length + 1 : dataIndex, 0, row)
+            } else {
+              this.treeList.push(row)
+            }
+            this.reloedTreeList(this.treeList)
+            if (!file) {
+              this.$nextTick(() => this.$refs[ref].setActiveRow(row)) //   只对 mode=row 有效，激活指定行行为可编辑状态
+            }
+          });
+        }
+      },
+      // 取消保存当前编辑行 🙂
+      cancelRowEvent (row, ref) {
+        let activeInfo = this.$refs[ref].getActiveRow(); // getActiveRow 获取当前活动行或列的信息
+        if (activeInfo && activeInfo.isUpdate) {
+          this.$confirm("该数据未保存，是否移除?", "温馨提示", {
+            confirmButtonText: "移除数据",
+            cancelButtonText: "返回继续",
+            type: "warning"
+          })
+            .then(action => {
+              if (action === "confirm") {
+                this.treeList = this.treeList.filter(item => item.id !== row.id); // 从缓存树中移除
+                this.reloedTreeList(this.treeList); //重新加载缓存树
+              } else {
+                this.$refs[ref].setActiveRow(row); //  只对 mode=row 有效，激活指定行行为可编辑状态
+              }
+            })
+            .catch(e => {
+              this.$nextTick(() => this.$refs[ref].setActiveRow(row))
+            })
+            .then(() => {
+              // this.isClearActiveFlag = true
+            })
+        } else {
+          this.$refs[ref].clearActive();
+        }
+      },
+      // 移除当前行 🙂
+      // 目前需求不需要此功能
+      removeEvent (row, ref) {
+        this.$confirm("确定删除该行数据?", "温馨提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning"
+        })
+          .then(() => {
+            // this.$refs[ref].remove(row); // 首先在 ref 中删除 row
+            // console.log(this.treeList)
+            // this.treeList = this.treeList.filter(item => item.id !== row.id); // 然后一定要在 this.treeList 中删除 row  // 解决无法成功删除数据
+            // this.updateRowEvent(row);
+            // this.reloedTreeList(this.treeList); //重新加载缓存树
+            this.tableData.forEach((item, idx) => {
+              if (item.RowId === row.RowId) {
+                this.tableData.splice(idx, 1)
+              }
+            })
+          })
+          .catch(e => e);
+      },
+      clearActiveEvent (row) {
+        this.updateRowEvent(row);
+      },
+      //更新树表格数据
+      updateRowEvent (row) {
+        // this.$refs[ref].reloadRow(row); // reloadRow() 初始化指定行数据
+        this.$message({ message: "保存成功", type: "success" });
+      },
+      //保存当前编辑行
+      saveRowEvent (row, ref) {
+        // console.log(row);
+        this.$refs[ref].validateRow(row, valid => {
+          if (valid) {
+            this.$refs[ref].clearActive(); //清除所有活动行或列为不可编辑状态
+            this.$refs[ref].reloadRow(row); //初始化指定行数据
+            Message({ message: "保存成功", type: "success" });
+          } else {
+            this.$refs[ref].revert(row); // 放弃更改，还原指定行 row 或者整个表格的数据
+          }
+        });
+      },
+      /**
+       * 根据楼栋获取项目名称
+       * @param {String} BuildName
+       */
+      GetProjectName () {
+        GetProjectName({ BuildName: this.floorByModel }).then(data => {
+          this.projectList = data.Detiel
+        })
+      },
+      /**
+       * 获取所有的费用清单列表数据
+       * @param {string} projectid
+       * @param {Number} userid
+       * @param {string} buildname  楼栋
+       * @param {string} name 名称
+       */
+      GetAllCostList () {
+        let param = {
+          projectid: this.projectid,
+          userid: this.userid,
+          buildname: this.floorByModel,
+          name: this.pro
+        }
+        GetAllCostList(param).then(data => {
+          this.list = data.Detiel
+          // this.list[0].isDisabled = true
+          // this.list[1].isDisabled = true
+        })
+      },
+      /**
+       * 获取楼栋信息
+       * @param {String} projectid 项目id
+       */
+      GetBuilding () {
+        GetBuilding({ projectid: this.projectid }).then(data => {
+          this.floorByModelList = JSON.parse(JSON.stringify(data.Detiel))
+          this.options = data.Detiel
+          this.options.unshift({ id: '', text: '全部' })
+          this.GetElementTree()
+        })
+      },
+      /**
+       * 获取构件树结构
+       * @param {String} projectid  项目ID
+       * @param {String} buildname  楼栋
+       * @param {Number} ordertype	排序类型 1.为楼层在上面（施工图） 2为楼层在下面（全费用）
+       */
+      GetElementTree () {
+        let param = {
+          projectid: this.projectid,
+          buildname: this.floorId,
+          ordertype: this.listType
+        }
+        GetElementTree(param).then(data => {
+          let arr = data.Detiel
+          let newArr = []
+          let parentList = []
+          arr.forEach(item => {
+            parentList.push(item.BuildingName)
+          })
+          // 一级楼栋
+          parentList = [...new Set(parentList)]
+          parentList.forEach(item => {
+            this.expandedKeys.push(item)
+            newArr.push({
+              id: item,
+              label: item,
+              children: []
+            })
+          })
+          // 二级专业
+          newArr.forEach(item => {
+            arr.forEach(obj => {
+              if (obj.BuildingName === item.id) {
+                item.children.push({
+                  id: obj.Specialty,
+                  label: obj.Specialty,
+                  parentId: item.id,
+                  children: []
+                })
+              }
+            })
+            let temp = {}
+            item.children = item.children.reduce((item, next) => {
+              temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+              return item
+            }, [])
+          })
+          // 三级楼层
+          newArr.forEach(item => {
+            item.children.forEach(treeItem => {
+              arr.forEach(fromArr => {
+                if (fromArr.Specialty === treeItem.id) {
+                  treeItem.children.push({
+                    id: fromArr.Floor,
+                    label: fromArr.Floor,
+                    parentId: treeItem.id,
+                    children: []
+                  })
+                }
+              })
+              let temp = {}
+              treeItem.children = treeItem.children.reduce((item, next) => {
+                temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+                return item
+              }, [])
+            })
+          })
+          // 四级族
+          newArr.forEach(item => {
+            item.children.forEach(treeItem => {
+              treeItem.children.forEach(fourItem => {
+                arr.forEach(fromArr => {
+                  if (fromArr.Floor === fourItem.id) {
+                    fourItem.children.push({
+                      id: fromArr.FamilyName,
+                      label: fromArr.FamilyName,
+                      parentId: fourItem.id,
+                      children: []
+                    })
+                  }
+                })
+                let temp = {}
+                fourItem.children = fourItem.children.reduce((item, next) => {
+                  temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+                  return item
+                }, [])
+              })
+            })
+          })
+          // 五级族类型
+          newArr.forEach(item => {
+            item.children.forEach(treeItem => {
+              treeItem.children.forEach(fourItem => {
+                fourItem.children.forEach(fiveItem => {
+                  arr.forEach(fromArr => {
+                    if (fromArr.FamilyName === fiveItem.id) {
+                      fiveItem.children.push({
+                        id: fromArr.FamilyTypeName,
+                        label: fromArr.FamilyTypeName,
+                        elementId: fromArr.RaletionElementID,
+                        parentId: fourItem.id
+                      })
+                    }
+                  })
+                  let temp = {}
+                  fiveItem.children = fiveItem.children.reduce((item, next) => {
+                    temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+                    return item
+                  }, [])
+                })
+              })
+            })
+          })
+          // console.log(newArr)
+          this.array = newArr
+          this.loading = false
+        })
+      },
+      /**
+       * 根据楼栋获取模型的楼层
+       * @param {string} projectid 项目id
+       * @param {string} building 楼栋名称
+       */
+      GetFloorbyBuilding (list) {
+        GetFloorbyBuilding({ projectid: this.projectid, building: list ? list.ModelFloor : this.floorType.floor }).then(data => {
+          if (!list) {
+            this.floorType.floor2 = ''
+            this.options4 = data.Detiel
+          } else {
+            this.ListFloorList = data.Detiel
+          }
+          this.GetElementTypebyBuilding(list)
+          this.GetConstructElementNamebyBuilding(list)
+        })
+      },
+      /**
+       * 根据楼栋获取模型的楼层的构件类型
+       * @param {string} projectid 项目id
+       * @param {string} building 楼栋名称
+       */
+      GetElementTypebyBuilding (list) {
+        GetElementTypebyBuilding({ projectid: this.projectid, building: list ? list.ModelFloor : this.floorType.floor }).then(data => {
+          if (!list) {
+            this.elementTypeList = data.Detiel
+          } else {
+            this.newElementTypeList = data.Detiel
+          }
+        })
+      },
+      /**
+       * 根据楼栋获取施工图的构件名称
+       * @param {string} projectid 项目id
+       * @param {string} buildname 楼栋名称
+       */
+      GetConstructElementNamebyBuilding (list) {
+        GetConstructElementNamebyBuilding({ projectid: this.projectid, buildname: list ? list.ModelFloor : this.floorType.floor }).then(data => {
+          if (!list) {
+            this.elementTypeNameList = data.Detiel
+          } else {
+            this.ElementNameList = data.Detiel
+          }
+        })
+      },
+      /**
+       * 获取施工图清单导入中楼栋和导入类型（施工图下拉列表）
+       * @param {String} projectid 项目id
+       */
+      GetBuildImportType () {
+        GetBuildImportType({ projectid: this.projectid }).then(data => {
+          this.options2 = data.Detiel
+          this.value2 = data.Detiel[0].ImportType
+          this.GetBOQList()
+        })
+      },
+      /**
+       * 获取预算清单数据
+       * @param {String} projectid 项目ID
+       * @param {String} type 导入类型
+       */
+      GetBOQList () {
+        let param = {
+          pageIndex: 1,
+          pageSize: 9999,
+          buildname: '',
+          floor: '',
+          elementname: '',
+          projectid: this.projectid,
+          type: this.value2
+        }
+        GetBOQList(param).then(data => {
+          this.tableData = data.Result
+          let map = {}
+          let dest = []
+          data.Result.forEach(item => {
+            if (!map[item['楼层']]) {
+              dest.push({
+                id: item['楼层'],
+                parentId: null,
+                '构件名称': item['楼层']
+              })
+              map[item['楼层']] = item;
+            } else {
+              item.id = item['RowId']
+              item.parentId = item['楼层']
+            }
+          })
+          let tempArr = dest.concat(data.Result)
+          this.initTreeList(tempArr)
+          // 动态生成表头
+          let list = Object.keys(data.Result[0])
+          this.columnList = list.filter(item => item !== '序号' && item !== '楼层' && item !== 'RowId' && item !== 'expandNode' && item !== 'indeterminate' && item !== 'isCheck' && item !== 'showNode' && item !== 'treeIndex' && item !== 'treeLevel' && item !== 'id' && item !== 'parentId' && item !== 'children')
+          this.loading = false
+        })
+      },
+      /**
+       * 施工图一键关联
+       * @param {String} modelbuiling 模型楼栋
+       * @param {Array} listFloor 楼层匹配
+       *    ModelFloor: '', // 模型中楼层
+       *    ListFloor: ''   // 清单中楼层
+       * @param {Array} listElement 构件匹配
+       *    ElementType: '' // 模型中构件类型
+       *    ElementName: '' // 构建名称
+       * @param {String} projectid 项目id
+       * @param {Number} userid 用户id
+       */
+      async ConstructAutoRalation () {
+        this.percentage = 0
+        this.showMapping = false
+        this.showProgress = true
+        let defaultModelId = await this.Request(GetDefaultModelId({ projectId: this.projectid }))
+        let listFloor = []
+        let listElement = []
+        listFloor = this.addFloorType.concat([{
+          ModelFloor: this.floorType.floor,
+          ListFloor: this.floorType.floor2
+        }])
+        listElement = this.addArtifactType.concat([{
+          ElementType: this.form.artifact,
+          ElementName: this.form.artifact2
+        }])
+        let param = {
+          modelbuiling: defaultModelId.Result,
+          listFloor: listFloor,
+          listElement: listElement,
+          projectid: this.projectid,
+          userid: this.userid
+        }
+        ConstructAutoRalation(param).then(data => {
+          this.totalCount = 300
+          this.relation = 180
+          this.fail = 120
+          let timer = setInterval(() => {
+            this.percentage++
+            if (this.percentage >= 100) {
+              clearTimeout(timer)
+              let timeJump = setTimeout(() => {
+                clearTimeout(timeJump)
+                this.showProgress = false
+                this.showResult = true
+              }, 1000)
+            }
+          }, 50)
+        })
+      },
+      showDialog () {
+        this.showMapping = true
+        this.centerDialogVisible = true
+      },
+      // 重新匹配
+      rematch () {
+        this.showResult = false
+        this.showMapping = true
+      },
+      sure () {
+        this.showResult = false
+        this.showProgress = false
+        this.showMapping = false
+        this.centerDialogVisible = false
+      },
+      // 处理树节点点击事件
+      handleCheckChange (data, checked, indeterminate) {
+        this.QueryRalationByElement()
+      },
+      /**
+       * 获取进度规划列表
+       * @param {String} ProjectID
+       */
+      Get_JDGH_List () {
+        Get_JDGH_List({ ProjectID: this.projectid }).then(data => {
+          this.tableData2 = data.Detiel
+          // 模拟关联后的数据
+          this.tableData2[0].isRelation = true
+          this.tableData2[6].isRelation = true
+        })
+      },
+      // 切换关联
+      tabList (bool) {
+        if (this.selected !== bool) {
+          if (this.listType === 1) {
+            this.GetBuildImportType()
+          } else if (this.listType === 2) {
+            this.GetProjectName()
+          }
+          this.selected = bool
+          if (bool) {
+            this.Get_JDGH_List()
+          }
+        }
+      },
+      // 处理时间
+      handleTime (item) {
+        return new Date(item.BaseFinishTime).toLocaleDateString()
+      },
+      // 处理已关联任务的禁用样式
+      handleCellClassName (item) {
+        return item.row.isRelation ? 'disabled-row' : 'disabled-none'
+      },
+      /**
+       * 加载模型
+       */
+      loadingModel () {
+        this.$nextTick(() => {
+          this.$util.getDomLocation(this, "modelContainer").then(res => {
+            // console.log(res)
+            this.modelBox({
+              isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+              isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+              top: res.top, //距离顶部距离‘px'
+              left: res.left, //距离左边距离‘px'
+              width: res.width, //模型宽‘px'
+              height: res.height, //模型高 ‘px'
+              zIndex: 100, //模型层级
+              background: "",
+              ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+              highLightElementIDs: [], // 高亮显示的构件
+              functionNumber: [] // 需要模型调用的函数编号数组
+            })
+          })
+        })
+      }
+    }
+  };
+</script>
+
+<style>
+  .container-artifacts-associated * {
+    font-size: 28px; /*px*/
+  }
+  .container-artifacts-associated
+    .el-col-14
+    .el-select
+    .el-input
+    .el-select__caret {
+    color: #fff;
+  }
+  .container-artifacts-associated .el-dialog__body {
+    height: 600px;
+  }
+  .container-artifacts-associated .el-col-14 .el-input__inner::placeholder {
+    color: #fff;
+  }
+
+  .container-artifacts-associated .el-progress {
+    margin: 100px 0 60px 0;
+  }
+
+  .container-artifacts-associated .progress p {
+    line-height: 30px;
+    font-size: 18px;
+    color: rgba(153, 153, 153, 1);
+  }
+
+  .container-artifacts-associated .progress .el-progress__text p {
+    font-size: 20px;
+    color: rgba(71, 117, 202, 1);
+  }
+
+  .container-artifacts-associated .center {
+    text-align: center;
+  }
+
+  .container-artifacts-associated
+    .el-row:nth-child(2)
+    .el-col:nth-child(2)
+    .el-input--suffix
+    .el-input__inner {
+    background: #435089;
+    color: #fff;
+  }
+
+  .container-artifacts-associated .el-table .table-head-th {
+    background-color: #435089;
+    color: white;
+    text-align: center;
+    border-bottom: none;
+  }
+
+  .container-artifacts-associated .el-table .disabled-row {
+    color: rgba(153, 153, 153, 1);
+    cursor: not-allowed;
+  }
+
+  .container-artifacts-associated .el-table .disabled-none {
+    cursor: pointer;
+  }
+
+  .container-artifacts-associated #relationTable .gutter {
+    background-color: #435089;
+    color: white;
+  }
+  /* select 下拉按按钮 */
+  .container-artifacts-associated .el-dialog .el-select {
+    flex: 1;
+    height: 40px;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+    border-radius: 4px;
+  }
+  .container-artifacts-associated .el-dialog .el-input--suffix .el-input__inner {
+    border: none;
+  }
+  .container-artifacts-associated .el-dialog .el-input__suffix {
+    background: rgba(67, 80, 137, 1);
+    border-radius: 0px 4px 4px 0px;
+    right: 0;
+    width: 40px;
+  }
+  .container-artifacts-associated .el-dialog .el-icon-arrow-up:before {
+    /* content: "\e60b"; */
+    content: "\e60c";
+    /* font-size: 20px; */
+    color: rgba(255, 255, 255, 1);
+  }
+  .container-artifacts-associated .el-dialog .center-select {
+    margin: 0 20px;
+  }
+  .container-artifacts-associated
+    .input-number
+    .el-input-group--append
+    .el-input__inner,
+  .container-artifacts-associated .el-input-group__prepend {
+    height: 40px;
+    background: rgba(248, 248, 248, 1);
+    border-radius: 4px;
+    border: 1px solid rgba(229, 229, 229, 1);
+    border-right: 1px dashed #979797;
+  }
+  .container-artifacts-associated .editable-required-icon,
+  .container-artifacts-associated .el-icon-edit-outline {
+    display: none;
+  }
+  tbody .el-table__row:nth-child(1) {
+    background: #f4f6ff;
+  }
+  .split .fancy {
+    display: block;
+  }
+  .split .el-form-item:not(.fancy) {
+    display: inline-block;
+  }
+  .split .el-form-item__label {
+    margin: 0.1rem 0;
+  }
+  .split .el-input {
+    width: 110px;
+  }
+  .container-artifacts-associated .el-dialog__header {
+    background: linear-gradient(
+      225deg,
+      rgba(105, 86, 255, 1) 0%,
+      rgba(84, 138, 255, 1) 100%
+    );
+  }
+  .container-artifacts-associated .el-dialog__title {
+    color: #fff;
+  }
+  .container-artifacts-associated .el-radio__input.is-checked .el-radio__inner {
+    border-color: #fca141;
+    background: #fca141;
+  }
+
+  .container-artifacts-associated .el-radio__input.is-checked + .el-radio__label {
+    color: #fca141;
+  }
+
+  .container-artifacts-associated
+    .el-checkbox__input.is-checked
+    .el-checkbox__inner,
+  .container-artifacts-associated
+    .el-checkbox__input.is-indeterminate
+    .el-checkbox__inner {
+    background-color: #fca141;
+    border-color: #fca141;
+  }
+</style>
+
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+  * {
+    font-size: 18px;
+  }
+
+  .model-container {
+    height: 866px;
+    padding-top: 25px;
+  }
+
+  .tree_height {
+    height: 590px;
+    overflow: auto;
+  }
+
+  .one_key_matching {
+    height: 40px;
+    z-index: 101;
+  }
+
+  .container-artifacts-associated {
+    // width: 100%;
+    // height: 100%;
+    padding: 0 20px;
+
+    .result {
+      .success {
+        width: 232px;
+        height: 232px;
+        background: url('../../../assets/imgs/success.png') no-repeat;
+        background-size: cover;
+        margin: 100px auto 50px auto;
+      }
+
+      p {
+        line-height: 30px;
+        font-size: 18px;
+        color: rgba(153, 153, 153, 1);
+
+        span {
+          color: rgba(71, 116, 202, 1);
+        }
+      }
+    }
+  }
+
+  .container-artifacts-associated .el-row {
+    margin: 20px 0;
+  }
+
+  .container-artifacts-associated .el-row:nth-child(2) .el-col:nth-child(1), .container-artifacts-associated .el-row:nth-child(2) .el-col:nth-child(2) {
+    height: 100%;
+    background: rgba(255, 255, 255, 1);
+  }
+
+  .container-artifacts-associated .el-row:nth-child(2) .el-col header {
+    width: 100%;
+    background: #435089;
+    color: white;
+    text-align: center;
+    padding: 0.1rem 0;
+  }
+
+  .container-artifacts-associated .el-row:nth-child(2) .el-col .el-select {
+    width: 100%;
+    height: 50px;
+    color: white;
+    text-align: center;
+  }
+
+  .selected {
+    background: #4775CA;
+    color: white;
+  }
+
+  .el-form {
+    height: 500px;
+    overflow-y: auto;
+  }
+
+  .el-form-item {
+    div {
+      margin: 0.1rem 0.6rem;
+    }
+  }
+
+  .add_btn, .delete_btn {
+    background: url('../../../assets/icons/add.png') center 60% no-repeat;
+    width: 0.5rem;
+    height: 0.5rem;
+    display: inline-block;
+    float: right;
+  }
+
+  .delete_btn {
+    background: url('../../../assets/icons/reduce.png') center 60% no-repeat;
+  }
+
+  .container-artifacts-associated .el-dialog__head {
+    background: linear-gradient(
+      225deg,
+      rgba(105, 86, 255, 1) 0%,
+      rgba(84, 138, 255, 1) 100%
+    );
+    color: white;
+    /* height: 40px; */
+  }
+
+  .cursor {
+    cursor: pointer;
+  }
+</style>

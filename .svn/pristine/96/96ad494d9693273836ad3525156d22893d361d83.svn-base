@@ -1,0 +1,736 @@
+<template>
+  <div class="temporary-dialog" v-if="temporaryDialog">
+    <div class="temporary-center position-center">
+      <el-row class="title">
+        <el-col :span="24">{{dialogTitle}}</el-col>
+        <el-col :span="1" class="close">
+          <img src="../../../../../assets/imgs/close_model.png" @click="temporaryDialog = false">
+        </el-col>
+      </el-row>
+      <settingm :isShow="isSetting" @onClose="onClose" @onSetTile="onSetTile"></settingm>
+      <template v-if="!isSetting">
+        <el-row class="mt20" style="position:relative">
+          <el-col :span="9" class="label">新增方式</el-col>
+          <el-col :span="9" class="radio-wp">
+            <el-radio-group v-model="temData.increase">
+              <el-radio label="1" size="medium" fill="#FCA141">手动新增</el-radio>
+              <el-radio label="2" size="medium" fill="#FCA141">自动新增</el-radio>
+            </el-radio-group>
+          </el-col>
+          <i
+            class="el-icon-setting radio-setting"
+            v-if="temData.increase=='2'"
+            @click="onSetting"
+          >自动更新设置</i>
+        </el-row>
+        <div class="patternMode">
+          <template v-if="temData.increase== '2'">
+            <el-row class="mt20">
+              <el-col :span="9" class="label">进度名称</el-col>
+              <el-col :span="9">
+                <el-input v-model="temData.name" prefix-icon size="small" placeholder="输入名称"></el-input>
+              </el-col>
+            </el-row>
+            <el-row class="mt20">
+              <el-col :span="9" class="label">项目开工日期</el-col>
+              <el-col :span="9">
+                <el-date-picker
+                  v-model="temData.startTime"
+                  prefix-icon
+                  size="small"
+                  type="date"
+                  placeholder="选择日期"
+                  style="width:100%"
+                ></el-date-picker>
+              </el-col>
+            </el-row>
+            <el-row class="mt20">
+              <el-col :span="9" class="label">是否使用爬架</el-col>
+              <el-col :span="11" class="radio-wp">
+                <el-radio-group v-model="temData.useClimbing">
+                  <el-radio label="1" size="medium" fill="#FCA141">是</el-radio>
+                  <el-radio label="0" size="medium" fill="#FCA141">否</el-radio>
+                </el-radio-group>
+              </el-col>
+            </el-row>
+            <div class="mt20 border-top contentCenter">
+              <div class="tableContent">
+                <div class="table-hand flex">
+                  <span class="w100 flex-row">楼层编号</span>
+                  <span class="w100 flex-row">楼层名称</span>
+                  <span class="flex-1 flex-row">楼层类型</span>
+                  <span class="flex-1 flex-row">描述</span>
+                  <span class="w80 flex-row">操作</span>
+                </div>
+                <div class="table-content-up">
+                  <template v-if="temData.underground.length>0">
+                    <div
+                      class="table-content-up-item flex-row"
+                      v-for="(item,index) in temData.underground"
+                      :key="index"
+                    >
+                      <div class="table-content-up-item-v w100 flex-row">
+                        <el-input v-model="item['num'+index]" placeholder="楼层编号"></el-input>
+                      </div>
+                      <div class="table-content-up-item-v w100 flex-row">
+                        <el-input v-model="item.FloorName" placeholder="楼层名称"></el-input>
+                      </div>
+                      <div class="table-content-up-item-v flex-1 flex-row">
+                        <el-input v-model="item['name'+index]" placeholder="楼层类型"></el-input>
+                      </div>
+                      <div class="table-content-up-item-v flex-1 flex-row">
+                        <el-input v-model="item.Describe" placeholder="描述"></el-input>
+                      </div>
+                      <div class="table-content-up-item-r flex-row" @click="onRemoveUp(index)">移除</div>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="flex-row table-content-up-item-v">暂无数据</div>
+                  </template>
+                  <el-row>
+                    <el-col :span="24" class="text-center">
+                      <el-dropdown @command="handleCommandUp">
+                        <span class="el-dropdown-link add-btn">
+                          添加
+                          <i class="el-icon-arrow-down el-icon--right"></i>
+                        </span>
+                        <el-dropdown-menu slot="dropdown">
+                          <el-dropdown-item
+                            v-for="(item,index) in floorList"
+                            :key="item.ID"
+                            :command="index"
+                          >{{item.Name}}</el-dropdown-item>
+                        </el-dropdown-menu>
+                      </el-dropdown>
+                    </el-col>
+                  </el-row>
+                </div>
+                <div class="table-content-up">
+                  <template v-if="temData.overground.length>0">
+                    <div
+                      class="table-content-up-item flex-row"
+                      v-for="(item,index) in temData.overground"
+                      :key="index"
+                    >
+                      <div class="table-content-up-item-v w100 flex-row">
+                        <el-input v-model="item['num'+index]" placeholder="楼层编号"></el-input>
+                      </div>
+                      <div class="table-content-up-item-v w100 flex-row">
+                        <el-input v-model="item.FloorName" placeholder="楼层名称"></el-input>
+                      </div>
+                      <div class="table-content-up-item-v flex-1 flex-row">
+                        <el-input v-model="item['name'+index]" placeholder="楼层类型"></el-input>
+                      </div>
+                      <div class="table-content-up-item-v flex-1 flex-row">
+                        <el-input v-model="item.Describe" placeholder="描述"></el-input>
+                      </div>
+                      <div class="table-content-up-item-r flex-row" @click="onRemoveDown(index)">移除</div>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="flex-row table-content-up-item-v">暂无数据</div>
+                  </template>
+                  <el-row>
+                    <el-col :span="24" class="text-center">
+                      <el-dropdown @command="handleCommandDown">
+                        <span class="el-dropdown-link add-btn">
+                          添加
+                          <i class="el-icon-arrow-down el-icon--right"></i>
+                        </span>
+                        <el-dropdown-menu slot="dropdown">
+                          <el-dropdown-item
+                            v-for="(item,index) in floorList"
+                            :key="item.ID"
+                            :command="index"
+                          >{{item.Name}}</el-dropdown-item>
+                        </el-dropdown-menu>
+                      </el-dropdown>
+                    </el-col>
+                  </el-row>
+                </div>
+              </div>
+            </div>
+          </template>
+          <template v-else-if="temData.increase== '1'">
+            <el-row class="mt20">
+              <el-col :span="9" class="label">进度名称</el-col>
+              <el-col :span="9">
+                <el-input v-model="temData.name_a" prefix-icon size="small" placeholder="输入名称"></el-input>
+              </el-col>
+            </el-row>
+            <el-row class="mt20">
+              <el-col :span="9" class="label">计划开始时间</el-col>
+              <el-col :span="9">
+                <el-date-picker
+                  v-model="temData.startTime_a"
+                  prefix-icon
+                  size="small"
+                  type="date"
+                  placeholder="选择日期"
+                  style="width:100%"
+                ></el-date-picker>
+              </el-col>
+            </el-row>
+            <el-row class="mt20">
+              <el-col :span="9" class="label">计划结束时间</el-col>
+              <el-col :span="9">
+                <el-date-picker
+                  v-model="temData.endTime_a"
+                  prefix-icon
+                  size="small"
+                  type="date"
+                  placeholder="选择日期"
+                  style="width:100%"
+                ></el-date-picker>
+              </el-col>
+            </el-row>
+
+            <div class="empty mt20"></div>
+          </template>
+        </div>
+        <div class="tab-sub-btn flex-row">
+          <div @click="submitNewly" class="affirm flex-row">确定</div>
+          <div class="ml20 cancel flex-row" @click="temporaryDialog = false">取消</div>
+        </div>
+      </template>
+    </div>
+  </div>
+</template>
+<style>
+.temporary-dialog .el-radio__input.is-checked .el-radio__inner {
+  border-color: #fca141;
+  background-color: #fca141;
+}
+
+.temporary-dialog .el-radio__label {
+  color: rgba(51, 51, 51, 1) !important;
+}
+
+.tableContent .el-input__inner {
+  border: none;
+  background: rgba(244, 246, 255, 1);
+  text-align: center;
+}
+</style>
+
+<style  lang='stylus' scoped rel='stylesheet/stylus'>
+@import '../../base/base.css';
+
+.contentCenter {
+  display: flex;
+  justify-content: center;
+}
+
+.tableContent {
+  width: 650px;
+  background: rgba(244, 246, 255, 1);
+  border: 1px solid rgba(151, 151, 151, 1);
+  margin-top: 35px;
+
+  .el-input__inner {
+    border: none;
+    background: rgba(244, 246, 255, 1);
+  }
+
+  .w80 {
+    width: 80px;
+  }
+
+  .w100 {
+    width: 100px;
+  }
+
+  .table-content-up-item-v {
+    height: 50px;
+    font-size: 18px;
+    font-family: SourceHanSansCN-Medium;
+    font-weight: 500;
+    color: rgba(51, 51, 51, 1);
+  }
+
+  .table-content-up-item-r {
+    width: 80px;
+    height: 50px;
+    font-size: 18px;
+    font-family: SourceHanSansCN-Normal;
+    font-weight: 400;
+    color: rgba(71, 117, 201, 1);
+  }
+
+  .table-hand {
+    height: 40px;
+    font-size: 18px;
+    font-family: SourceHanSansCN-Medium;
+    font-weight: 500;
+    color: rgba(51, 51, 51, 1);
+  }
+
+  .table-content-up {
+    height: 130px;
+    overflow-y: auto;
+    border-top: 2px solid #999999;
+  }
+}
+
+.tab-sub-btn {
+  font-size: 16px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+  margin-top: 23px;
+
+  .cancel {
+    background: rgba(153, 153, 153, 1);
+    width: 120px;
+    height: 40px;
+    box-shadow: 0px 2px 4px 0px rgba(161, 192, 250, 1);
+    border-radius: 4px;
+  }
+
+  .affirm {
+    background: rgba(71, 117, 202, 1);
+    width: 120px;
+    height: 40px;
+    box-shadow: 0px 2px 4px 0px rgba(161, 192, 250, 1);
+    border-radius: 4px;
+  }
+}
+
+.empty {
+  height: 246px;
+}
+
+.temporary-dialog .title {
+  height: 40px;
+  line-height: 40px;
+  background: linear-gradient(
+    225deg,
+    rgba(105, 86, 255, 1) 0%,
+    rgba(84, 138, 255, 1) 100%
+  );
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+  position: relative;
+  text-align: center;
+}
+
+.close {
+  position: absolute;
+  top: 10.5px;
+  right: 0;
+}
+
+.close img {
+  width: 19px;
+  height: 19px;
+  display: block;
+}
+
+.temporary-dialog {
+  text-align: right;
+  font-size: 18px;
+  font-family: SourceHanSansCN-Normal;
+  font-weight: 400;
+  color: rgba(51, 51, 51, 1);
+}
+
+.temporary-dialog .el-input-number--small {
+  width: 95%;
+}
+
+.temporary-dialog .el-table__fixed-right::before, .temporary-dialog .el-table__fixed::before {
+  background-color: transparent;
+}
+
+.temporary-dialog .el-button--mini.is-circle {
+  border: none;
+}
+
+.temporary-dialog .el-date-editor.el-input, .temporary-dialog .el-date-editor.el-input__inner {
+  width: 100%;
+}
+
+.temporary-dialog .el-input--small .el-input__inner {
+  width: 100%;
+  height: 0.532rem;
+  background: rgba(248, 248, 248, 1) !important;
+  border-radius: 4px;
+  border: 1px solid rgba(229, 229, 229, 1);
+}
+
+.temporary-dialog .el-table th > .cell {
+  text-align: center;
+}
+
+.radio-wp {
+  line-height: 32px;
+  text-align: left;
+  padding-left: 10px;
+  position: relative;
+}
+
+.radio-setting {
+  position: absolute;
+  top: 0;
+  right: 30px;
+  line-height: 32px;
+}
+
+.temporary-dialog .el-radio {
+  margin-top: 0;
+}
+
+.temporary-dialog .el-date-editor.el-input {
+  width: 100%;
+}
+
+.revise-dialog, .add-multip {
+  width: 500px;
+  height: 300px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 10px;
+}
+
+.add-btn {
+  text-align: right;
+  color: #666;
+  cursor: pointer;
+}
+
+ul, li {
+  list-style: none;
+}
+
+.sub-btn ul {
+  display: flex;
+  flex-direction: row;
+  cursor: pointer;
+}
+
+.sub-btn {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  color: #666;
+}
+
+.ml20 {
+  margin-left: 20px;
+}
+
+.border-top {
+  border-top: 1px solid #ccc;
+}
+
+.temporary-dialog .el-table::before {
+  height: 0;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.label {
+  color: #666;
+  line-height: 32px;
+  text-align: right;
+  margin-right: 30px;
+}
+
+.mt20 {
+  margin-top: 20px;
+}
+
+.position-center {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+}
+
+.temporary-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.temporary-center {
+  width: 1000px;
+  height: 720px;
+  background: #fff;
+  border-radius: 10px;
+}
+
+.temporary-center h1 {
+  font-size: 16px;
+}
+</style>
+<script>
+import settingm from "./setting";
+import {
+  add_scheme_hand,
+  add_scheme_automation,
+  get_floor_list
+} from "../../../../../api/api.js";
+
+import { getDateFormatting } from "../../base/util.js";
+
+export default {
+  components: {
+    settingm
+  },
+  props: {
+    selectItem: {
+      type: Object
+    },
+    scheduleMenuItems: Array
+  },
+  data() {
+    return {
+      projectId: localStorage.getItem("projectid"), //项目ID
+      dialogTitle: "新增进度方案",
+      isSetting: false, // 自动更新设置
+      // floorTableData: [],
+      temData: {
+        name: "",
+        startTime: "",
+        useClimbing: "1",
+        underground: [],
+        overground: [],
+        name_a: "", // 手动更新 名称
+        startTime_a: "", // 手动更新 开始时间
+        endTime_a: "", // 手动更新 结束时间
+        increase: "2" // 新增方式
+      },
+      floorList: [], // 楼层类型选项
+      temporaryDialog: false
+    };
+  },
+  methods: {
+    // 选择楼层类型 up / down
+    handleCommandUp(index) {
+      let v = this.floorList[index];
+      let l = this.temData.underground.length;
+      this.temData.underground.push({
+        ["num" + l]: l + 1,
+        ["name" + l]: v.Name,
+        FloorName: l + 1 + "F",
+        Describe: v.Describe,
+        ProjectID: v.ProjectID
+      });
+    },
+    handleCommandDown(index) {
+      let v = this.floorList[index];
+      let l = this.temData.overground.length;
+      this.temData.overground.push({
+        ["num" + l]: -l - 1,
+        ["name" + l]: v.Name,
+        FloorName: -l - 1 + "F",
+        Describe: v.Describe,
+        ProjectID: v.ProjectID
+      });
+    },
+    // 删除楼层类型 up / down
+    onRemoveUp(i) {
+      this.temData.underground.splice(i, 1);
+    },
+    onRemoveDown(i) {
+      this.temData.overground.splice(i, 1);
+    },
+    // 获取楼层列表
+    getFloorList() {
+      get_floor_list({ProjectId:this.projectId}).then(res => {
+        if (res.StatusCode == 200) {
+          this.floorList = res.Detiel;
+        }
+      });
+    },
+    // 自动更新设置-完成
+    onClose() {
+      this.isSetting = false;
+    },
+    // 自动更新-设置
+    onSetting() {
+      this.isSetting = true;
+      this.dialogTitle = "楼层类型定义";
+    },
+    // 设置dialog title
+    onSetTile(v) {
+      this.dialogTitle = v;
+    },
+    // 提交新增进度方案
+    submitNewly() {
+      let increase = this.temData.increase;
+      if (increase == "1") {
+        this.manualOperation();
+      } else if (increase == "2") {
+        this.automationOperation();
+      }
+    },
+    // 自动更新
+    automationOperation() {
+      let ProjectID = this.projectId,
+        TaskName = this.temData.name,
+        BaseStartTime = this.temData.startTime,
+        ClimbingFrame = this.temData.useClimbing == "1" ? true : false,
+        UndergroundCount = this.temData.underground,
+        OvergroundCount = this.temData.overground,
+        gather = this.handleList(UndergroundCount, OvergroundCount);
+        console.log(String(gather), 
+        TaskName, BaseStartTime, ClimbingFrame);
+      if (TaskName != "" && BaseStartTime != "" && String(gather)) {
+        BaseStartTime = getDateFormatting(BaseStartTime);
+        add_scheme_automation(
+          {
+            ProjectID,
+            TaskName,
+            BaseStartTime,
+            ClimbingFrame,
+            UndergroundCount: UndergroundCount.length,
+            OvergroundCount: OvergroundCount.length,
+            FloorTableList:gather
+          },
+        ).then(res => {
+          console.log(res.Message);
+          if (res.StatusCode == 200) {
+            this.dataReset();
+            this.$message({
+              message: res.Message,
+              type: "success"
+            });
+          } else {
+            this.$message({
+              message: res.Message,
+              type: "error"
+            });
+          }
+        });
+      } else {
+        let message = "";
+        if (UndergroundCount.length != 0 || OvergroundCount.length != 0) {
+          message = "请选择楼层数";
+        }
+        if (BaseStartTime == "") {
+          message = "请选择开始时间";
+        }
+        if (TaskName == "") {
+          message = "请填写进度名称";
+        }
+        this.$message({
+          message: message,
+          type: "error"
+        });
+      }
+    },
+    // 手动更新
+    manualOperation() {
+      let ProjectID = this.projectId,
+        TaskName = this.temData.name_a,
+        BaseStartTime = this.temData.startTime_a,
+        BaseFinishTime = this.temData.endTime_a;
+      if (TaskName != "" && BaseStartTime != "" && BaseFinishTime != "") {
+        BaseStartTime = getDateFormatting(BaseStartTime);
+        BaseFinishTime = getDateFormatting(BaseFinishTime);
+        add_scheme_hand({
+          ProjectID,
+          TaskName,
+          BaseStartTime,
+          BaseFinishTime
+        }).then(res => {
+          if (res.StatusCode == 200) {
+            this.dataReset();
+            this.$message({
+              message: res.Message,
+              type: "success"
+            });
+          } else {
+            this.$message({
+              message: res.Message,
+              type: "error"
+            });
+          }
+        });
+      } else {
+        let message = "";
+        if (BaseFinishTime == "") {
+          message = "请选择结束时间";
+        }
+        if (BaseStartTime == "") {
+          message = "请选择开始时间";
+        }
+        if (TaskName == "") {
+          message = "请填写进度名称";
+        }
+        this.$message({
+          message: message,
+          type: "error"
+        });
+      }
+    },
+    // 数据复原
+    dataReset() {
+      let increase = this.temData.increase;
+      // 手动输入 -- 自动输入
+      if (increase == "1") {
+        this.temData.name_a = "";
+        this.temData.startTime_a = "";
+        this.temData.endTime_a = "";
+        this.temData.useClimbing = "1";
+      } else if (increase == "2") {
+        this.temData.name = "";
+        this.temData.startTime = "";
+        this.temData.useClimbing = "1";
+        this.temData.underground = "";
+        this.temData.overground = "";
+      }
+      // 关闭当前弹窗，更新甘特图
+      this.temporaryDialog = false;
+      this.$emit("updataGt");
+    },
+    // 处理楼层列表
+    handleList(a, b) {
+      let arr = [];
+      a.forEach(el => {
+        arr.push({
+          ProjectID: el.ProjectID,
+          FloorName: el.FloorName,
+          Describe: el.Describe
+        });
+      });
+      b.forEach(el => {
+        arr.push({
+          ProjectID: el.ProjectID,
+          FloorName: el.FloorName,
+          Describe: el.Describe
+        });
+      });
+      return arr;
+    }
+  },
+  mounted() {},
+  watch: {
+    temporaryDialog: function(val, oldval) {
+      if (val) {
+        if (this.isSetting) {
+          this.floorList.length = 0;
+        } else {
+          this.getFloorList(); //  楼层下拉
+        }
+      } else {
+        this.isSetting = false;
+        this.temData.name = "";
+        this.temData.startTime = "";
+        this.temData.useClimbing = "1";
+      }
+    }
+  }
+};
+</script>

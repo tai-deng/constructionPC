@@ -1,0 +1,1559 @@
+<!-- 智能报表-资料员intelligenceReports -->
+<template>
+  <div class="container-intelligence-reports">
+    <div class="intelligenec_left">
+      <div class="intelligenec_left_head">
+        <img class="intelligenec_left_head_img" src="../../assets/imgs/AI_img.png" alt>AI报表
+      </div>
+      <div class="intelligenec_left_body">
+        <ul class="intelligenec_jump">
+           <!-- 1.施工日志2.节点对比6.施工方案7.技术交底   5----4.质量控制5.安全管理3.三算对比 -->
+          <li @click="showFrom(1)" :class="fromCurrent==1?'active':''">施工日志</li>
+          <li @click="showFrom(6)" :class="fromCurrent==6?'active':''">施工方案</li>
+          <li @click="showFrom(7)" :class="fromCurrent==7?'active':''">技术交底</li>
+          <li @click="showFrom(2)" :class="fromCurrent==2?'active':''">节点对比</li>
+          <li
+            @click="showFrom(5)"
+            :class="fromCurrent==5?'intelligenec_left_border active':'intelligenec_left_border'"
+          >自定义表格</li>
+        </ul>
+        <div v-if="fromCurrent==1">
+          <!-- 施工日志   toshow--点击预览事件    getFile--批量下载文件-->
+          <alltable
+           :buildingDay="bigData"
+           :nobuildingDay="smallData"
+           :bingCount="bingCount" 
+           :notBingCount='notBingCount' 
+           :pageIndex="pageIndex" 
+           :pageSize="pageSize" 
+           @getindex='changeIndex($event)'
+           @showbox="toshow" 
+           @fileArr='getFile'>
+           </alltable>
+        </div>
+        <div v-if="fromCurrent==6">
+          <!-- 施工方案 -->
+           <alltable
+           :buildingDay="bigData"
+           :nobuildingDay="smallData"
+           :bingCount="bingCount" 
+           :notBingCount='notBingCount' 
+           :pageIndex="pageIndex" 
+           :pageSize="pageSize" 
+           @showbox="toshow" 
+           @fileArr='getFile'>
+           </alltable>
+        </div>
+        <div v-if="fromCurrent==7">
+          <!-- 技术交底 -->
+           <alltable
+           :buildingDay="bigData"
+           :nobuildingDay="smallData"
+           :bingCount="bingCount" 
+           :notBingCount='notBingCount' 
+           :pageIndex="pageIndex" 
+           :pageSize="pageSize" 
+           @showbox="toshow" 
+           @fileArr='getFile'>
+           </alltable>
+        </div>
+        <div v-if="fromCurrent==2">
+          <!-- 节点对比 -->
+           <alltable
+           :buildingDay="bigData"
+           :nobuildingDay="smallData"
+           :bingCount="bingCount" 
+           :notBingCount='notBingCount' 
+           :pageIndex="pageIndex" 
+           :pageSize="pageSize" 
+           @showbox="toshow" 
+           @fileArr='getFile'>
+           </alltable>
+        </div>
+        <div v-if="fromCurrent==5" class="intelligenec_left_div">
+          <!-- 自定义表格 -->
+          <el-row>
+            <el-col class="intell_margin_top intell_text_right" :span="4">资料名称</el-col>
+            <el-col class="intell_margin_top" :span="7">
+              <el-input v-model="buildingType.text" placeholder="请输入资料名称"></el-input>
+            </el-col>
+            <el-col class="intell_margin_top intell_text_right" :span="4" >内容配置</el-col>
+            <el-col class="intell_margin_top" :span="7">
+              <el-select
+                v-model="buildingType.context"
+                multiple 
+                collapse-tags
+                placeholder="内容配置" 
+                style="width:100%;">
+                <el-option
+                  v-for="(item, index) in contextList"
+                  :key="index"
+                  :label="item.text"
+                  :value="item.text"
+                ></el-option>
+              </el-select>
+            </el-col> 
+            <el-col class="intell_margin_top" :span="2">
+              <button @click.prevent="setMarks">设置</button>
+            </el-col>
+          </el-row>
+
+          <el-row>
+            <el-col class="intell_margin_top intell_text_right" :span="4">楼栋</el-col>
+            <el-col class="intell_margin_top" :span="7">
+              <el-select v-model="buildingType.build" @change='changeBuilding' style="width:100%;">
+                <el-option
+                  v-for="(item, index) in  allBuild"
+                  :key="index"
+                  :label="item.text"
+                  :value="item.id"
+                ></el-option>
+              </el-select>
+            </el-col>
+            <el-col class="intell_margin_top intell_text_right" :span="4" >楼层</el-col>
+            <el-col class="intell_margin_top" :span="7">
+              <el-select v-model="buildingType.class" style="width:100%;">
+                <el-option
+                  v-for="(item, index) in  allClass"
+                  :key="index"
+                  :label="item.text"
+                  :value="item.id"
+                ></el-option>
+              </el-select>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col class="intell_margin_top intell_text_right" :span="4">开始时间</el-col>
+            <el-col class="intell_margin_top" :span="7">
+              <el-date-picker
+                v-model="buildingType.beginTime"
+                style="width:100%;"
+                type="date"
+                placeholder="开始时间"
+              ></el-date-picker>
+            </el-col>
+            <el-col class="intell_margin_top intell_text_right" :span="4">结束时间</el-col>
+            <el-col class="intell_margin_top" :span="7">
+              <el-date-picker
+                v-model="buildingType.endTime"
+                style="width:100%;"
+                type="date"
+                placeholder="结束时间"
+              ></el-date-picker>
+            </el-col>
+          </el-row>
+          <div class="remark">
+            <div>
+              标签:
+              <span v-for="(i,d) in markList" :key="d" @click="setRemarkData(i)">{{i.LabelName}} <b v-if="i.LabelValue !== '8'&& i.LabelValue !== '9'&&i.LabelValue !== '10'" @click.stop="delMark(i.ID)">x</b> </span>
+            </div>
+          </div>
+          <div class="intell_building_type_btn">
+            <el-button class="correct-btn" @click="getFormExport">检索</el-button>
+          </div>
+
+          <el-table
+            style="width:100%;"
+            ref="buildingTable"
+            :header-cell-style="{'background-color':'#435089','color':'#ffffff'}"
+            :data="buildingTypeTable"
+          >
+            <el-table-column type="selection" align="center"></el-table-column>
+            <el-table-column type="index" label="序号" align="center" :index="indexMethod"></el-table-column>
+            <el-table-column prop="name" label="资料名称" align="center"></el-table-column>
+            <el-table-column label="预览" align="center">
+              <template slot-scope="scope">
+                <img
+                  src="../../assets/imgs/blue_eye.png"
+                  @click="buildingTypeClick(scope.$index, scope.row)"
+                  alt
+                >
+              </template>
+            </el-table-column>
+            <el-table-column label="下载" align="center">
+              <template slot-scope="scope">
+                <img
+                  src="../../assets/imgs/down_blue.png"
+                  @click="buildingTypeDown(scope.$index, scope.row)"
+                  alt
+                >
+              </template>
+            </el-table-column>
+          </el-table>
+           <el-pagination 
+            :total="bingCount" 
+            @current-change="CurrentChange" 
+            :current-page.sync="CurrentPage"
+            :page-size="pageSize" 
+            background 
+            layout="prev, pager, next" 
+            v-show="bingCount>pageSize" 
+            class="text-center" >
+          </el-pagination>
+        </div>
+        <div class="intelligenec_left_foot">
+          <el-button class="intelligenec_down_btn" @click="allDownFile">批量下载</el-button>
+        </div>
+      </div>
+    </div>
+
+    <div class="intelligenec_right">
+      <div class="intelligenec_left_head">
+        <img class="intelligenec_left_head_img" src="../../assets/imgs/number_looking.png" alt>数据预览
+      </div>
+      <!-- 下列隐藏的---为前端实现表格代码 -->
+
+      <!-- 施工日志---报表 -->
+      <!-- <div v-if="fromCurrent==1" class="intelligenec_right_table_div">
+        <div class="intelligenec_right_title">施工日志</div>
+        <div class="intelligenec_right_table_div1">
+          <div>栋号</div>
+          <div></div>
+          <div>日期</div>
+          <div></div>
+        </div>
+        <div class="intelligenec_right_table_div2">
+          <div>天气</div>
+          <div>
+            <ul class="intelligenec_right_list">
+              <li class="intelligenec_right_list_border">
+                <span class="intelligenec_right_span_border"></span>
+                <span class="intelligenec_right_span_border">白天</span>
+                <span>夜晚</span>
+              </li>
+              <li class="intelligenec_right_list_border">
+                <span class="intelligenec_right_span_border">天气情况</span>
+                <span class="intelligenec_right_span_border"></span>
+                <span></span>
+              </li>
+              <li class="intelligenec_right_list_border">
+                <span class="intelligenec_right_span_border">风力</span>
+                <span class="intelligenec_right_span_border"></span>
+                <span></span>
+              </li>
+              <li>
+                <span class="intelligenec_right_span_border">最高/最低温度</span>
+                <span class="intelligenec_right_span_border"></span>
+                <span></span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="intelligenec_right_table_div3">
+          <div>生产情况</div>
+          <div>
+            <p>项目总进度：</p>
+            <p>作业任务详情：</p>
+            <p class="intelligenece_margin_top">人员配置:</p>
+          </div>
+        </div>
+        <div class="intelligenec_right_table_div4">
+          <div>技术质量安全</div>
+          <div>
+            <p>施工方案（ 项）：</p>
+            <p>技术交底（ 项）：</p>
+            <p>工序验收（ 项）：</p>
+            <br>
+            <p>质量问题（ 项）：</p>
+            <p>安全问题（ 项）：</p>
+          </div>
+        </div>
+        <div class="intelligenec_right_table_div5">
+          <div>物资管理</div>
+          <div>
+            <p>材料入库：</p>
+            <p>材料出库：</p>
+            <p>材料退还：</p>
+          </div>
+        </div>
+        <div class="intelligenec_right_table_div6">
+          <div>项目负责人</div>
+          <div></div>
+          <div>记录人</div>
+          <div></div>
+        </div>
+      </div> -->
+      <!-- 施工方案/技术交底--表格直接在页面上门显示 -->
+
+      <!-- <div v-if="fromCurrent==6"></div>
+      <div v-if="fromCurrent==7"></div> -->
+
+      <!-- 节点对比 -->
+      <!-- <div v-if="fromCurrent==2" class="intelligenec_right_table_div">
+        <div class="intelligenec_right_title">节点对比</div>
+        <div class="intelligenec_right_table_div1">
+          <div>楼栋</div>
+          <div></div>
+          <div>日期</div>
+          <div></div>
+        </div>
+        <div class="intelligenec_right_table_div1">
+          <div>计划完成进度</div>
+          <div></div>
+          <div>实际完成进度</div>
+          <div></div>
+        </div>
+        <div class="intelligenec_right_table_div11">
+          <div>任务总览</div>
+          <div>
+            <span>任务总数：条</span>
+            <span>进行中：条</span>
+            <span>正常：条</span>
+            <span>滞后：条</span>
+          </div>
+        </div>
+        <div class="intelligenec_right_table_div12">
+          <el-table
+            :data="right_table1"
+            :border="true"
+            style="width: 100%;border:1px solid #D0D1D4;border-left:0;border-right:0;"
+          >
+            <el-table-column type="index" label="序号" :index="indexMethod" align="center"></el-table-column>
+            <el-table-column prop="name" label="任务名称" align="center"></el-table-column>
+            <el-table-column prop="time" label="计划完成时间" align="center"></el-table-column>
+            <el-table-column prop="number" label="实际完成率" align="center"></el-table-column>
+            <el-table-column prop="state" label="状态" align="center"></el-table-column>
+          </el-table>
+        </div>
+      </div> -->
+
+      <!-- 自定义表格--配置--施工日志（跳转）、施工方案、技术交底（跳转）、节点对比（跳转）、三算对比、质量控制、安全管理 -->
+      <!-- <div v-if="fromCurrent==5" class="intelligenec_right_table_div"> -->
+        <!-- 安全管理 -->
+        <!-- <div v-if="myselftTable==1">
+          <div class="intelligenec_right_title">安全管理</div>
+          <div class="intelligenec_right_table_div1">
+            <div>楼栋</div>
+            <div></div>
+            <div>时间周期</div>
+            <div></div>
+          </div>
+          <div class="intelligenec_right_table_div13">
+            <el-row>
+              <el-col :span="11" :offset="1">新增问题：</el-col>
+              <el-col :span="11" :offset="1">开工累计发现问题：</el-col>
+            </el-row>
+            <div class="intelligenec_right_table_div14">
+              <div>
+                <echartTable :plan_table="table1"></echartTable>
+              </div>
+              <div class="right_table_div14_right">
+                <echartTable :plan_table="table2"></echartTable>
+              </div>
+            </div>
+            <div class="intelligenec_right_table_div15">
+              <p>新增问题详情</p>
+            </div>
+          </div>
+        </div> -->
+
+        <!-- 质量控制 -->
+        <!-- <div v-if="myselftTable==2">
+          <div class="intelligenec_right_title">质量控制</div>
+          <div class="intelligenec_right_table_div1">
+            <div>楼栋</div>
+            <div></div>
+            <div>时间周期</div>
+            <div></div>
+          </div>
+          <div class="intelligenec_right_table_alldiv">施工方案</div>
+          <div class="intelligenec_right_table_div18">
+            <p>计划完成/实际完成:</p>
+          </div>
+          <div class="intelligenec_right_table_alldiv">技术交底</div>
+          <div class="intelligenec_right_table_div18">
+            <p>计划完成/实际完成:</p>
+          </div>
+          <div class="intelligenec_right_table_alldiv">工序验收</div>
+          <div class="intelligenec_right_table_div18">
+            <p>计划完成/实际完成:</p>
+          </div>
+          <div class="intelligenec_right_table_alldiv">质量检查</div>
+          <div class="intelligenec_right_table_div16">
+            <el-row>
+              <el-col :span="11" :offset="1">新增问题：</el-col>
+              <el-col :span="11" :offset="1">开工累计发现问题：</el-col>
+            </el-row>
+            <div class="intelligenec_right_table_div14">
+              <div>
+                <echartTable :plan_table="table3"></echartTable>
+              </div>
+              <div class="right_table_div14_right">
+                <echartTable :plan_table="table4"></echartTable>
+              </div>
+            </div>
+            <div class="intelligenec_right_table_div17">
+              <p>新增问题详情</p>
+            </div>
+          </div>
+        </div> -->
+
+        <!-- 三算对比 -->
+        <!-- <div v-if="myselftTable==3">
+          <div class="intelligenec_right_title">三算对比</div>
+          <div class="intelligenec_right_table_div1">
+            <div>楼栋</div>
+            <div></div>
+            <div>楼层</div>
+            <div></div>
+          </div>
+          <div class="intelligenec_right_table_div20">
+            <div class="intelligenec_right_table_div21"></div>
+            <el-table
+              :data="three_table"
+              :border="true"
+              style="width: 100%;border:1px solid #D0D1D4;border-left:0;border-right:0;"
+            >
+              <el-table-column type="index" label="序号" :index="indexMethod" align="center"></el-table-column>
+              <el-table-column prop="name" label="物资名称" align="center"></el-table-column>
+              <el-table-column prop="number" label="规格型号" align="center"></el-table-column>
+              <el-table-column prop="befornumber" label="施工图预算量" align="center"></el-table-column>
+              <el-table-column prop="setnumber" label="调整系数" align="center"></el-table-column>
+              <el-table-column prop="already" label="施工预算量" align="center"></el-table-column>
+              <el-table-column prop="atnumber" label="实际消耗量" align="center"></el-table-column>
+              <el-table-column prop="remove" label="差额（实际-施工）" align="center"></el-table-column>
+              <el-table-column prop="removenumber" label="偏差率（差额/施工）" align="center"></el-table-column>
+            </el-table>
+          </div>
+        </div> -->
+      <!-- </div> -->
+
+      <div class="intelligenec_right_table_div">
+        <!-- <button onclick="window.open('http://view.officeapps.live.com/op/view.aspx?src=http://47.112.21.206:8006/Upload/Doc/201904031711405295.docx')">
+          在线预览word文档
+        </button>
+        <button onclick="window.open('http://view.officeapps.live.com/op/view.aspx?src=http://mczaiyun.top/ht/3.docx')">
+          在线预览word文档2222
+        </button> -->
+        <iframe :src="previewUrl" width="100%" height="100%"></iframe>  
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import alltable from "./intelligenceReports_components/alltable";
+// import echartTable from "./intelligenceReports_components/echartTable";
+import {
+  AIReportTypeList,
+  GetWeather,
+  GetReportFormList,
+  GetCustomFormExport,
+  GetAllElementBuilding,
+  GetFloorbyBuilding,
+  GetReportLabelList,  //获取智能报表标签
+  AddReportLabel,  //添加标签
+  DelReportLabel,  //删除标签
+  GetReportBuilding,  // 获取楼栋信息
+  GetReportFloorbyBuilding  //获取楼层信息
+  } from '@/api/api.js';
+
+export const downloadFile = (url) => {
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";  // 防止影响页面
+    iframe.style.height = 0;  // 防止影响页面
+    iframe.src = url; 
+    document.body.appendChild(iframe);  // 这一行必须，iframe挂在到dom树上才会发请求
+    // 5分钟之后删除（onload方法对于下载链接不起作用的时候）
+    setTimeout(()=>{
+      iframe.remove();
+    }, 5 * 60 * 1000);
+}
+export default {
+  components: { alltable },//echartTable
+  data() {
+    return {
+      //两个表格数据--传入组件
+      bigData: [],
+      smallData: [],
+      //跳转显示
+      fromCurrent: 1,
+      tableTitle: "施工日志", //表格预览的--表格标题
+
+      //自定义表格
+      contextList: [
+        { value: "1", label: "全部" },
+        { value: "2", label: "进度计划" },
+        { value: "3", label: "物资计划" },
+        { value: "4", label: "质量管理" },
+        { value: "5", label: "风险管理" },
+        { value: "6", label: "人力资源" }
+      ], //内容配置
+      allBuild: [], //楼栋
+      allClass: [], //楼层
+      buildingType: {
+        context: "", //内容配置
+        text: "", //资料类型
+        build: "全部", //楼栋
+        class: "", //楼层
+        beginTime: "", //开始时间
+        endTime: "" //接受时间
+      },
+      buildingTypeTable: [
+        { id: 1, name: "安全管理-点击预览" },
+        { id: 2, name: "质量控制-点击预览" },
+        { id: 3, name: "三算对比-点击预览" }
+      ], //自定义表格数据
+
+      //节点对比表中的表格
+      right_table1: [
+        { name: "基础施工", time: "2019.01.06", number: "80%", state: "正常" },
+        {
+          name: " 1F钢筋绑扎",
+          time: "2019.02.06",
+          number: "20%",
+          state: "滞后1天"
+        },
+        {
+          name: "1F混凝土浇筑",
+          time: "2019.01.06",
+          number: "80%",
+          state: "滞后14天"
+        },
+        {
+          name: "1F内墙砌筑",
+          time: "2019.01.06",
+          number: "80%",
+          state: "滞后5天"
+        }
+      ],
+
+      //自定义表格中的值：1为安全管理，2为质量控制，3为三算对比
+      myselftTable: 2,
+      //安全管理表格中-新增问题-饼图
+      table1: [
+        { value: 4, name: "已整改" },
+        { value: 2, name: "待整改" },
+        { value: 4, name: "整改中" }
+      ],
+      //安全管理表格中-开工累计发生问题-饼图
+      table2: [
+        { value: 10, name: "已整改" },
+        { value: 10, name: "待整改" },
+        { value: 10, name: "整改中" }
+      ],
+      //质量控制表格中-新增问题-饼图
+      table3: [
+        { value: 4, name: "已整改" },
+        { value: 2, name: "待整改" },
+        { value: 4, name: "整改中" }
+      ],
+      //质量控制表格中-开工累计发生问题-饼图
+      table4: [
+        { value: 10, name: "已整改" },
+        { value: 10, name: "待整改" },
+        { value: 10, name: "整改中" }
+      ],
+      //三算对比表中的表格
+      three_table: [
+        {
+          name: "混凝土",
+          number: "C20",
+          befornumber: "10.00m³",
+          setnumber: "1.1",
+          already: "11.00m³",
+          atnumber: "12.00m³",
+          remove: "2.00m³",
+          removenumber: "18%"
+        },
+        {
+          name: "混凝土",
+          number: "C20",
+          befornumber: "10.00m³",
+          setnumber: "1.1",
+          already: "11.00m³",
+          atnumber: "12.00m³",
+          remove: "2.00m³",
+          removenumber: "18%"
+        },
+        {
+          name: "混凝土",
+          number: "C20",
+          befornumber: "10.00m³",
+          setnumber: "1.1",
+          already: "11.00m³",
+          atnumber: "12.00m³",
+          remove: "2.00m³",
+          removenumber: "18%"
+        },
+        {
+          name: "混凝土",
+          number: "C20",
+          befornumber: "10.00m³",
+          setnumber: "1.1",
+          already: "11.00m³",
+          atnumber: "12.00m³",
+          remove: "2.00m³",
+          removenumber: "18%"
+        },
+        {
+          name: "混凝土",
+          number: "C20",
+          befornumber: "10.00m³",
+          setnumber: "1.1",
+          already: "11.00m³",
+          atnumber: "12.00m³",
+          remove: "2.00m³",
+          removenumber: "18%"
+        }
+      ],
+
+      previewUrl:'',//预览文件
+
+      fileArr:[],//存放要批量下载文件列表 
+      markList: [
+        {LabelName: '标签1',LabelValue: '8'
+        }], // 标签列表
+        pageIndex: 1,
+        pageSize: 5,
+        bingCount: 0,  // 已生成总数据
+        notBingCount: 0, //未生成总数据 
+        activeTabIndex: 1,  // 切换tab的参数 默认为第一项1.施工日志
+        CurrentPage: 1,   // 自定义数据列表页
+    };
+  },
+  created(){
+    this.getContext();//获取内容配置
+    // this.GetWeather();//获取天气信息
+    this.ReportLabelList() //获取智能报表标签列表
+    // this.ReportBuilding()  // 获取楼栋信息
+    this.getReportFormList(this.fromCurrent);
+  },
+  methods: {
+    //获取翻页处理函数
+    changeIndex(param){
+      console.log(param)
+      this.pageIndex = param
+      console.log(this.activeTabIndex)
+      this.getReportFormList(this.activeTabIndex)
+    },
+    CurrentChange(val){
+      this.pageIndex = val
+      this.getReportFormList(this.activeTabIndex)
+    },
+    //预览文件------文件地址没有域名，无法在页面上展示
+    toshow(msg) {
+        var word=msg.split('.')[1];
+        if( word!='docx' || word!='dotx'|| word!='xlsx'|| word!='xlsb'|| word!='xls'|| word!='xlsm'){
+          this.$message({type:"error",message:'文件格式不对!',center:"true"});
+        }
+        this.previewUrl ='http://view.officeapps.live.com/op/view.aspx?src='+msg;
+        console.log(this.previewUrl)
+    },
+    //子组件的--需下载的文件集合
+    getFile(arr){
+      this.fileArr=arr
+    },
+    //点击左边的菜单--切换
+    showFrom(a) {
+      this.activeTabIndex = a
+      this.bingCount = 0
+      this.pageIndex = 1
+      if(a=='5'){
+        this.fromCurrent = a;
+        this.fileArr=[];//每次跳转页面的时候，清空批量下载的数据
+        this.ReportBuilding();//获取楼栋信息
+      }else{
+        this.getReportFormList(a);
+      }
+    },
+    //表格序号
+    indexMethod(index) {
+      return index + 1;
+    },
+
+    //自定义表格--点击预览-----暂时做成跳转--切换表格的图纸
+    buildingTypeClick(index, row) {
+      console.log(row.id);
+      this.myselftTable = row.id;
+    },
+    //自定义表格--点击下载
+    buildingTypeDown(index, row) {
+      console.log(index);
+      console.log(row);
+    },
+    //自定义列表-获取内容配置下拉
+    getContext(){
+      this.load();
+      this.Request(AIReportTypeList({})).then(res=>{
+        console.log('内容配置')
+        console.log(res)
+          if(res.StatusCode=='200'){
+            this.contextList=res.Detiel
+          }else{
+             this.$message({type:"error",message:res.Message,center:"true"});
+          }
+          this.$toast.clear();
+      })
+    },
+    //GetWeather 获取天气信息
+    // GetWeather(){
+    //   this.load();
+    //   this.Request(GetWeather({})).then(res=>{
+    //       console.log(res);
+    //       // if(res.StatusCode=='200'){
+    //       //   this.contextList=res.Detiel
+    //       // }else{
+    //       //    this.$message({type:"error",message:res.Message,center:"true"});
+    //       // }
+    //       this.$toast.clear();
+    //   })
+    // },
+    //GetReportFormList获取AI报表列表 fromCurrent //(1.施工日志2.节点对比3.三算对比4.质量控制5.安全管理 6.施工方案7.技术交底
+    getReportFormList(n){
+      console.log('n'+n);
+      //5----4.质量控制5.安全管理3.三算对比 myselftTable
+       this.load();
+      // if(n==5){
+      //   if(this.myselftTable==1){
+      //     n=5;
+      //   }else if(this.myselftTable==2){
+      //     n=4;
+      //   }else{
+      //     n=3;
+      //   }
+      // }
+
+      this.Request(GetReportFormList({ProjectID:localStorage.getItem('projectid'),ReportType:n,pageIndex:this.pageIndex,pageSize: this.pageSize})).then(res=>{
+        this.bigData=[];
+        this.smallData=[];
+        console.log(res)
+        if(res.StatusCode=='200'){ 
+          console.log(res)
+          if(n =='6' || n == '7'){   //未生成的表格--后台传值不一样 ReportFormFalseList
+             console.log('是-6.施工方案7.技术交底');
+            for(var x=0;x<res.Detiel[0].ReportFormFalseList.length;x++){
+              this.bigData.push(res.Detiel[0].ReportFormFalseList[x])
+            }
+            this.bingCount = parseInt(res.Message) // 已生成总数
+            for(var y=0;y<res.Detiel[0].ReportFormTrueList.length;y++){
+              this.smallData.push(res.Detiel[0].ReportFormTrueList[y])
+            }
+            this.notBingCount = parseInt(res.Count)  // 未生成总数
+          }else{
+            console.log('不是-6.施工方案7.技术交底');
+            this.bingCount = res.Count  //已生成总数
+            for(var i=0;i<res.Detiel[0].ReportFormList.length;i++){
+              if(res.Detiel[0].ReportFormList[i].IsGenerate==true){
+                
+                this.bigData.push(res.Detiel[0].ReportFormList[i])
+              }else{
+                this.smallData.push(res.Detiel[0].ReportFormList[i])
+              }
+            }
+          }
+        }else{
+          
+          this.$message({type:"error",message:res.Message,center:"true"});
+          this.bingCount = 0
+          this.notBingCount = 0
+
+        }
+        this.fromCurrent = n;
+        this.fileArr=[];//每次跳转页面的时候，清空批量下载的数据
+        this.$toast.clear();
+      })
+
+
+    },
+    //自定义表格查询按钮 --buildingTypeTable
+    getFormExport(){
+      // if(this.buildingType.text=='' || this.buildingType.context==''|| this.buildingType.build==''|| this.buildingType.class==''|| this.buildingType.beginTime==''|| this.buildingType.endTime==''){
+      //    this.$message({type:"error",message:'检索条件不能全为空！',center:"true"});
+      //    return false;
+      // }
+      let ReportType = []
+      this.contextList.forEach(i => {
+        this.buildingType.context.forEach(j =>{
+          if(j === i.text){
+            ReportType.push(i.id)
+          }
+        })
+      })
+      ReportType = ReportType.join(',')
+      var post={
+        ProjectID:localStorage.getItem('projectid'),
+        ReportName:this.buildingType.text,
+        AIReportType: ReportType,
+        BuildingName:this.buildingType.build,
+        LevelName:this.buildingType.class,
+        StartTime:this.buildingType.beginTime ? this.buildingType.beginTime: require('moment')().format('YYYY-MM-DD'),
+        EndTime:this.buildingType.endTime ? this.buildingType.endTime: require('moment')().format('YYYY-MM-DD'),
+      };
+      console.log(post);   //buildingTypeTable表格
+      this.Request(GetCustomFormExport(post)).then(res=>{
+          console.log(res);
+      })
+    },
+    //GetAllElementBuilding 获取楼栋信息 allBuild 
+    // getBuilding(){
+    //   this.Request(GetAllElementBuilding({ProjectID:localStorage.getItem('projectid')})).then(res=>{
+    //       if(res.StatusCode=='200'){
+    //         this.allBuild=[{value:'',label:'请选择楼栋'}];
+    //         for(var i=0;i<res.Detiel.length;i++){
+    //           var text={value:res.Detiel[i],label:res.Detiel[i]};
+    //           this.allBuild.push(text)
+    //         }
+    //       }else{
+    //         this.$message({type:"error",message:res.Message,center:"true"});
+    //       }
+    //   })
+    // },
+    //GetFloorbyBuilding 根据项目id和楼栋获取楼层  //this.buildingType.build
+    changeBuilding(){
+      // this.buildingType.class='';
+      this.ReportFloorbyBuilding()
+      // this.allClass=[{id:'',text:'请选择楼层'}];
+      // this.Request(GetFloorbyBuilding({ProjectID:localStorage.getItem('projectid'),building:this.buildingType.build})).then(res=>{
+      //     for(var i=0;i<res.Detiel.length;i++){
+      //       this.allClass.push(res.Detiel[i]);
+      //     }
+      // })
+
+    },
+    //批量下载
+    allDownFile(){
+      let that=this;
+      console.log(that.fileArr);
+      for (let i = 0; i < that.fileArr.length; i++) {
+          const url = that.fileArr[i];
+          downloadFile(url);  
+      }
+    },
+
+    // 设置标签
+    setMarks(){
+      console.log(this.buildingType.context)
+      // if(this.contextList.length){
+      //   this.contextList.forEach((i) => {
+      //     this.buildingType.context.forEach((j)=>{
+      //       if(j=== i.id){
+      //         this.markList.push(i)
+      //       }
+      //     })
+      //   })
+      // }
+      this.getAddReportLabel()
+    },
+    //设置标签数据
+    setRemarkData(id){
+      console.log(id)
+      if(id){
+        // id.id.split(',').forEach(item =>{
+        //   this.buildingType.context.push(item)
+        // })
+
+        let selectID = id.LabelValue.split(',')
+        let selectContext = []
+        this.contextList.forEach(i=> {
+          selectID.forEach(j=>{
+            if(i.id === j){
+              selectContext.push(i.text)
+            }
+          })
+        })
+        console.log(this.contextList)
+        this.buildingType.context= selectContext
+        console.log(this.buildingType.context)
+        this.buildingType.text = id.LabelName
+      }
+      
+    },
+    //删除标签
+    delMark(id){
+      console.log(this.buildingType)
+      console.log(id)
+      if(id){
+        this.getDelReportLabel(id)
+      }
+    },
+    /**
+     * api
+     */
+    // 获取智能报表标签
+    async ReportLabelList (){
+      let res = await this.Request(GetReportLabelList())
+      console.log(`智能报表标签：${res}`)
+      console.log(res)
+      if(res.StatusCode === 200){
+        this.markList = res.Detiel
+      }else {
+        this.$message({
+          type: 'error',
+          message: res.Message,
+          center: 'true'
+        })
+      }
+    },
+    // 添加标签
+    async getAddReportLabel (){
+       if(this.buildingType.text==''){
+         this.$message({type:"error",message:'请输入资料名称',center:"true"});
+         return false;
+      }
+      if(this.buildingType.context.length === 0){
+        this.$message({type:"error",message:'请选择内容配置',center:"true"});
+         return false;
+      }
+       let selectID = []
+        this.contextList.forEach(i=> {
+          this.buildingType.context.forEach(j=>{
+            if(i.text === j){
+              selectID.push(i.id)
+            }
+          })
+        })
+      let data = {
+        ProjectID: localStorage.getItem('projectid'),
+        LabelName: this.buildingType.text,
+        LabelValue: selectID.join(',')
+      }
+      let res = await this.Request(AddReportLabel(data))
+      console.log(`添加标签：${res}`)
+      if(res.StatusCode === 200){
+        this.$message({
+          type: 'success',
+          message: res.Message,
+          center: 'true'
+        })
+        this.ReportLabelList()
+      }else {
+        this.$message({
+          type: 'error',
+          message: res.Message,
+          center: 'true'
+        })
+      }
+    },
+    // 删除标签
+    async getDelReportLabel(id){
+      let res = await this.Request(DelReportLabel({ids:id}))
+      console.log(`删除标签：${res}`)
+      console.log(res)
+      if(res.StatusCode === 200){
+        this.$message({
+          type: 'success',
+          message: res.Message,
+          center: 'true'
+        })
+        this.ReportLabelList()
+      }else {
+        this.$message({
+          type: 'error',
+          message: res.Message,
+          center: 'true'
+        })
+      }
+    },
+    //获取楼栋信息
+    async ReportBuilding(){
+      let res = await this.Request(GetReportBuilding({projectid: localStorage.getItem('projectid')}))
+      console.log(`楼栋信息：${res}`)
+      console.log(res)
+      if(res.StatusCode === 200){
+        this.allBuild = res.Detiel
+        console.log(this.allBuild)
+        this.ReportFloorbyBuilding()
+      }else {
+        this.$message({
+          type: 'error',
+          message: res.Message,
+          center: 'true'
+        })
+      }
+    },
+    //获取楼层信息
+    async ReportFloorbyBuilding(){
+      if(this.buildingType.build == ''){
+       this.$message({type:"error",message:'请输入资料名称',center:"true"});
+         return false;
+      }
+      let data = {
+        projectid: localStorage.getItem('projectid'),
+        building: this.buildingType.build
+      }
+      let res = await this.Request(GetReportFloorbyBuilding(data))
+      console.log(`楼层信息：${res}`)
+      console.log(res)
+      if(res.StatusCode === 200){
+        this.buildingType.class =res.Detiel[0].text
+        this.allClass = res.Detiel
+      }else {
+        this.$message({
+          type: 'error',
+          message: res.Message,
+          center: 'true'
+        })
+      }
+    }
+
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-intelligence-reports {
+  width: 100%;
+  height: 100%;
+  font-size: 18px;
+  padding: 20px;
+  box-sizing: border-box;
+  background-color: #F5F6FA;
+
+  .intelligenec_left {
+    width: 50%;
+    box-sizing: border-box;
+    height: 1000px;
+    border-right: 1px solid #DFDFE2;
+    float: left;
+    padding-top: 12px;
+    padding-right: 1%;
+    box-sizing:border-box;
+  }
+
+  .intelligenec_left_head {
+    font-weight: bold;
+  }
+
+  .intelligenec_left_head_img {
+    display: inline-block;
+    width: 23px;
+    height: 23px;
+    margin-right: 16px;
+  }
+
+  .intelligenec_left_body {
+    height: 680px;
+    padding-top: 20px;
+  }
+
+  .intelligenec_jump li {
+    display: inline-block;
+    width: 20%;
+    height: 40px;
+    box-sizing: border-box;
+    border: 1px solid #4775CA;
+    border-right: 0;
+    color: #4775CA;
+    font-weight: bold;
+    font-size: 18px;
+    line-height: 40px;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  // 表格最上面的样式
+  .intelligenec_left_div .intelligenec_building li {
+    display: inline-block;
+    background-color: #435089;
+    color: #ffffff;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+  }
+
+  .intelligenec_expand {
+    width: 100%;
+    height: 40px;
+    line-height: 40px;
+    background-color: #ffffff;
+    border: 1px solid #EEEFF1;
+    box-sizing: border-box;
+    padding-left: 30px;
+  }
+
+  .intelligenec_expand i {
+    margin-right: 40px;
+  }
+
+  .el-table .success-row {
+    background: #F4F6FF;
+  }
+
+  .intelligenec_down_btn {
+    margin-top: 30px;
+    color: #ffffff;
+    background: rgba(71, 117, 202, 1);
+    box-shadow: 0px 3px 7px 0px rgba(161, 192, 250, 1);
+    border-radius: 4px;
+    font-size: 18px;
+    padding: 11px 24px;
+    border: 0;
+  }
+
+  .intelligenec_left_div .el-table td, .intelligenec_left_div .el-table th {
+    padding: 5px 0;
+  }
+
+  .intelligenec_left_body li.active {
+    color: #ffffff;
+    background-color: #4775CA;
+  }
+
+  .intelligenec_left_body .intelligenec_left_border {
+    border-right: 1px solid #4775CA;
+  }
+
+  .intelligenec_left_div {
+    overflow-x: hidden;
+    overflow-y: auto;
+    margin-top: 30px;
+    width: 100%;
+    height: 700px;
+    box-sizing: border-box;
+  }
+  .intelligenec_left_div .text-center{
+    text-align: center;
+  }
+
+  .el-table .cell {
+    text-align: center;
+  }
+
+  .intelligenec_right {
+    width: 50%;
+    box-sizing: border-box;
+    height: 950px;
+    float: left;
+    padding-top: 12px;
+    padding-left: 1%;
+  }
+
+  .intell_margin_top {
+    margin-top: 20px;
+  }
+  .intell_margin_top >button {
+    display: inline-block;
+    margin-left: 10px;
+    width: 50px;
+    height: 38px;
+    font-size: 16px;
+    color: #fff;
+    border-radius: 4px;
+    border: none;
+    box-shadow: 0px 3px 2px 0px rgba(253, 161, 67, 1);
+    background-color: #fda143;
+    cursor: pointer;
+  }
+
+  .intell_text_right {
+    text-align: right;
+    padding-right: 15px;
+    line-height: 33px;
+  }
+  .remark {
+    margin: 20px 0;
+    height: 50px;
+    >div {
+      display: inline-block;
+      width: 100%;
+      font-size: 16px;
+      color: #333;
+      >span {
+        position: relative;
+        display: inline-block;
+        margin-left: 4px;
+        margin-right: 12px;
+        border: 1px solid #4775ca;
+        border-radius: 5px;
+        padding: 0 2px;
+        cursor: default;
+        color: #666;
+        transition: all 0.6s ease;
+      }
+      >span:hover {
+        box-shadow: 0px 2px 7px 0px #4775ca;
+      }
+      >span b {
+        position: absolute;
+        top: -6px;
+        right: -12px;
+        width: 10px;
+        height: 6px;
+        padding: 2px 0;
+        line-height: 8px;
+        font-size: 8px;
+        text-align: center;
+        color: #fff;
+        background-color: #fda143;
+        border-radius: 50%;
+        cursor pointer;
+      }
+    }
+  }
+  .intell_building_type_btn {
+    margin-top: 20px;
+    margin-bottom: 40px;
+    padding-right: 20px;
+    padding-bottom: 40px;
+    text-align: center;
+    border-bottom: 1px solid #E3E4E6;
+    
+    .correct-btn {
+      padding: 12px 44px;
+      font-size: 16px;
+      font-family: SourceHanSansCN-Normal;
+      font-weight: 400;
+      color: rgba(255, 254, 254, 1);
+      background: rgba(253, 161, 67, 1);
+      border: 0;
+      box-shadow: 0px 3px 7px 0px rgba(253, 161, 67, 1);
+      border-radius: 4px;
+    }
+  }
+
+  .intelligenec_right_title {
+    height: 50px;
+    width: 100%;
+    background-color: #435089;
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: bold;
+    line-height: 50px;
+    text-align: center;
+  }
+
+  .intelligenec_right_table_div {
+    width: 100%;
+    height: 100%;
+    overflow-y:auto;
+    overflow-x:hidden;
+    box-sizing: border-box;
+    margin-top: 20px;
+  }
+
+  .intelligenec_right_table_div div {
+    box-sizing: border-box;
+  }
+
+  .intelligenec_right_table_div1, .intelligenec_right_table_div6 {
+    width: 100%;
+    border: 1px solid #D0D1D4;
+    border-top: 0;
+    background-color: #F4F6FF;
+    height: 48px;
+    line-height: 48px;
+  }
+
+  .intelligenec_right_table_div1>div, .intelligenec_right_table_div6>div {
+    display: inline-block;
+    text-align: center;
+  }
+
+  .intelligenec_right_table_div1>div:nth-child(2), .intelligenec_right_table_div6>div:nth-child(2) {
+    width: 30%;
+    height: 100%;
+    box-sizing: border-box;
+    float: left;
+    border-right: 1px solid #D0D1D4;
+  }
+
+  .intelligenec_right_table_div1>div:nth-child(3), .intelligenec_right_table_div6>div:nth-child(3) {
+    width: 20%;
+    height: 100%;
+    box-sizing: border-box;
+    float: left;
+    border-right: 1px solid #D0D1D4;
+  }
+
+  .intelligenec_right_table_div1>div:nth-child(4), .intelligenec_right_table_div6>div:nth-child(4) {
+    width: 30%;
+    height: 100%;
+    box-sizing: border-box;
+    float: left;
+  }
+
+  .intelligenec_right_table_div1>div:nth-child(1), .intelligenec_right_table_div6>div:nth-child(1), .intelligenec_right_table_div11>div:nth-child(1) {
+    width: 20%;
+    float: left;
+    display: inline-block;
+    text-align: center;
+    border-right: 1px solid #D0D1D4;
+  }
+
+  .intelligenec_right_table_div11 {
+    width: 100%;
+    border: 1px solid #D0D1D4;
+    border-top: 0;
+    background-color: #F4F6FF;
+    height: 48px;
+    line-height: 48px;
+  }
+
+  .intelligenec_right_table_div11>div:nth-child(2) {
+    width: 80%;
+    height: 100%;
+    box-sizing: border-box;
+    float: left;
+    line-height: 48px;
+    padding-left: 15px;
+  }
+
+  .intelligenec_right_table_div11>div:nth-child(2) span {
+    margin-right: 30px;
+  }
+
+  .intelligenec_right_table_div12 {
+    width: 100%;
+    border: 1px solid #D0D1D4;
+    border-top: 0;
+    background-color: #ffffff;
+    height: 850px;
+    box-sizing: border-box;
+    padding-top: 15px;
+    color: #333333;
+    font-size: 18px;
+  }
+
+  .intelligenec_right_table_div12 .el-table .cell {
+    color: #333333;
+  }
+
+  .intelligenec_right_table_div13 {
+    width: 100%;
+    border: 1px solid #D0D1D4;
+    border-top: 0;
+    background-color: #ffffff;
+    height: 900px;
+    box-sizing: border-box;
+    padding-top: 15px;
+    color: #333333;
+    font-size: 18px;
+  }
+
+  .intelligenec_right_table_div14 {
+    width: 100%;
+    height: 300px;
+    box-sizing: border-box;
+    padding: 15px;
+  }
+
+  .intelligenec_right_table_div14>div {
+    display: inline-block;
+    float: left;
+    border: 1px solid #333333;
+    width: 45%;
+    height: 100%;
+  }
+
+  .right_table_div14_right {
+    margin-left: 5%;
+  }
+
+  .intelligenec_right_table_div15 {
+    width: 100%;
+    height: 500px;
+    box-sizing: border-box;
+    padding: 20px;
+  }
+
+  .intelligenec_right_table_alldiv {
+    width: 100%;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    box-sizing: border-box;
+    border: 1px solid #D0D1D4;
+    border-top: 0;
+    background-color: #F4F6FF;
+  }
+
+  .intelligenec_right_table_div16 {
+    width: 100%;
+    border: 1px solid #D0D1D4;
+    border-top: 0;
+    background-color: #ffffff;
+    height: 500px;
+    box-sizing: border-box;
+    padding-top: 10px;
+    color: #333333;
+    font-size: 18px;
+  }
+
+  .intelligenec_right_table_div17 {
+    width: 100%;
+    height: 200px;
+    box-sizing: border-box;
+    padding: 10px;
+  }
+
+  .intelligenec_right_table_div18 {
+    width: 100%;
+    border: 1px solid #D0D1D4;
+    border-top: 0;
+    background-color: #ffffff;
+    height: 200px;
+    box-sizing: border-box;
+    padding-top: 10px;
+    padding-left: 10px;
+    color: #333333;
+    font-size: 18px;
+  }
+
+  .overflow_table_scroll_y {
+    overflow-y: auto;
+    overflow-x: hidden;
+    width: 100%;
+    height: 1070px;
+  }
+
+  .intelligenec_right_table_div20 {
+    box-sizing: border-box;
+    width: 100%;
+    height: 950px;
+    border: 1px solid #D0D1D4;
+    background-color:#ffffff;
+  }
+
+  .intelligenec_right_table_div21 {
+    width: 100%;
+    height: 10px;
+    background: #ffffff;
+  }
+
+  .intelligenec_right_table_div2 {
+    width: 100%;
+    border: 1px solid #D0D1D4;
+    border-top: 0;
+    height: 130px;
+  }
+
+  .intelligenec_right_table_div2>div:first-child {
+    width: 20%;
+    display: inline-block;
+    text-align: center;
+    background-color: #F4F6FF;
+    box-sizing: border-box;
+    border-right: 1px solid #D0D1D4;
+    line-height: 128px;
+    height: 128px;
+    float: left;
+  }
+
+  .intelligenec_right_table_div2>div:last-child {
+    display: inline-block;
+    width: 80%;
+    height: 130px;
+    overflow: hidden;
+  }
+
+  .intelligenec_right_list {
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+  }
+
+  .intelligenec_right_list li {
+    display: inline-block;
+    width: 25%;
+    height: 100%;
+    box-sizing: border-box;
+  }
+
+  .intelligenec_right_list_border {
+    border-right: 1px solid #D0D1D4;
+  }
+
+  .intelligenec_right_list span {
+    display: inline-block;
+    float: left;
+    width: 100%;
+    height: 32%;
+    text-align: center;
+    box-sizing: border-box;
+    line-height: 42px;
+  }
+
+  .intelligenec_right_span_border {
+    border-bottom: 1px solid #D0D1D4;
+  }
+
+  .intelligenec_right_table_div3 {
+    width: 100%;
+    border: 1px solid #D0D1D4;
+    border-top: 0;
+    height: 260px;
+  }
+
+  .intelligenec_right_table_div3>div:first-child {
+    width: 20%;
+    display: inline-block;
+    text-align: center;
+    background-color: #F4F6FF;
+    box-sizing: border-box;
+    border-right: 1px solid #D0D1D4;
+    border-bottom:1px solid #D0D1D4;
+    line-height: 216px;
+    height: 100%;
+    float: left;
+  }
+
+  .intelligenec_right_table_div3>div:last-child {
+    display: inline-block;
+    width: 80%;
+    height: 100%;
+    padding: 10px 20px;
+    box-sizing: border-box;
+  }
+
+  .intelligenec_right_table_div4 {
+    width: 100%;
+    border: 1px solid #D0D1D4;
+    border-top: 0;
+    height: 260px;
+  }
+
+  .intelligenec_right_table_div4>div:first-child {
+    width: 20%;
+    display: inline-block;
+    text-align: center;
+    background-color: #F4F6FF;
+    box-sizing: border-box;
+    border-right: 1px solid #D0D1D4;
+    line-height: 216px;
+    height: 100%;
+    float: left;
+  }
+
+  .intelligenec_right_table_div4>div:last-child {
+    display: inline-block;
+    width: 80%;
+    height: 100%;
+    padding: 10px 20px;
+  }
+
+  .intelligenec_right_table_div5 {
+    width: 100%;
+    border: 1px solid #D0D1D4;
+    border-top: 0;
+    height: 260px;
+  }
+
+  .intelligenec_right_table_div5>div:first-child {
+    width: 20%;
+    display: inline-block;
+    text-align: center;
+    background-color: #F4F6FF;
+    box-sizing: border-box;
+    border-right: 1px solid #D0D1D4;
+    line-height: 216px;
+    height: 100%;
+    float: left;
+  }
+
+  .intelligenec_right_table_div5>div:last-child {
+    display: inline-block;
+    width: 80%;
+    height: 100%;
+    padding: 10px 20px;
+  }
+
+  .intelligenec_right_table_div p {
+    line-height: 27px;
+  }
+
+  .intelligenece_margin_top {
+    margin-top: 30px;
+  }
+}
+</style>

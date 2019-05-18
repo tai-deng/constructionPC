@@ -1,0 +1,662 @@
+<!--  import of construction 导入施工图预算 -->
+<template>
+  <div class="container-import-construction">
+    <div class="top">
+      <div class="buts">
+        <button class="back-but" @click="back">
+          <span class="icon-18 back-size"></span> &nbsp;返回上一级
+        </button>
+        <button class="re-upload" @click.stop="reUploaded">重新导入</button>
+      </div>
+      <div class="down" v-if="!isCostImport">
+        <menu-el-select :list="TableNamelist" @selected="select"></menu-el-select>
+      </div>
+    </div>
+    <div class="bottom">
+      <!-- :label="`<span>aa</span>${item.val}`" 施工图表格-->
+      <el-table
+        v-if="!loadDataing&&!isCostImport"
+        :data="list"
+        max-height="750"
+        stripe
+        fit
+        highlight-current-row
+        :header-cell-style="{background:'#435089',color:'#FFFFFF'}"
+      >
+        <el-table-column :prop="item.val" v-for="item in titles" :key="item.index" >
+          <template slot="header" slot-scope="scope" >
+            <el-checkbox @change="onClickRow(scope.$index)">{{item.val}}</el-checkbox>
+          </template>
+        </el-table-column>
+      </el-table>
+      <!-- 全费用表格 show-summary-->
+      <div v-if="isCostImport">
+        <el-table
+          
+          height="750"
+          stripe
+          fit
+          highlight-current-row
+          :data="tableData1"
+          style="width: 100%"
+          sum-text="本页小计"
+          :header-cell-style="{background:'#435089',color:'#FFFFFF'}"
+        >
+          <el-table-column type="index" label="序号" width="80px"></el-table-column>
+          <el-table-column prop="ProjectCode" label width="130">
+            <template slot="header">
+              <el-checkbox
+                v-model="checkeds.checked1"
+                @change="onCostImport(1,checkeds.checked1,'ProjectCode')"
+              >项目编码</el-checkbox>
+            </template>
+          </el-table-column>
+          <el-table-column prop="ResorceName" label>
+            <template slot="header">
+              <el-checkbox
+                v-model="checkeds.checked2"
+                @change="onCostImport(2,checkeds.checked2,'ResorceName')"
+              >项目名称</el-checkbox>
+            </template>
+          </el-table-column>
+          <el-table-column prop="ProjectDescrib" label>
+            <template slot="header">
+              <el-checkbox
+                v-model="checkeds.checked3"
+                @change="onCostImport(3,checkeds.checked3,'ProjectDescrib')"
+              >项目特征描述</el-checkbox>
+            </template>
+          </el-table-column>
+          <el-table-column prop="Unit" label width="100">
+            <template slot="header">
+              <el-checkbox
+                v-model="checkeds.checked4"
+                @change="onCostImport(4,checkeds.checked4,'Unit')"
+              >计量单位</el-checkbox>
+            </template>
+          </el-table-column>
+          <el-table-column prop="BIMBOQ" label width="120">
+            <template slot="header">
+              <el-checkbox
+                v-model="checkeds.checked5"
+                @change="onCostImport(5,checkeds.checked5,'BIMBOQ')"
+              >工程量</el-checkbox>
+            </template>
+          </el-table-column>
+          <el-table-column label="金额（元）">
+            <el-table-column prop="CompPrice" label width="120">
+              <template slot="header">
+                <el-checkbox
+                  v-model="checkeds.checked6"
+                  @change="onCostImport(6,checkeds.checked6,'CompPrice')"
+                >综合单价</el-checkbox>
+              </template>
+            </el-table-column>
+            <el-table-column prop="SumPrice" label width="120">
+              <template slot="header">
+                <el-checkbox
+                  v-model="checkeds.checked7"
+                  @change="onCostImport(7,checkeds.checked7,'SumPrice')"
+                >合价</el-checkbox>
+              </template>
+            </el-table-column>
+            <el-table-column label="其中">
+              <el-table-column prop="JAFee" label width="120">
+                <template slot="header">
+                  <el-checkbox
+                    v-model="checkeds.checked8"
+                    @change="onCostImport(8,checkeds.checked8,'JAFee')"
+                  >建安费用</el-checkbox>
+                </template>
+              </el-table-column>
+              <el-table-column prop="SellAmount" label width="120">
+                <template slot="header">
+                  <el-checkbox
+                    v-model="checkeds.checked9"
+                    @change="onCostImport(9,checkeds.checked9,'SellAmount')"
+                  >销项税额</el-checkbox>
+                </template>
+              </el-table-column>
+              <el-table-column prop="AttachAmount" label width="120">
+                <template slot="header">
+                  <el-checkbox
+                    v-model="checkeds.checked10"
+                    @change="onCostImport(10,checkeds.checked10,'AttachAmount')"
+                  >附加税额</el-checkbox>
+                </template>
+              </el-table-column>
+            </el-table-column>
+          </el-table-column>
+        </el-table>
+        <!-- 合计 -->
+        <!-- <p class="combined">
+          <span style="width:80px">合计</span>
+          <span style="width:130px">合计</span>
+          <span style="flex:1">合计</span>
+          <span style="flex:1">合计</span>
+          <span style="width:100px">合计</span>
+          <span style="width:120px">合计</span>
+          <span style="width:120px">合计</span>
+          <span style="width:120px">合计</span>
+          <span style="width:120px">合计</span>
+          <span style="width:120px">合计</span>
+          <span style="width:120px">合计</span>
+        </p> -->
+        <div>
+          <el-pagination
+            background
+            layout="prev, pager, next"
+            :page-size="pageSize"
+            @current-change="currentChange"
+            :total="Count"
+          ></el-pagination>
+        </div>
+      </div>
+    </div>
+    <div class="is-upload">
+      <button class="upload-but" @click="trueImportXlsx">确定导入</button>
+    </div>
+
+    <!-- 单体选择弹窗 -->
+    <div class="dialog" v-if="isShowWX">
+      <div class="select-monomer">
+        <header class="head-title">
+          温馨提示
+          <span @click="close" class="el-icon-close close-icon-style"></span>
+        </header>
+        <div class="selectd">
+          <img src="./note.gif" alt>
+        </div>
+        <p>*选择楼栋后上传xlsx表数据</p>
+        <div class="buts">
+          <el-button type="info" @click="close">取消</el-button>&nbsp;&nbsp;&nbsp;
+          <el-button type="primary" @click="close">确定</el-button>
+        </div>
+      </div>
+    </div>
+    <!-- 表单选择上传弹窗 -->
+    <import-form
+      v-if="isShowBuildingListSelect&&[0,1].indexOf(toPageNum)!=-1"
+      @closeBuildingListSelect="closeBuildingListSelect"
+      @jumpto="jumptos"
+    ></import-form>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import menuElSelect from "@/common/Selects/elSelect.vue";
+import importForm from "./import_form";
+import { GetCostTempData ,GetBOQTempTable} from "@/api/api.js";
+import CostTempData from "../modules/CostImport.js";
+import { saveImportTable,CostImportTable } from "../modules/interfaces.js";
+export default {
+  mixins: [CostTempData],
+  props: {
+    tableData: {
+      type: Array,
+      default: () => {
+        return [];
+      }
+    },
+    XlsxTableNamelist: {
+      type: Array,
+      default: () => {
+        return [];
+      }
+    }
+  },
+  data() {
+    return {
+      loadDataing: false, //是否加载数据中
+      toPageNum: 0, //跳转到哪个页面 0 --plan1 , 2 --plan2 ,  3-- plan3
+      isShowBuildingListSelect: false, //是否显示楼栋选择器蒙层弹窗。
+      reUpload: false, //是否显示重新导入按钮
+      list: [], //展示表数据
+      titles: [], //表头
+      indexList: [], //已勾选的表头在titles中的下标数组
+      valList: [], //已勾选的表头在titles中的val数组 已去null 去重
+      TableNamelist: [], //选择表下拉菜单 XlsxTableNamelist的转换结构
+      index: -1, //选择了哪个类型在TableNameList
+      pageSize: 7,
+      pageIndex: 1,
+      projectid: localStorage.getItem("projectid"),
+      type: "", //类型 汉字，如门 ， 窗
+      isShowWX: true, //是否显示温馨提示弹窗
+      isCostImport: false, //是不是全费用清单导入，为费用清单导入则不显示下拉列表
+      tableData1: [], //全费用清单表数据
+      Count: 0, //总数
+      checkeds: {
+        checked1: false,
+        checked2: false,
+        checked3: false,
+        checked4: false,
+        checked5: false,
+        checked6: false,
+        checked7: false,
+        checked8: false,
+        checked9: false,
+        checked10: false
+      },
+      costImportList: [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    };
+  },
+  created() {
+    let plan = Number(localStorage.getItem("plan"));
+    if (plan == 1) {
+      /**
+       * 全费用清单
+       */
+      this.isCostImport = true;
+      this.costData(); //调用
+    } else {
+      /**
+       * 施工图导入
+       */
+      this.isCostImport = false;
+      console.log(this.tableData, this.XlsxTableNamelist);
+      //转换表下拉菜单数据
+      this.TableNamelist = [];
+      Object.keys(this.XlsxTableNamelist).forEach((i, index) => {
+        console.log(i, this.XlsxTableNamelist[i]);
+        this.TableNamelist.push({
+          id: index+1,
+          text: this.XlsxTableNamelist[index],
+          //传给后台的参数
+          type: this.XlsxTableNamelist[index],
+          listField: [] //已选择列表
+        });
+      });
+      console.log(this.TableNamelist);
+    }
+  },
+  mounted() {
+    this.$nextTick(() => {
+      //显示重新导入按钮
+      this.reUpload = true;
+    });
+  },
+  components: {
+    menuElSelect,
+    importForm
+  },
+  methods: {
+    back() {
+      this.$confirm("是否确定返回?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+        center: true
+      })
+        .then(() => {
+          // this.$message({
+          //   type: 'success',
+          //   message: '删除成功!'
+          // });
+          this.$emit("back");
+        })
+        .catch(() => {
+          // this.$message({
+          //   type: 'info',
+          //   message: '已取消删除'
+          // });
+        });
+    },
+    /**
+     * 选择哪个表头
+     */
+    onClickRow(index) {
+      if (this.indexList.indexOf(index) == -1) {
+        this.indexList.push(index);
+      } else {
+        this.indexList[this.indexList.indexOf(index)] = null;
+      }
+      console.log(this.indexList);
+      let a = this.indexList.sort().filter(i => {
+        return i || i == 0;
+      });
+      console.log(a);
+      let arr = [];
+      a.forEach(k => {
+        arr.push(this.titles[k].val);
+      });
+      console.log(arr);
+      // this.TableNamelist用于确定导入提交的
+      console.log(this.TableNamelist);
+      this.TableNamelist[this.index].listField = arr;
+    },
+    /**
+     * 选择绘图列表某项
+     */
+    select(data) {
+      this.load();
+      /* eslint-disable */
+      console.log(data);
+      // 获取选择类型菜单 的选项下标，用于更改TableNameList对应的值
+      let s = this.TableNamelist.filter(i => {
+        return i.text == data;
+      });
+      this.index = s[0].id;
+      console.log(this.index);
+
+      this.type = data;
+      let param = {
+        pageSize: this.pageSize,
+        pageIndex: this.pageIndex,
+        projectid: this.projectid,
+        userid: Number(localStorage.getItem("userId")),
+        type: data
+      };
+      // 根据绘图选项 获取缓存中的表数据 表头
+      this.loadDataing = true;
+      this.Request(GetBOQTempTable(param)).then(res => {
+        if (res.StatusCode === 200) {
+          this.titles = [];
+          //从第个对象中 获取所有表头
+          Object.keys(res.Result[0]).forEach((i, k) => {
+            console.log(i, k);
+            if(['序号','RowId'].indexOf(i)==-1){
+
+              this.titles.push({
+                id: k + "",
+                val: i
+              });
+            }
+          });
+          this.list = res.Result;
+        } else {
+          this.$message({
+            type: "error",
+            message: res.Message,
+            center: "true"
+          });
+        }
+        this.loadDataing = false;
+        this.$toast.clear();
+      });
+    },
+    /**
+     * 确定导入
+     */
+    trueImportXlsx() {
+      let plan = Number(localStorage.getItem("plan"));
+      let projectid = localStorage.getItem("projectid"),
+          userid = Number(localStorage.getItem("userId")),
+          isAdd = Number(localStorage.getItem("isAdd")),
+          buildname = localStorage.getItem('Building');
+      console.log(plan!=1,!this.type)
+      if(plan!=1){
+        if (!this.type) {
+          this.$message({ type: "error", message: "请选择类型", center: "true" });
+          return;
+        }
+        this.load();
+        let list = this.TableNamelist.filter(i => {
+          return i.listField.length > 0;
+        });
+        console.log(list);
+        if (list.length === 0) {
+          this.$message({
+            type: "error",
+            message: "请选择导出项",
+            center: "true"
+          });
+          this.$toast.clear();
+          return;
+        }
+        saveImportTable(this, projectid, isAdd, userid, list)
+          .then(res => {
+            console.log(res);
+            this.$message({
+              type: "success",
+              message: res.Message,
+              center: "true"
+            });
+            this.$emit("toSuccessPage");
+            this.$toast.clear();
+          })
+          .catch(e => {
+            this.$message({ type: "error", message: e.Message, center: "true" });
+            this.$toast.clear();
+          });
+      }else{
+        this.load();
+        let list = this.costImportList.filter(i => {
+          return i
+        });
+        if (list.length === 0) {
+          this.$message({
+            type: "error",
+            message: "请选择导出项",
+            center: "true"
+          });
+          this.$toast.clear();
+          return;
+        }
+        console.log(list);
+        CostImportTable(this, projectid, isAdd, userid,buildname, list)
+          .then(res => {
+            console.log(res);
+            this.$message({
+              type: "success",
+              message: res.Message,
+              center: "true"
+            });
+            this.$emit("toSuccessPage");
+            this.$toast.clear();
+          })
+          .catch(e => {
+            this.$message({ type: "error", message: e.Message, center: "true" });
+            this.$toast.clear();
+          });
+      }
+    },
+    /**
+     * 关闭温馨提示弹窗
+     */
+    close() {
+      this.isShowWX = false;
+    },
+    /**
+     * 重新导入
+     */
+    reUploaded() {
+      console.log("重新导入");
+      this.isShowBuildingListSelect = true;
+    },
+    jumptos(toPageNum, detiel) {
+      this.$emit("jump", toPageNum, detiel); //关闭入口页面组件,并将解析出的xlsx数据返回父组件
+    },
+    /**
+     * 关闭楼栋选择蒙层
+     */
+    closeBuildingListSelect() {
+      this.isShowBuildingListSelect = false;
+    },
+    /**
+     * 页码
+     */
+    currentChange(e) {
+      console.log(e);
+      this.pageIndex = e;
+      this.costData(); //调用
+    },
+    
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+@import '../../../../assets/stylus/variable.styl'
+
+.container-import-construction
+  width 100%
+  height 100%
+  box-sizing border-box
+  padding 0 20px
+  .top
+    width 100%
+    height 80px
+    display flex
+    padding-top 20px
+    box-sizing border-box
+    .buts
+      // width 500px
+      height 40px
+      display flex
+      .back-but
+        display inline-block
+        width 180px
+        height 40px
+        background $font-color-13
+        box-shadow 0px 2px 4px 0px rgba(161, 192, 250, 1)
+        border-radius 4px
+        font-size $font-size-16
+        color $font-color-03
+        .back-size
+          font-size $font-size-16
+      .re-upload
+        display inline-block
+        width 120px
+        height 40px
+        background $font-color-14
+        border-radius 4px
+        font-size $font-size-16
+        font-family SourceHanSansCN-Medium
+        font-weight 500
+        color $font-color-03
+        line-height $font-size-16
+        margin 0 20px
+        text-align center
+        line-height 40px
+    .down
+      width 460px
+      height 40px
+  .bottom
+    overflow-x auto
+  .is-upload
+    width 100%
+    position fixed
+    bottom 300px
+    left 0
+    text-align center
+    .upload-but
+      width 200px
+      height 60px
+      background #FDA143
+      box-shadow 0px 0px 10px 10px rgba(255, 198, 140, 0.9)
+      border-radius 4px
+      color $font-color-03
+      font-size $font-size-18
+      border none
+  .combined
+    width 100%
+    height 40px
+    background-color #435089
+    color white
+    font-size 16px
+    display flex
+    span
+      display block
+      line-height 40px
+      text-align center
+  .dialog
+    position fixed
+    top 0
+    left 0
+    width 100%
+    height 100%
+    background-color rgba(0, 0, 0, 0.6)
+    z-index 999
+    .select-monomer
+      width 1000px
+      height 640px
+      margin 0 auto
+      margin-top 100px
+      background-color $font-color-03
+      p
+        font-size $font-size-18
+        color $font-color-10
+        box-sizing border-box
+        text-align center
+        padding-top 50px
+        font-family SourceHanSansCN-Medium
+        font-weight 500
+      .head-title
+        position relative
+        width 100%
+        height 40px
+        background linear-gradient(225deg, rgba(105, 86, 255, 1) 0%, rgba(84, 138, 255, 1) 100%)
+        color $font-color-03
+        font-size $font-size-16
+        line-height 40px
+        text-align center
+        .close-icon-style
+          position absolute
+          top 0
+          right 0
+          color $font-color-03
+          font-size $font-size-26
+          line-height 40px
+          width 40px
+          height 40px
+      .selectd
+        width 100%
+        margin-top 30px
+        text-align center
+        img
+          width 600px
+          height 337px
+      .buts
+        text-align center
+        margin-top 80px
+</style>
+<style>
+.bottom .el-table th > .cell {
+  white-space: nowrap;
+}
+.bottom .el-table .cell,
+.el-table th div {
+  overflow: initial;
+  text-overflow: initial;
+}
+.bottom .el-table td {
+  border-bottom: initial;
+}
+.bottom .el-table .cell,
+.el-table th div {
+  /* white-space: nowrap;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important; */
+  /* width: 160px; */
+  text-align: center;
+}
+.container-import-construction .el-checkbox__label {
+  color: white;
+}
+.buts .el-button span {
+  padding: 0 30px;
+}
+.bottom .el-table__footer-wrapper tbody td {
+  background: #435089;
+  color: #ffffff;
+}
+.bottom .el-table--border th,
+.bottom .el-table__fixed-right-patch {
+  border-bottom: 0.013333rem solid rgba(255, 255, 255, 0.1);
+}
+.bottom .el-table--border th,
+.bottom .el-table--border td {
+  border-right: 0.013333rem solid rgba(255, 255, 255, 0.1);
+}
+</style>
+

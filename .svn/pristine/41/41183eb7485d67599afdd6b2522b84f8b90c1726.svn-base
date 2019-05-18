@@ -1,0 +1,888 @@
+<!-- risk1风险管理新建问题 -->
+<template>
+  <div class="container-risk1">
+    <div class="leftBox">
+      <div class="box-card">
+        <!-- <div class="title">
+          <i class="el-icon-menu icon"></i>
+        </div> -->
+        <ul class="statisticsList">
+          <li>
+            <span class="addicon">
+              <img src="../../../assets/imgs/icon.jpg" alt>
+            </span>
+            <div class="addText">
+              <span>本月新增问题</span>
+              <span>({{thisMonthCount}}项)</span>
+            </div>
+          </li>
+          <li>
+            <span>
+              <img src="../../../assets/imgs/img2.png" alt>
+            </span>
+            <span>待接收</span>
+            <span>({{ingPageTotal}}项)</span>
+          </li>
+          <li>
+            <span>
+              <img src="../../../assets/imgs/img3.png" alt>
+            </span>
+            <span>进行中</span>
+            <span>({{handlePageTotal}}项)</span>
+          </li>
+          <li>
+            <span>
+              <img src="../../../assets/imgs/img4.png" alt>
+            </span>
+            <span>已完成</span>
+            <span>({{overPageTotal}}项)</span>
+          </li>
+        </ul>
+        <!-- 模型box -->
+        <div class="model-container">
+          <div ref="modelContainer" class="model-container"></div>
+        </div>
+      </div>
+    </div>
+    <div class="rightBox">
+      <div class="box-card">
+        <!-- 日常管理 -->
+        <div class="dayManagement" v-show="alteration">
+          <div class="titleBg notice">
+            新建问题
+            <i class="el-icon-close" @click="close()"></i>
+          </div>
+          <el-row>
+            <el-col :span="24">
+              <el-form ref="questionForm" :model="form" label-width="100px" :rules="rules">
+                <el-form-item label="主题" prop="theme">
+                  <div class="originator">
+                    <el-input v-model="form.theme"></el-input>
+                  </div>
+                </el-form-item>
+                <el-form-item label="问题类型" prop="qt">
+                  <div class="originator question">
+                    <el-select v-model="form.qt" placeholder="问题类型" @focus="getQuestionType">
+                      <el-option
+                        v-for="item in questionType"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                      ></el-option>
+                    </el-select>
+                  </div>
+                </el-form-item>
+                <el-form-item label="风险类型" prop="category">
+                  <el-radio-group v-model="form.category">
+                    <el-radio label="1">质量</el-radio>
+                    <el-radio label="2">安全</el-radio>
+                  </el-radio-group>
+                </el-form-item>
+                <el-form-item label="发起人">
+                  <div class="originator">
+                    <el-input v-model="form.initiator" :disabled="true"></el-input>
+                  </div>
+                </el-form-item>
+                <el-form-item label="发起时间" prop="startTime">
+                  <div class="originator">
+                    <el-date-picker
+                      type="date"
+                      placeholder="选择日期"
+                      v-model="form.startTime"
+                      style="width: 100%;"
+                    ></el-date-picker>
+                  </div>
+                </el-form-item>
+                <el-form-item label="问题描述" prop="describe">
+                  <el-input type="textarea" v-model="form.describe" placeholder="请输入问题描述"></el-input>
+                </el-form-item>
+                <el-form-item label="现场照片">
+                  <el-upload
+                    action
+                    list-type="picture-card"
+                    :on-change="uploadPicture"
+                    :auto-upload="false"
+                    :limit = "5"
+                  >
+                    <i class="el-icon-plus"></i>
+                  </el-upload>
+                  <!-- <ul class="uploadImg">
+                    <li class="imgWrap">
+                      <img src="../../../assets/imgs/img2.jpg" alt>
+                    </li>
+                    <li class="imgWrap">
+                      <img src="../../../assets/imgs/img5.jpg" alt>
+                    </li>
+                  </ul>-->
+                </el-form-item>
+                <!-- <el-form-item label="模型视点">
+                  <div class="viewpoint" v-for="item in upload_base64_img" :key="item.index" v-show="fileext.length != 0">
+                    <img class="modePic" :src="item.TokenUrL+item.URL" alt=""> -->
+                <el-form-item label="视点上传">
+                  <div
+                    class="viewpoint"
+                    v-for="item in viewPointList"
+                    :key="item.index"
+                    v-show="fileext.length != 0"
+                  >
+                    <img class="modePic" :src="item.TokenUrL+item.smallPhotoURL" @click="onRemove(index)" alt>
+                  </div>
+                  <div class="viewpoint" @click="createViewPoint" v-show="viewPointList.length < 4">
+                    <img class="camera" src="../../../assets/imgs/camera.png" alt>
+                  </div>
+                </el-form-item>
+                <!-- <el-form-item label="接收人:">
+                  <div class="originator">
+                    <el-select v-model="form.person" placeholder="接收人" @focus="getReceiver">
+                      <el-option v-for="item in receiver" :key="item.value" :label="item.label" :value="item.value"></el-option>
+                    </el-select>
+                  </div>
+                </el-form-item>-->
+                <el-form-item label="接收人" prop="person">
+                  <el-select v-model="form.person" multiple placeholder="接收人" @focus="getReceiver">
+                    <el-option
+                      v-for="item in receiver"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    ></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="整改截止时间" prop="completionTime">
+                  <div class="originator">
+                    <el-date-picker
+                      type="date"
+                      placeholder="选择日期"
+                      v-model="form.completionTime"
+                      style="width: 100%;"
+                    ></el-date-picker>
+                  </div>
+                </el-form-item>
+                <el-form-item>
+                  <div class="btn">
+                    <el-button>取消</el-button>
+                    <el-button
+                      type="primary"
+                      @click="onSubmit('questionForm')"
+                      :loading="loading"
+                    >确认</el-button>
+                  </div>
+                </el-form-item>
+              </el-form>
+            </el-col>
+          </el-row>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import {
+  PublishRisk,
+  GetRiskTypeList,
+  GetAllUserList,
+  GetLoginUserInfo,
+  UploadImages,
+  UploadBase64Img,
+  GetDefaultModelId,
+  GetDictInfoList
+} from "@/api/api.js";
+import { mapMutations } from "vuex";
+export default {
+  data() {
+    return {
+      data: "",
+      isAddView: true,  //防止连续点击添加视点
+      thisMonthCount: "", //本月新问题数
+      alteration: true, //变更弹框
+      questionType: [], //所有问题类型
+      receiver: [], //所有接收人
+      photoList: [], //现场照片
+      viewPointList: [], //模型视点
+      fileext: "", //图片格式
+      view_point: sessionStorage.getItem("e"), //视点路径
+      stateStr: sessionStorage.getItem("stateStr"), //视点快照图路径
+      upload_base64_img: [], //图片详情
+      defaultModelID: 0,  // 默认模型ID
+      form: {
+        //form表单
+        theme: "",
+        qt: "",
+        initiator: "",  //发起人
+        person: [],  //接收人
+        startTime: "",  //发起时间
+        describe: "",  //问题描述
+        completionTime: "",  //整改截止时间
+        category: ""  //风险类型
+      },
+      loading: false,
+      rules: {
+        theme: [{ required: true, message: "请输入主题", trigger: "blur" }],
+        qt: [{ required: true, message: "请选择问题类型", trigger: "blur" }],
+        category: [
+          { required: true, message: '请选择风险类型', trigger: 'blur' }
+        ],
+        startTime: [
+          { required: true, message: "请选择发起时间", trigger: "blur" }
+        ],
+        describe: [
+          { required: true, message: "请输入问题描述", trigger: "blur" }
+        ],
+        person: [{ required: true, message: "请选择接收人", trigger: "blur" }],
+        completionTime: [
+          { required: true, message: "请选择整改截止时间", trigger: "blur" }
+        ]
+      }
+    };
+  },
+  beforeRouteEnter(to, from, next) {
+    next(vm => {
+      if (localStorage.getItem("userId") == "") {
+        vm.$router.push("/login");
+      }
+    });
+  },
+  created() {
+    this.getDefaultModelId()  //默认模型ID
+    this.initModel(); //加载模型
+    this.getLoginUserInfoDate();
+    this.thisMonthCount = this.$route.query.thisMonthCount;
+    this.ingPageTotal = this.$route.query.ingPageTotal;
+    this.handlePageTotal = this.$route.query.handlePageTotal;
+    this.overPageTotal = this.$route.query.overPageTotal;
+  },
+  methods: {
+    /**
+     * 加载模型
+     */
+    initModel() {
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          // console.log(res);
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    }),
+    /**
+     * 获取当前登录用户详情
+     */
+    getLoginUserInfoDate() {
+      this.Request(
+        GetLoginUserInfo({ curUserId: localStorage.getItem("userId") }) //当前用户ID
+      ).then(data => {
+        if (data.StatusCode === 200) {
+          console.log("用户信息：", data);
+          this.form.initiator = data.Detiel[0].loginUserInfo.cName;
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+      });
+    },
+    /**
+     * 获取问题类型
+     */
+    getQuestionType() {
+      this.Request(GetDictInfoList({ProjectID:localStorage.getItem("projectid"), DICode: "风险类型"})).then(data => {
+        if (data.StatusCode === 200) {
+          this.questionType = [];
+          for (let i = 0; i < data.Detiel.length; i++) {
+            let Option1 = {};
+            Option1.label = data.Detiel[i].cDIName;
+            Option1.value = data.Detiel[i].cDIValue;
+            this.questionType.push(Option1);
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+      });
+    },
+    /**
+     * 获取接收人数据
+     */
+    getReceiver() {
+      this.Request(
+        GetAllUserList({ projectId: localStorage.getItem("projectid") })
+      ).then(data => {
+        if (data.StatusCode === 200) {
+          this.receiver = [];
+          for (let i = 0; i < data.Detiel.length; i++) {
+            let Option1 = {};
+            Option1.label = data.Detiel[i].text;
+            Option1.value = data.Detiel[i].id;
+            this.receiver.push(Option1);
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+      });
+    },
+    close() {
+      //关闭变更
+      this.$router.go(-1);
+    },
+    /**
+     * 提交表单
+     */
+    onSubmit(formName) {
+      this.$refs[formName].validate(valid => {
+        if (valid) {
+          this.loading = true;
+          let params = {
+            CurUserID: Number(localStorage.getItem('userId')),  //当前用户ID
+            ProjectID: localStorage.getItem('projectid'),  //项目ID
+            Subject: this.form.theme,  //主题
+            Category: this.form.category,  //风险类别 1：质量 2：安全
+            ProblemType: this.form.qt,  //问题类型
+            Initiator: Number(localStorage.getItem('userId')),  //发起人ID
+            InitiateTime: require('moment')(this.form.startTime).format('YYYY-MM-DD'),  //发起时间
+            Problem: this.form.describe,  //问题描述
+            DeadLine: require('moment')(this.form.completionTime).format('YYYY-MM-DD'),  //整改截止时间
+            listViewpoints: this.viewPointList,  //模型视点
+            PhotoList: this.photoList,  //上传问题照片
+            ReceiverList: this.form.person  //接收人
+          }
+          // console.log("风险-发布问题：", params);
+          this.Request(PublishRisk(params)).then(data => {
+            console.log("风险-", data);
+            if (data.StatusCode === 200) {
+              this.$router.push({ path: "/nav/to/risk" });
+              this.$message({
+                type: "success",
+                message: "添加成功！",
+                center: "true"
+              });
+            } else {
+              this.$message({
+                type: "error",
+                message: data.Message,
+                center: "true"
+              });
+            }
+            this.loading = false;
+          });
+        } else {
+          console.log("error submit!!");
+          return false;
+        }
+      });
+    },
+    /**
+     * 上传：文件状态改变时的钩子，添加文件、上传成功和上传失败时都会被调用
+     */
+    async uploadPicture(file) {
+      let params = [
+        {
+          key: "files",
+          value: file.raw
+        }
+      ];
+      let data = await this.Request(UploadImages(params));
+      if (data.StatusCode == 200) {
+        if(data.Detiel.length > 0){
+          this.photoList.push({
+            Id: data.Detiel[0].Id, //上传后的文件名
+            URL: data.Detiel[0].URL, //文件地址
+            smallPhotoURL: data.Detiel[0].smallPhotoURL, //如果存在小图则返回小图地址
+            Type: data.Detiel[0].Type, //文件类型
+            TokenUrL: data.Detiel[0].TokenUrL //域名地址
+          });
+        }else{
+          this.$message({
+            type: "error",
+            message: data.message ? data.message : "图片上传失败",
+            center: "true"
+          });
+        }
+      } else {
+        this.$message({
+          type: "error",
+          message: data.message ? data.message : "后台异常",
+          center: "true"
+        });
+      }
+    },
+    /**
+     * 创建视点
+     */
+    createViewPoint() {
+      if(!this.isAddView){
+        this.$message({ type: "warning", message: "不要急", center: "true" });
+        return
+      }
+      this.isAddView = false;
+      this.$util.getDomLocation(this, "modelContainer").then(res => {
+        this.modelBox({
+          isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示 false:隐藏模型
+          isLoadModel: true, //是否加载模型 true：加载模型，如果已经加载，不会重新加载， false:卸载模型
+          top: res.top, //距离顶部距离‘px'
+          left: res.left, //距离左边距离‘px'
+          width: res.width, //模型宽‘px'
+          height: res.height, //模型高 ‘px'
+          zIndex: 100, //模型层级
+          background: "",
+          ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+          highLightElementIDs: [], // 高亮显示的构件
+          functionNumber: [35] // 需要模型调用的函数编号数组
+        });
+      });
+      setTimeout(() => {
+        this.view_point = sessionStorage.getItem("e")
+        this.fileext = this.view_point.slice(10, 14).replace("/", ".");
+        // this.uploadBase64Img();
+        this.currentState();
+      }, 1000);
+    },
+    /**
+     * 获取项目默认模型
+     */
+    async getDefaultModelId() {
+      //获取默认模型ID
+      let defaultModelId = await this.Request(GetDefaultModelId({projectId: localStorage.getItem("projectid")}))
+      if(defaultModelId.StatusCode == 200){
+        this.defaultModelID = defaultModelId.Result
+      }else{
+        this.$message({type:'error',message:defaultModelId.message?defaultModelId.message:'后台异常',center:'true'})
+      }
+    },
+    /**
+     * 上传Base64String 图片
+     */
+    async uploadBase64Img() {
+      let base64_img_data = await this.Request(
+        UploadBase64Img({
+          fileext: this.fileext,
+          Base64Photo: this.view_point
+        })
+      );
+      if (base64_img_data.StatusCode === 200) {
+        if (base64_img_data.Detiel.length != 0) {
+          this.upload_base64_img = base64_img_data.Detiel;
+          // this.currentState();
+          this.viewPointList.push({
+            // ProjectID: localStorage.getItem("projectid"),
+            ModelID: this.defaultModelID,
+            State: this.stateStr,
+            Snapshot: this.upload_base64_img[0].URL,
+            TokenUrL: this.upload_base64_img[0].TokenUrL,
+            smallPhotoURL: this.upload_base64_img[0].smallPhotoURL
+          });
+        } else {
+          this.$message({ type: "error", message: "无数据", center: "true" });
+        }
+      } else {
+        this.$message({
+          type: "error",
+          message: this.upload_base64_img.message ? this.upload_base64_img : "后台异常",
+          center: "true"
+        });
+      }
+      this.isAddView = true;
+    },
+    /**
+     * 获取当前模型的浏览状态，用于保存后恢复模型状态
+     */
+    currentState() {
+      this.$util.getDomLocation(this, "modelContainer").then(res => {
+        this.modelBox({
+          isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示 false:隐藏模型
+          isLoadModel: true, //是否加载模型 true：加载模型，如果已经加载，不会重新加载， false:卸载模型
+          top: res.top, //距离顶部距离‘px'
+          left: res.left, //距离左边距离‘px'
+          width: res.width, //模型宽‘px'
+          height: res.height, //模型高 ‘px'
+          zIndex: 100, //模型层级
+          background: "",
+          ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+          highLightElementIDs: [], // 高亮显示的构件
+          functionNumber: [36] // 需要模型调用的函数编号数组
+        });
+      });
+      setTimeout(() => {
+        this.stateStr = sessionStorage.getItem("stateStr")
+        this.uploadBase64Img();
+      }, 1000);
+    },
+    /**
+     * @name 移除视点
+     * @param {} index 视点索引
+     */
+    onRemove(index) {
+      this.$alert("是否确认删除？", "提示！", {
+        confirmButtonText: "确定",
+        callback: action => {
+          if (action == "confirm") {
+            this.viewPointList.splice(index, 1);
+          }
+        }
+      });
+    }
+  },
+  mounted() {}
+};
+</script>
+<style lang='stylus' rel='stylesheet/stylus'>
+.container-risk1 {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.container-risk1 .model-container {
+  width: 100%;
+  height: 100%;
+  padding: 0 !important;
+  z-index: 100;
+}
+
+.container-risk1 .viewpoint {
+  width: 160px;
+  height: 120px;
+  border: 1px dashed #c0ccda;
+  border-radius: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  float: left;
+  margin-right: 10px;
+}
+
+.container-risk1 .viewpoint .modePic {
+  width: 160px;
+  height: 120px;
+}
+
+.container-risk1 .el-form-item .el-form-item__label {
+  width: 140px !important;
+  margin-left: 0px !important;
+}
+
+.container-risk1 .el-form-item {
+  width: 100%;
+  height: auto !important;
+}
+
+.container-risk1 .statisticsList {
+  position: absolute;
+  bottom: 50px;
+  right: 20px;
+  z-index 110
+}
+
+.container-risk1 .statisticsList li {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.container-risk1 .statisticsList li:first-child {
+  margin-bottom: 20px;
+}
+
+.container-risk1 .statisticsList li span {
+  font-size: 12px;
+  color: #353535;
+  margin-right: 10px;
+}
+
+.container-risk1 .statisticsList li .addicon {
+  width: 26px !important;
+  height: 33px !important;
+  margin: 0 0px 0px 2px;
+}
+
+.container-risk1 .statisticsList li .addicon img {
+  width: 20px !important;
+  height: 33px !important;
+}
+
+.container-risk1 .statisticsList li .addText {
+  display: flex;
+  flex-flow: column;
+  width: 100%;
+  padding-left: 15px;
+}
+
+.container-risk1 .statisticsList li .addText span {
+  display: block !important;
+  width: 100% !important;
+  height: 15px !important;
+}
+
+.container-risk1 .statisticsList li span:first-child {
+  width: 26px;
+  height: 26px;
+  display: inline-block;
+}
+
+.container-risk1 .statisticsList li span:first-child img {
+  width: 100%;
+  height: 100%;
+  display: inline-block;
+}
+
+.container-risk1 .imgWrap {
+  float: left;
+  margin-right: 20px;
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+}
+
+.container-risk1 .imgWrap img {
+  width: 160px;
+  height: 120px;
+  display: block;
+}
+
+.container-risk1 .model {
+  width: 160px !important;
+  height: 120px !important;
+  display: block;
+  background: #F8F8F8;
+}
+
+.container-risk1 .model img {
+  width: 114px !important;
+  height: 115px !important;
+  display: block;
+  padding: 5px 23px 0 23px;
+}
+
+.container-risk1 .el-date-editor--date .el-input__prefix {
+  left: calc(100% - 30px) !important;
+}
+
+.container-risk1 .originator {
+  float: left;
+  width: 633px;
+}
+
+.container-risk1 .question {
+  width: 260px !important;
+}
+
+.container-risk1 .el-select {
+  width: 633px;
+}
+
+.container-risk1 .el-select .el-input__suffix {
+  width: 0.666667rem;
+  background: #435089;
+  border-radius: 0 0.066667rem 0.066667rem 0; 
+  right: 0 !important;
+}
+
+.container-risk1 .question .el-select input {
+  background: #fff !important;
+  
+}
+
+.container-risk1 .el-step.is-horizontal .el-step__line {
+  top: 0.25rem;
+  background: #E5E5E5;
+}
+
+.container-risk1 .btn {
+  padding: 20px 25% 0px 5%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container-risk1 .el-step__icon.is-text {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #E5E5E5;
+  background: #ddd;
+}
+
+.container-risk1 .el-step__main div {
+  color: #333 !important;
+}
+
+.container-risk1 .el-button {
+  width: 100px;
+  color: #fff;
+}
+
+.container-risk1 .el-button--default {
+  background: #999999;
+}
+
+.container-risk1 .el-button--default:focus, .container-risk1 .el-button--default:hover {
+  background: #999999;
+  color: #fff;
+}
+
+.container-risk1 .el-button--primary {
+  background: #4775CA;
+}
+
+.container-risk1 .el-button--primary:focus, .el-button--primary:hover {
+  background: #4775CA;
+  color: #fff;
+}
+
+// 图标颜色
+.container-risk1 .container-risk1 .icon {
+  color: #ffa147;
+}
+
+.container-risk1 .titleBg {
+  background: #44508a;
+}
+
+.container-risk1 .dayManagement {
+  margin-bottom: 26px;
+}
+
+.container-risk1 .el-row .el-col-24 {
+  font-size: 22px;
+  color: #28292b;
+}
+
+.container-risk1 .dayManagement .el-row .el-col-24 {
+  margin: 20px 0px;
+}
+
+.container-risk1 .notice {
+  color: #fff;
+  font-size: 20px;
+  height: 40px;
+  line-height: 40px;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.container-risk1 .notice i {
+  font-size: 20px;
+  position: absolute;
+  right: 15px;
+  line-height: 40px;
+  cursor: pointer;
+}
+
+.container-risk1 .el-form {
+  padding: 0 0px;
+}
+
+.container-risk1 .el-input {
+}
+.container-risk1 .el-form-item__content{
+  margin-left:150px !important;
+}
+.el-input{
+ width:633px;
+}
+.container-risk1 .el-input input, .container-risk1 .el-textarea .el-textarea__inner {
+  background: #F8F8F8;
+  color: #666;
+  font-size: 16px;
+}
+
+.container-risk1 .el-input--prefix .el-input__inner {
+  padding-left: 15px !important;
+  padding-right: 15px !important;
+}
+.el-form-item__content{margin-left:150px;}
+.container-risk1 .el-select .el-input__inner {
+  color: #333;
+  width:633px;
+}
+
+.container-risk1 .el-textarea .el-textarea__inner {
+  min-height: 120px !important;
+  width:633px;
+}
+
+.container-risk1 .el-form-item__label {
+  color: #333333;
+  font-size: 18px;
+  width:150px;
+}
+
+.container-risk1 .leftBox, .container-risk1 .rightBox {
+  width: 50%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  background: #f5f6fa;
+}
+
+.container-risk1 .add {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #435089;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container-risk1 .add i {
+  color: #435089;
+  font-size: 18px;
+}
+
+.container-risk1 .leftBox {
+  left: 0;
+}
+
+.container-risk1 .rightBox {
+  right: 0;
+}
+
+.container-risk1 .leftBox .box-card {
+  width: calc(100% - 30px);
+  height: calc(100% - 42px);
+  margin: 20px 10px 20px 20px;
+  position:relative
+}
+
+.container-risk1 .leftBox .box-card .title{
+  position absolute
+  z-index 110
+}
+
+.container-risk1 .rightBox .box-card {
+  width: calc(100% - 30px); 
+    // calc(100% - 30px); 
+  height: calc(100% - 42px);
+  margin: 20px 10px 20px 20px;
+  background: #f5f6fa;
+  border: none;
+  box-shadow: none;
+  background: #fff;
+  overflow: auto;
+}
+</style>

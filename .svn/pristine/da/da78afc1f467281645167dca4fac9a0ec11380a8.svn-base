@@ -1,0 +1,74 @@
+
+const projectid = localStorage.getItem("projectid");
+/**
+ * @name 风险管理-拒收、接收、认证操作
+ * @param {*} that 
+ * @param {function} DoRiskWork 风险管理问题提交工作流操作接口
+ * @param {integer} ID 风险ID
+ */
+export const dotoRiskWork = (that, DoRiskWork, status) => {
+    that.load();
+    let params = {
+            Risk: {
+                ID: that.riskid
+            },
+            Receiver: {
+                ID: that.receiverID,
+                Status: status,
+                AuthTime: that.riskForm.AuthTime == "" ? require('moment')(new Date()).format('YYYY-MM-DD') : require('moment')(that.riskForm.AuthTime).format('YYYY-MM-DD')
+            },
+            AuthFiles: that.authPhotoList.length == 0 ? [] : that.authPhotoList
+        }
+    DoRiskWork(params).then(res => {
+        if(res.StatusCode === 200){
+            that.$message({
+                type: "success",
+                message: "操作成功！",
+                center: "true"
+            });
+            that.$router.go(-1)
+        }else{
+            that.$message({
+                type: "error",
+                message: "操作失败",
+                center: "true"
+            });
+        }
+        that.$toast.clear();
+    });
+}
+
+export const getRiskMarkers = (that, GetRiskTotal, status) => {
+    that.load();
+    GetRiskTotal({projectId: projectid, status: status}).then(res => {
+        if(res.StatusCode === 200){
+            if(res.Detiel.length > 0){
+                switch (status) {
+                    case 0:
+                        res.Detiel.forEach(element => {
+                            that.noMarkers.push({
+                                imgTag: "./img/img2.png",
+                                position: element.listViewpoints.State.position,
+                                markerState: status,
+                                tooltip: "问题：" + element.Risk.Problem + " 发起人：" + element.Risk.Initiator + " 发起时间：" + element.Risk.InitiateTime
+                            })
+                        })
+                        console.log("=====util.js=====",that.noMarkers)
+                        break;
+                
+                    default:
+                        break;
+                }
+            }else{
+                that.noMarkers = []
+            }
+        }else{
+            that.$message({
+                type: "error",
+                message: res.Message,
+                center: "true"
+            });
+        }
+        that.$toast.clear();
+    });
+}

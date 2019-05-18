@@ -1,0 +1,294 @@
+<!-- 范围管理-变更列表 scope -->
+<template lang="pug" src="./index.pug"></template>
+<style lang="stylus" src="./index.styl" scope></style>
+<style lang="stylus" scoped>
+.filter {
+  .input-text {
+    >>> {
+      .el-input__inner {
+        width: 250px;
+      }
+    }
+  }
+
+  >>> {
+    .el-form-item__content {
+      background: red;
+    }
+
+    .el-select .el-input__inner {
+      border: 1px solid #ecedf1;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .el-select .el-select__caret::before {
+      content: '\e60c';
+      font-size: 24px;
+    }
+
+    .el-input__suffix {
+      width: 50px;
+      background: #44508a;
+      border-radius: 0 5px 5px 0;
+    }
+
+    .el-input--suffix {
+      overflow: hidden;
+    }
+
+    .el-select .el-input .el-select__caret {
+      color: #fff;
+    }
+  }
+}
+</style>
+
+
+<script type='textecmascript-6'>
+import { mapMutations } from "vuex";
+import {
+  GetChangeRange,
+  GetBuilding,
+  GetSpecialtybyBuilding,
+  GetFloorbyBuilding
+} from "../../../../../../api/api.js";
+import {
+  dataResetBSF,
+  getBuildList,
+  getSpecialtyList,
+  getFloorList,
+  onHandle
+} from "../../../util/util.js";
+
+export default {
+  components: {},
+  created() {
+    // 获取变更列表
+    this.getChangeList(0);
+    this.getChangeList(1);
+    this.getChangeList(2);
+    // 楼栋下拉
+    getBuildList(this, GetBuilding);
+  },
+  data() {
+    return {
+      ingLoading: false,
+      handleLoading: false,
+      overLoading: false,
+      pageSize: 5,
+      ingCurrentPage: 1,
+      ingPageTotal: 0, //待接收数
+      handleCurrentPage: 1,
+      handlePageTotal: 0, //整改中数
+      overCurrentPage: 1,
+      overPageTotal: 0, //已整改数
+
+      projectid: localStorage.getItem("projectid"),
+      BuildNameList: [], // 楼栋下拉
+      SpecialtyList: [], // 专业下拉
+      FloorbyList: [], // 楼层下拉
+      filterForm: {
+        BuildName: "", // 楼栋
+        Specialty: "", // 专业
+        Floor: "", // 楼层
+        Name: "" // 查询内容
+      },
+      PurchaseList: [],
+      totalNum: 0,
+      purchaseDetailId: "", // 采购详情ID
+
+      /**[当前选项卡]
+       *  @ture   采购列表
+       *  @false  变更列表
+       */
+      activeTab: true,
+      /**[当前折叠面板] */
+      nowCollapse: ["1", "2", "3"],
+      /**[楼栋1] 可选项 */
+      house1Options: [{ label: "AAA", value: 1 }, { label: "BBB", value: 2 }],
+      /**[楼栋1] 可选项 */
+      house2Options: [{ label: "CCC", value: 3 }, { label: "DDD", value: 4 }],
+      /**[楼栋1] 可选项 */
+      house3Options: [{ label: "EEE", value: 5 }, { label: "FFF", value: 6 }],
+      /**[筛选表单规则] */
+      filterRules: {},
+      /**[进行中] */
+      dataIng: [],
+      /**[处理中] */
+      dataHandle: [],
+      /**[已处理] */
+      dataOver: []
+    };
+  },
+  computed: {},
+  methods: {
+    // 联动模型定位
+    onPosition(row){
+      onHandle(this,{id:row.ID},'bg')
+    },
+    /**[获取变更列表] */
+    getChangeList(type) {
+      let par = {
+        building: this.filterForm.BuildName, // 楼栋
+        specialty: this.filterForm.Specialty, // 专业
+        floor: this.filterForm.Floor, // 楼层
+        name: this.filterForm.Name, // 搜索内容
+        page: 1, // 第几也页
+        rows: this.pageSize, // 每页行数
+        type
+      };
+      if (type == 0) {
+        par.page = this.ingCurrentPage;
+        this.ingLoading = true;
+      } else if (type == 1) {
+        par.page = this.handleCurrentPage;
+        this.handleLoading = true;
+      } else if (type == 2) {
+        par.page = this.overCurrentPage;
+        this.overLoading = true;
+      } else {
+        return;
+      }
+      GetChangeRange(par).then(data => {
+        if (data.StatusCode === 200) {
+          if (data.Detiel.length != 0 && type == 0) {
+            this.ingPageTotal = parseInt(data.Count);
+            this.dataIng = [];
+            this.pushData(data, item => {
+              this.dataIng.push(item);
+            });
+          }
+
+          if (data.Detiel.length != 0 && type == 1) {
+            this.handlePageTotal = parseInt(data.Count);
+            this.dataHandle = [];
+            this.pushData(data, item => {
+              this.dataHandle.push(item);
+            });
+          }
+
+          if (data.Detiel.length != 0 && type == 2) {
+            this.overPageTotal = parseInt(data.Count);
+            this.dataOver = [];
+            this.pushData(data, item => {
+              this.dataOver.push(item);
+            });
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+        if (type == 0) {
+          this.ingLoading = false;
+        } else if (type == 1) {
+          this.handleLoading = false;
+        } else if (type == 2) {
+          this.overLoading = false;
+        }
+      });
+    },
+    pushData(data, func) {
+      data.Detiel.forEach(element => {
+        let item = {
+          Code: element.Code,
+          Building: element.Building,
+          Specialty: element.Specialty,
+          Floor: element.Floor,
+          Theme: element.Theme,
+          EndTime: element.EndTime
+            ? require("moment")(element.EndTime).format("YYYY/MM/DD")
+            : "/",
+          DoNum: element.DoNum + "/" + element.TotalDoNum,
+          ID: element.ID
+        };
+        func(item);
+      });
+    },
+    // 分页
+    ingCurrentChange: function(val) {
+      this.ingCurrentPage = val;
+      this.getChangeList(0);
+    },
+    handleCurrentChange: function(val) {
+      this.handleCurrentPage = val;
+      this.getChangeList(1);
+    },
+    overCurrentChange: function(val) {
+      this.overCurrentPage = val;
+      this.getChangeList(2);
+    },
+
+    /**[采购列表按钮] */
+    onPurchaseBtn() {
+      this.activeTab = true;
+    },
+    /**[变更列表按钮] */
+    onChangeBtn() {
+      this.activeTab = false;
+    },
+    /**[表格处理]
+     *  @row  当前行的数据
+     */
+    onHandle(row, state) {
+      let par = {
+        ID: row.ID,
+        state
+      };
+      this.$emit("showChangeDetail", par);
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    })
+  },
+  watch: {
+    // 搜索
+    "filterForm.Name": {
+      handler(val, oldval) {
+        if (val != "") this.getChangeList(0);
+        this.getChangeList(1);
+        this.getChangeList(2);
+      }
+    },
+    // 楼层
+    "filterForm.Floor": {
+      handler(val, oldval) {
+        if (val != "") dataResetBSF(this, "Floor");
+        this.getChangeList(0);
+        this.getChangeList(1);
+        this.getChangeList(2);
+      }
+    },
+    // 专业
+    "filterForm.Specialty": {
+      handler(val, oldval) {
+        if (val != "") dataResetBSF(this, "Specialty");
+        getFloorList(this, GetFloorbyBuilding);
+        this.getChangeList(0);
+        this.getChangeList(1);
+        this.getChangeList(2);
+      }
+    },
+    // 楼栋
+    "filterForm.BuildName": {
+      handler(val, oldval) {
+        if (val != "") dataResetBSF(this, "BuildName");
+        getSpecialtyList(this, GetSpecialtybyBuilding);
+        this.getChangeList(0);
+        this.getChangeList(1);
+        this.getChangeList(2);
+      }
+    }
+  }
+};
+</script>
+<style>
+.container-scope-list .content {
+  height: calc(100% - 10px);
+  overflow-y: scroll;
+}
+</style>
+

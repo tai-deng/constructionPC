@@ -1,0 +1,988 @@
+<!-- setting 自动新建设置 -->
+<template>
+  <div class="setting-container" v-if="isShow">
+    <el-form :model="fromData" class="setting-container">
+      <div class="setting-content">
+        <template v-if="step==1">
+          <div class="stepOne">
+            <div class="stepOne-title flex-row">
+              <div class="stepOne-title-name flex-row">楼层类型</div>
+              <div class="stepOne-title-describe flex-row">描述</div>
+              <div class="stepOne-title-handle flex-row">操作</div>
+            </div>
+            <div class="stepOne-item flex-row" v-for="(item,index) in fromData.one" :key="index">
+              <div class="stepOne-title-name">
+                <el-input v-model="item.Name" placeholder="楼层类型"></el-input>
+              </div>
+              <div class="stepOne-title-describe">
+                <el-input v-model="item.Describe" placeholder="描述"></el-input>
+              </div>
+              <div class="stepOne-title-handle flex-row">
+                <div class="addImg" @click="onOneAddItem(index)" v-if="index==0">
+                  <img src="../../../../../assets/imgs/add.png">
+                </div>
+                <div class="delImg" @click="onOneDelItem(index)" v-else>
+                  <img src="../../../../../assets/imgs/del_model.png">
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+        <template v-else-if="step==2">
+          <div class="stepOne">
+            <div class="stepOne-title flex-row">
+              <div class="stepOne-title-nameb flex-row">工序名称</div>
+              <div class="stepOne-title-describe flex-row">描述</div>
+              <div class="stepOne-title-nameb flex-row">模型匹配</div>
+              <div class="stepOne-title-handle flex-row">操作</div>
+            </div>
+            <div class="stepOne-item flex-row" v-for="(item,index) in fromData.two" :key="index">
+              <div class="stepOne-title-nameb">
+                <el-input v-model="item.ProcedureName" placeholder="基础工程"></el-input>
+              </div>
+              <div class="stepOne-title-describe">
+                <el-input v-model="item.Describe" placeholder="描述文字"></el-input>
+              </div>
+              <div class="stepOne-title-nameb">
+                <el-input v-model="item.ModelMatching" placeholder="模型匹配"></el-input>
+              </div>
+              <div class="stepOne-title-handle flex-row">
+                <div class="addImg" @click="onOneAddItem(index)" v-if="index==0">
+                  <img src="../../../../../assets/imgs/add.png">
+                </div>
+                <div class="delImg" @click="onOneDelItem(index)" v-else>
+                  <img src="../../../../../assets/imgs/del_model.png">
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+        <template v-else-if="step==3">
+          <div class="setting-tab">
+            <div class="setting-tab-head flex-row">
+              <div class="tab-col-warp flex-row">
+                <div class="setting-tab-head-angle flex-row">楼层类型/工序</div>
+              </div>
+              <div class="flex-row flex-1">
+                <div
+                  class="tab-col-warp flex-1 flex-row"
+                  v-for="(item,index) in fromData.three.head"
+                  :key="index"
+                >
+                  <div class="flex-1 flex-row setting-tab-head-item">{{item.Name}}</div>
+                </div>
+              </div>
+              <div class="tab-col-warp flex-row">
+                <div class="setting-tab-head-operate flex-row">操作</div>
+              </div>
+            </div>
+            <div class="setting-tab-body">
+              <div
+                class="setting-tab-body-item flex-row"
+                v-for="(item,index) in fromData.three.body"
+                :key="index"
+              >
+                <div class="tab-col-warp flex-row w108">
+                  <div class="setting-tab-body-item-name flex-row">{{item.name}}</div>
+                </div>
+                <div
+                  class="setting-tab-body-item-col-i flex-row tab-col-warp flex-1"
+                  v-for="(col,i) in item.data"
+                  :key="i"
+                >
+                  <div
+                    v-if="col.ProcedureName=='基础工程'&&col.status"
+                    class="setting-tab-body-item-input flex-row flex-1 isClick"
+                  >
+                    <el-select v-model="col.Timelimit" multiple placeholder="请选择">
+                      <el-option
+                        v-for="(v,i) in foundation"
+                        :key="i"
+                        :label="v.text"
+                        :value="v.id"
+                      ></el-option>
+                    </el-select>
+                  </div>
+                  <div
+                    class="setting-tab-body-item-input flex-row flex-1"
+                    @click="onFocus(index,i)"
+                    v-else
+                  >
+                    <el-input
+                      type="number"
+                      v-model="col.Timelimit"
+                      :placeholder="col.Timelimit"
+                      :class="[col['isClick']?'isClick':'isClickb']"
+                    ></el-input>
+                    <div class="a" v-if="!col['isClick']">{{col.Timelimit}}</div>
+                  </div>
+                </div>
+                <div class="tab-col-warp flex-row w108">
+                  <div class="setting-tab-body-item-rm flex-row" v-if="item.name=='基础工程'">移除</div>
+                  <div
+                    class="setting-tab-body-item-rm flex-row"
+                    @click="onOneDelItem(index,item.ProcedureId)"
+                    v-else
+                  >移除</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+        <template v-else-if="step==4||5">
+          <div class="stepOne">
+            <div class="stepOne-title flex-row">
+              <div class="stepOne-title-describe flex-row">节点名称</div>
+              <div class="stepOne-title-describe flex-row">前置</div>
+              <div class="stepOne-title-describe flex-row">技术间隔时间</div>
+              <div class="stepOne-title-describe flex-row">关联工序</div>
+              <div class="stepOne-title-handle flex-row">操作</div>
+            </div>
+            <div
+              class="stepOne-item flex-row"
+              v-for="(item,index) in fromData.four"
+              :key="index"
+            >
+              <div class="stepOne-title-describe">
+                <el-input v-model="item.NodeName" placeholder="节点名称" :disabled="step==5"></el-input>
+              </div>
+              <div class="stepOne-title-describe">
+                <el-select v-model="item.FrontNode" placeholder="请选择" :disabled="step==4">
+                  <el-option v-for="(va,i) in afterPull" :key="i" :label="va.text" :value="va.text"></el-option>
+                </el-select>
+              </div>
+              <div class="stepOne-title-describe">
+                <el-input
+                  v-model="item.IntervalTime"
+                  type="number"
+                  placeholder="技术间隔时间"
+                  :disabled="step==5"
+                ></el-input>
+              </div>
+              <div class="stepOne-title-describe">
+                <el-select v-model="item.ProcedureId" placeholder="请选择" :disabled="step==5">
+                  <el-option
+                    v-for="(va,i) in relevancePull"
+                    :key="i"
+                    :label="va.ProcedureName"
+                    :value="va.ProcedureId"
+                  ></el-option>
+                </el-select>
+              </div>
+              <div class="stepOne-title-handle flex-row">
+                <div class="addImg" @click="onOneAddItem(index)" v-if="index==0">
+                  <img src="../../../../../assets/imgs/add.png">
+                </div>
+                <div class="delImg" @click="onOneDelItem(index)" v-else>
+                  <img src="../../../../../assets/imgs/del_model.png">
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+      <div class="tab-sub-btn flex-row">
+        <div class="cancel flex-row" @click="onLastStep">上一步</div>
+        <div class="affirm flex-row" @click="submit">{{step==5?"确定":'下一步'}}</div>
+      </div>
+    </el-form>
+  </div>
+</template>
+
+<script>
+import {
+  get_floor_list,
+  set_floor_list,
+  del_floor_list,
+  get_process_list,
+  set_process_list,
+  del_process_list,
+  get_date_list,
+  pull_date_list,
+  set_date_list,
+  del_date_list,
+  get_standard_list,
+  pullb_standard_list,
+  set_standard_list,
+  del_standard_list,
+  getpre_standard_list
+} from "../../../../../api/api.js";
+import { sum } from "../../base/util.js";
+
+export default {
+  props: { isShow: { type: Boolean, default: false } },
+  data() {
+    return {
+      projectid: localStorage.getItem("projectid"),
+      hasClick: false,
+      arr: [],
+      step: 1,
+      foundation: [], // 基础工程下拉
+      afterPull: [], // 前置下拉
+      relevancePull: [], // 关联下拉
+      fromData: {
+        one: [],
+        two: [],
+        three: { head: [], body: [] },
+        four: []
+      }
+    };
+  },
+  methods: {
+    // 第一步 添加
+    onOneAddItem() {
+      if (this.step == 1) {
+        this.addLIstOne();
+      } else if (this.step == 2) {
+        this.addLIstTwo();
+      } else if (this.step == 4) {
+        this.addLIstFour();
+      }
+    },
+    // 第一步 删除
+    onOneDelItem(i, id) {
+      if (this.step == 1) {
+        this.delLIstOne(i);
+      } else if (this.step == 2) {
+        this.delLIstTwo(i);
+      } else if (this.step == 3) {
+        this.delLIstThree(i, id);
+      } else if (this.step == 4) {
+        this.delLIstFour(i);
+      }
+    },
+    // 上一步
+    onLastStep() {
+      if (!this.hasClick) return;
+      if (this.step > 1) {
+        this.step = this.step - 1;
+      }
+      this.onTitle();
+    },
+    // 下一步
+    onNextStep() {
+      console.log(this.step);
+      if (this.step < 5) {
+        this.step = this.step + 1;
+      }
+      this.onTitle();
+    },
+    // 设置标题
+    onTitle() {
+      let c = this.step;
+      if (c == 1) {
+        this.getLIstOne();
+        this.$emit("onSetTile", "楼层类型定义");
+      } else if (c == 2) {
+        this.getLIstTwo();
+        this.$emit("onSetTile", "工序定义");
+      } else if (c == 3) {
+        this.getLIstThree();
+        this.$emit("onSetTile", "时间定义");
+      } else if (c == 4) {
+        this.getLIstFour();
+        this.$emit("onSetTile", "标准工序定义");
+      }
+    },
+    // 提交
+    submit() {
+      let step = this.step;
+      let fdOne = this.fromData.one;
+      let fdTwo = this.fromData.two;
+      let fdThree = this.fromData.three;
+      let fdFour = this.fromData.four;
+      if (!this.hasClick) return;
+      if (step == 1) {
+        let flag = true;
+        fdOne.forEach(element => {
+          if (!element.Name || !element.Describe) {
+            flag = false;
+          }
+        });
+        if (flag) {
+          // 提交设置
+          this.setLIstOne(fdOne);
+        } else {
+          this.$message({
+            message: "请填写名称和描述",
+            type: "error",
+            center: "true"
+          });
+        }
+      } else if (step == 2) {
+        let v = fdTwo;
+        let flag = true;
+        fdTwo.forEach(element => {
+          if (
+            !element.ProcedureName ||
+            !element.Describe ||
+            !element.ModelMatching
+          ) {
+            flag = false;
+          }
+        });
+
+        if (flag) {
+          this.setLIstTwo(fdTwo);
+        } else {
+          this.$message({
+            message: "请填写完整内容",
+            type: "error",
+            center: "true"
+          });
+        }
+      } else if (step == 3) {
+        let flag = true;
+        this.fromData.three.body.forEach(element => {
+          element.data.forEach(item => {
+            if (
+              !item.ProcedureId &&
+              !item.ProjectID &&
+              !String(item.Timelimit)
+            ) {
+              flag = false;
+            }
+          });
+        });
+        if (flag) {
+          this.setLIstThree();
+        } else {
+          this.$message({
+            message: "请填写完整内容",
+            type: "error",
+            center: "true"
+          });
+        }
+      } else if (step == 4) {
+        let flag = true;
+        let d = [];
+        fdFour.forEach(element => {
+          if (
+            !element.NodeName &&
+            !element.IntervalTime &&
+            !element.ProcedureId
+          ) {
+            flag = false;
+          }
+        });
+
+        if (flag) {
+          console.log(fdFour);
+          this.setLIstFour(fdFour);
+        } else {
+          this.$message({
+            message: "请填写完整内容",
+            type: "error",
+            center: "true"
+          });
+        }
+      } else if (step == 5) {
+        let flag = true;
+        let d = [];
+        fdFour.forEach(element => {
+          if (
+            !element.NodeName &&
+            !element.IntervalTime &&
+            !element.ProcedureId
+            // && !fdFour[i].FrontNode
+          ) {
+            flag = false;
+          }
+        });
+        if (flag) {
+          this.setLIstFour(fdFour);
+        } else {
+          this.$message({
+            message: "请填写完整内容",
+            type: "error",
+            center: "true"
+          });
+        }
+      }
+    },
+    // 获取焦点
+    onFocus(index, i) {
+      console.log(index, i, this.fromData.three.body);
+      let data = this.fromData.three.body;
+      let arr = [];
+      data.forEach((element, index) => {
+        element.data.forEach((el, i) => {
+          data[index].data[i]["isClick"] = false;
+        });
+        arr.push(element);
+      });
+      arr[index].data[i]["isClick"] = true;
+      this.fromData.three.body = arr;
+    },
+    loadIng() {
+      this.load();
+      this.hasClick = false;
+    },
+    loadDone() {
+      this.$toast.clear();
+      this.hasClick = true;
+    },
+    // 获取--楼层类型---1
+    getLIstOne() {
+      this.loadIng();
+      this.ajax(
+        get_floor_list,
+        [{ ProjectID: this.projectid }],
+        res => {
+          this.loadDone();
+          this.fromData.one.length = 0;
+          if (res) {
+            this.fromData.one = res;
+          } else {
+            this.addLIstOne();
+          }
+        },
+        res => {
+          this.fromData.one.length = 0;
+          this.addLIstOne();
+        }
+      );
+    },
+    // 添加--楼层类型---1
+    addLIstOne() {
+      this.fromData.one.push({
+        Name: "",
+        Describe: "",
+        ProjectID: this.projectid,
+        FloorTypeId: ""
+      });
+      console.log("添加");
+    },
+    // 修改--楼层类型---1
+    setLIstOne(par) {
+      this.loadIng();
+      this.ajax(set_floor_list, [par], res => {
+        this.loadDone();
+        this.fromData.one = res;
+        this.$message({
+          message: "操作成功！",
+          type: "success",
+          center: "true"
+        });
+        // 进入下一步
+        this.onNextStep();
+      });
+    },
+    // 删除--楼层类型---1
+    delLIstOne(i) {
+      this.loadIng();
+      let ID = this.fromData.one[i].ID;
+      this.ajax(del_floor_list, [{ ID }], res => {
+        this.loadDone();
+        this.fromData.one.splice(i, 1);
+        this.$message({
+          message: "操作成功！",
+          type: "success",
+          center: "true"
+        });
+      });
+    },
+
+    // 获取--工序---2
+    getLIstTwo() {
+      this.loadIng();
+      this.ajax(
+        get_process_list,
+        [{ ProjectID: this.projectid }],
+        res => {
+          this.loadDone();
+          this.fromData.two.length = 0;
+          if (res) {
+            this.fromData.two = res;
+            console.log("工序类型", this.fromData.two);
+            return res;
+          } else {
+            this.addLIstTwo();
+          }
+        },
+        res => {
+          this.fromData.two.length = 0;
+          this.addLIstTwo();
+        }
+      );
+    },
+    // 添加--工序---2
+    addLIstTwo() {
+      this.fromData.two.push({
+        ProcedureId: "",
+        ProcedureName: "基础工程",
+        Describe: "",
+        ModelMatching: "",
+        ProjectID: this.projectid
+      });
+      console.log("添加");
+    },
+    // 修改--工序---2
+    setLIstTwo(par) {
+      this.loadIng();
+      this.ajax(set_process_list, [par], res => {
+        this.loadDone();
+        this.$message({
+          message: "操作成功！",
+          type: "success",
+          center: "true"
+        });
+        this.fromData.two = res;
+        this.onNextStep();
+        console.log("修改");
+      });
+    },
+    // 删除--工序---2
+    delLIstTwo(i) {
+      this.loadIng();
+      let ProcedureId = this.fromData.two[i].ProcedureId;
+      console.log(ProcedureId);
+      this.ajax(del_process_list, [{ ProcedureId }], res => {
+        this.loadDone();
+        this.fromData.two.splice(i, 1);
+        this.$message({
+          message: "操作成功！",
+          type: "success",
+          center: "true"
+        });
+      });
+    },
+
+    // 获取下拉-- 时间---3
+    getPullThree() {
+      this.foundation = [];
+      this.ajax(pull_date_list, [{ ProjectID: this.projectid }], res => {
+        this.foundation = res;
+      });
+    },
+    // 获取--时间---3
+    getLIstThree() {
+      this.getPullThree();
+      this.fromData.three.body.length = 0;
+      this.fromData.three.head.length = 0;
+
+      this.fromData.one.forEach((el, index) => {
+        this.fromData.three.head.push(el);
+      });
+      this.fromData.two.forEach((el, i) => {
+        let item = new Object({ name: "", ProcedureId: "", data: [] });
+        item.name = el.ProcedureName;
+        item.ProcedureId = el.ProcedureId;
+        this.fromData.one.forEach((element, index) => {
+          if (el.ProcedureName == "基础工程") {
+            item.data.push({
+              ProjectID: element.ProjectID,
+              ProcedureId: el.ProcedureId,
+              TimeId: "",
+              Timelimit: [],
+              ProcedureName: el.ProcedureName,
+              status: true
+            });
+          } else {
+            item.data.push({
+              ProjectID: element.ProjectID,
+              ProcedureId: el.ProcedureId,
+              TimeId: "",
+              Timelimit: "",
+              ProcedureName: el.ProcedureName,
+              status: false
+            });
+          }
+        });
+        this.fromData.three.body.push(item);
+      });
+      this.loadIng();
+      this.ajax(get_date_list, [{ ProjectID: this.projectid }], res => {
+        this.loadDone();
+        if (res && res.length > 0) {
+          this.fromData.three.body.forEach((element, i) => {
+            element.data.forEach(el => {
+              res.forEach(ele => {
+                if (
+                  el.ProjectID == ele.ProjectID &&
+                  el.ProcedureId == ele.ProcedureId
+                ) {
+                  if (el.ProcedureName == "基础工程") {
+                    (el.TimeId = ele.TimeId), (el.Timelimit = [ele.Timelimit]);
+                  } else {
+                    (el.TimeId = ele.TimeId), (el.Timelimit = ele.Timelimit);
+                  }
+                }
+              });
+            });
+          });
+        }
+      });
+    },
+    // 修改--时间---3
+    setLIstThree() {
+      this.loadIng();
+      let par = [];
+      let ProjectID = this.projectid;
+      this.fromData.three.body.forEach(element => {
+        element.data.forEach(item => {
+          if (typeof item.Timelimit == "object") {
+            item.Timelimit = sum(item.Timelimit);
+            item.status = false;
+            ProjectID
+          }
+          par.push(item);
+        });
+      });
+      this.ajax(set_date_list, [par], res => {
+        this.loadDone();
+        this.$message({
+          message: "操作成功！",
+          type: "success",
+          center: "true"
+        });
+        this.onNextStep();
+        console.log("修改");
+      });
+    },
+    // 删除--时间---3
+    delLIstThree(i, ProcedureId) {
+      this.loadIng();
+      this.ajax(del_date_list, [{ ProcedureId }], res => {
+        this.fromData.three.body.splice(i, 1);
+        this.loadDone();
+        console.log("删除");
+        this.$message({
+          message: "操作成功！",
+          type: "success",
+          center: "true"
+        });
+      });
+    },
+
+    // 前置下拉--标准工序---4
+    pullaLIstFour() {
+      this.afterPull = [];
+      this.ajax(pullb_standard_list, [{ ProjectID: this.projectid }], res => {
+        this.afterPull = res;
+        console.log("前置节点下拉", this.afterPull);
+      });
+    },
+    // 获取--标准工序---4
+    getLIstFour() {
+      this.loadIng();
+      this.fromData.four.length = 0;
+      this.relevancePull = [];
+      this.fromData.two.forEach(element => {
+        this.relevancePull.push(element);
+      });
+      this.ajax(
+        get_standard_list,
+        [{ ProjectID: this.projectid }],
+        res => {
+          this.loadDone();
+          if (res) {
+            res.forEach(element => {
+              this.relevancePull.forEach(ele => {
+                if (element.ProcedureId == ele.ProcedureId) {
+                  element.ProcedureId = ele.ProcedureName;
+                }
+              });
+            });
+            this.fromData.four = res;
+          } else {
+            this.addLIstFour();
+          }
+        },
+        res => {
+          this.addLIstFour();
+        }
+      );
+    },
+    // 添加--标准工序---4
+    addLIstFour() {
+      let ProjectID = this.projectid;
+      this.fromData.four.push({
+        NodeName: "",
+        FrontNode: "/",
+        IntervalTime: "",
+        ProcedureId: "",
+        StanProcedureId: "",
+        ProjectID
+      });
+      console.log("添加");
+    },
+    // 修改--标准工序---4
+    setLIstFour(par) {
+      this.loadIng();
+      this.ajax(
+        set_standard_list,
+        [par],
+        res => {
+          if (this.step == 5) {
+            this.$emit("onClose", false);
+            this.step = 1;
+            this.foundation = [];
+            this.afterPull = [];
+            this.relevancePull = [];
+            this.fromData = {
+              one: [],
+              two: [],
+              three: { head: [], body: [] },
+              four: []
+            };
+            this.$emit("onSetTile", "新增进度方案");
+          }
+          if (this.step == 4) {
+            this.pullaLIstFour();
+            this.onNextStep();
+          }
+          console.log("修改");
+          this.loadDone();
+          this.$message({
+            message: "操作成功！",
+            type: "success",
+            center: "true"
+          });
+        },
+        res => {
+          this.$message({
+            message: "提交失败",
+            type: "error",
+            center: "true"
+          });
+        }
+      );
+    },
+    // 删除--标准工序---4
+    delLIstFour(i) {
+      let StanProcedureId = this.fromData.four[i].StanProcedureId;
+      if (!StanProcedureId) {
+        this.fromData.four.splice(i, 1);
+      } else {
+        this.loadIng();
+        this.ajax(del_standard_list, [{ StanProcedureId }], res => {
+          this.fromData.four.splice(i, 1);
+          this.loadDone();
+          console.log("删除");
+        });
+      }
+    },
+    // 接口
+    ajax(ajaxFn, param, handle, reserve) {
+      ajaxFn(...param).then(res => {
+        if (res.StatusCode == 200) {
+          handle(res.Detiel);
+        } else {
+          if (typeof reserve == "function") {
+            reserve();
+          }
+        }
+      });
+    }
+  },
+  watch: {
+    isShow(v, o) {
+      if (v) {
+        this.getLIstOne();
+      }
+      console.log(v, o);
+    },
+    step(v, o) {
+      // console.log(v, o);
+      // this.onTitle(v);
+    }
+  }
+};
+</script>
+<style>
+.setting-content .el-input__suffix {
+  width: 50px;
+  height: 40px;
+  background: rgba(67, 80, 137, 1);
+  border-radius: 0px 4px 4px 0px;
+  right: 0px;
+}
+.setting-content .el-input__suffix .el-select__caret {
+  color: #ffffff;
+}
+</style>
+
+<style scoped lang='stylus'>
+@import '../../base/base.css';
+
+.setting-container {
+  width: 100%;
+  height: 94%;
+
+  .setting-content {
+    height: 80%;
+    padding: 0 30px;
+    overflow-y: auto;
+
+    .el-input__suffix {
+      width: 50px;
+      height: 40px;
+      background: rgba(67, 80, 137, 1);
+      border-radius: 0px 4px 4px 0px;
+    }
+
+    .setting-tab {
+      background-color: rgba(244, 246, 255, 1);
+
+      .tab-col-warp {
+        padding: 0 15px;
+        height: 50px;
+      }
+
+      .w108 {
+        width: 108px;
+      }
+
+      .setting-tab-body {
+        .setting-tab-body-item {
+          font-size: 18px;
+
+          .setting-tab-body-item-rm {
+            width: 108px;
+            height: 50px;
+            font-family: SourceHanSansCN-Normal;
+            font-weight: 400;
+            color: rgba(71, 117, 202, 1);
+            border-bottom: 1px solid #C5CAD7;
+          }
+
+          .setting-tab-body-item-name {
+            width: 108px;
+            height: 50px;
+            border-bottom: 1px solid #C5CAD7;
+            font-family: SourceHanSansCN-Medium;
+            font-weight: 500;
+            color: rgba(51, 51, 51, 1);
+          }
+
+          .setting-tab-body-item-col-i {
+            background: rgba(234, 237, 250, 1);
+            font-family: SourceHanSansCN-Normal;
+            font-weight: 400;
+            color: rgba(51, 51, 51, 1);
+
+            .setting-tab-body-item-input {
+              border-bottom: 1px solid #C5CAD7;
+              height: 50px;
+              text-align: center;
+
+              .isClick {
+                .el-input__inner {
+                  text-align: center;
+                }
+              }
+
+              .isClickb {
+                display: none;
+
+                .el-input__inner {
+                  text-align: center;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      .setting-tab-head {
+        .setting-tab-head-angle {
+          width: 108px;
+          height: 50px;
+          font-size: 12px;
+          font-family: SourceHanSansCN-Normal;
+          font-weight: 400;
+          color: rgba(51, 51, 51, 1);
+          border-bottom: 1px solid #1E2637;
+        }
+
+        .setting-tab-head-item {
+          font-size: 18px;
+          font-family: SourceHanSansCN-Medium;
+          font-weight: 500;
+          color: rgba(51, 51, 51, 1);
+          border-bottom: 1px solid #1E2637;
+          height: 50px;
+        }
+
+        .setting-tab-head-operate {
+          width: 108px;
+          height: 50px;
+          font-size: 18px;
+          font-family: SourceHanSansCN-Medium;
+          font-weight: 500;
+          color: rgba(51, 51, 51, 1);
+          border-bottom: 1px solid #1E2637;
+        }
+      }
+    }
+
+    .stepOne-item {
+      margin-top: 15px;
+    }
+
+    .stepOne-title-name {
+      width: 290px;
+    }
+
+    .stepOne-title-nameb {
+      width: 220px;
+    }
+
+    .stepOne-title-describe {
+      flex: 1;
+      margin: 0 13px 0 20px;
+    }
+
+    .stepOne-title-handle {
+      width: 54px;
+
+      .addImg img {
+        width: 54px;
+        height: 54px;
+        display: block;
+      }
+
+      .delImg img {
+        width: 50px;
+        height: 50px;
+        display: block;
+      }
+    }
+
+    .stepOne-title {
+      border-bottom: 1px solid #E5E5E5;
+      height: 50px;
+      font-size: 18px;
+      font-family: SourceHanSansCN-Medium;
+      font-weight: 500;
+      color: rgba(51, 51, 51, 1);
+    }
+  }
+}
+
+.tab-sub-btn {
+  font-size: 16px;
+  font-family: SourceHanSansCN-Medium;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+  margin-top: 23px;
+
+  .cancel {
+    background: rgba(153, 153, 153, 1);
+    width: 120px;
+    height: 50px;
+    box-shadow: 0px 2px 4px 0px rgba(161, 192, 250, 1);
+    border-radius: 4px;
+  }
+
+  .affirm {
+    background: rgba(71, 117, 202, 1);
+    width: 120px;
+    height: 50px;
+    box-shadow: 0px 2px 4px 0px rgba(161, 192, 250, 1);
+    border-radius: 4px;
+    margin-left: 20px;
+  }
+}
+</style>

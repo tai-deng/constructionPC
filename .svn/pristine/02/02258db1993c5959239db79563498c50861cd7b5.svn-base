@@ -1,0 +1,685 @@
+<template>
+  <div class="organPeople">
+    <!-- 岗位配置 -->
+    <div class="organ_all_list">
+      <div class="collabora_title">Step3.2 岗位配置 <span @click="addprop" style="float:right;width:20px"><i class="el-icon-circle-plus"></i></span></div>
+      <div class="company_div">
+        <div class="company_div_title">
+          <p>*注：此处岗位配置数据为用户注册时自动生成</p>
+          <p class="company_div_title_left">如需编辑请到项目配置中修改</p>
+        </div>
+        <headerPeople :peopleList='peopleList'></headerPeople>  
+        
+      </div>
+    </div>
+    <!-- 项目组织框架图 -->
+    <div class="organ_all_img">
+      <div class="collabora_title">Step3.3 项目组织架构图</div>
+      <div class="organ_all_img_body">
+        <p><el-button  class="downLoadBtn"  @click="timeToDownLine()">下载</el-button></p>
+        <vo-basic
+          v-if="isShowVoB"
+          ref="chart"
+          :data="chartData"
+          export-filename="testpic"
+          :pan="true"
+          :zoom="true"
+        ></vo-basic>
+        <!-- :export-button="true"
+        exportButtonName="下载" -->
+       
+        <!-- <a :href="screenUrl" class="down" download="下载"  @click="timeToDownLine()">下载</a> -->
+        
+        <!-- <echartImg :plan_table="chartData"></echartImg> -->
+  
+    
+      </div>
+    </div>
+    <!-- 新增人员弹窗 -->
+    <div class="popup-center-item flex-row" v-if="isAdd">
+        <el-form
+          :model="addUserParams"
+          :rules="rules"
+          ref="ruleForm"
+          label-width="100px"
+          class="popup-center-item-form flex-column"
+        >
+        <p class="fack">新增人员 <span style="float:right;" @click="onClose"><i class="el-icon-close"></i></span></p>
+    <div class="popup-center-item-form-content" >
+            <template>
+              <el-form-item label="所属公司" prop="iSys_Company_ID">
+                <el-select v-model="addUserParams.iSys_Company_ID" placeholder="选择所属公司">
+                  <el-option :label="org.Name" :value="org.ID" v-for="org in orgList" :key="org.index"></el-option>
+                </el-select>
+              </el-form-item>
+
+              <el-form-item label="所属部门" prop="iSys_Dep_ID">
+                <el-select v-model="addUserParams.iSys_Dep_ID" placeholder="选择所属部门">
+                  <el-option :label="dep.text" :value="dep.id" v-for="dep in departmentList" :key="dep.index"></el-option>
+                </el-select>
+              </el-form-item>
+
+              <el-form-item label="用户账号" prop="UserName">
+                <el-input v-model="addUserParams.UserName" placeholder="请输入用户账号" key="personnel-account"></el-input>
+              </el-form-item>
+
+              <el-form-item label="用户姓名" prop="Name">
+                <el-input v-model="addUserParams.Name" placeholder="请输入用户姓名" key="personnel-username"></el-input>
+              </el-form-item>
+
+              <el-form-item label="联系电话" prop="Tel">
+                <el-input v-model="addUserParams.Tel" placeholder="请输入联系号码" key="personnel-phone"></el-input>
+              </el-form-item>
+
+              <el-form-item label="微信号码" prop="WeChatNo">
+                <el-input v-model="addUserParams.WeChatNo" placeholder="请输入微信号码" key="personnel-wechat"></el-input>
+              </el-form-item>
+
+              <el-form-item label="邮箱" prop="Email">
+                <el-input v-model="addUserParams.Email" placeholder="请输入邮箱" key="personnel-email"></el-input>
+              </el-form-item>
+
+              <el-form-item label="所负责区域" prop="Building">
+                <el-select v-model="addUserParams.Building" placeholder="请选择负责区域">
+                  <el-option :label="area.text" :value="area.id" v-for="area in areaList" :key="area.index"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item class="popup-center-item-form-btn">
+            <el-button class="popup-center-item-form-btn-cancel" @click="onClose">取消</el-button>
+            <el-button
+              class="popup-center-item-form-btn-affirm"
+              type="primary"
+              @click="submitForm('ruleForm')"
+            >确认</el-button>
+          </el-form-item>
+            </template>
+
+
+
+  </div>
+</el-form>
+      </div>
+
+    </div>
+
+</template>
+<script>
+import { VoBasic } from "vue-orgchart";
+import headerPeople from './headerPeople'
+import html2canvas from 'html2canvas'
+import {GetPositionConfig,AddRole,UpdateRole,AddDept,GetOrgList,UpdateDept,GetDeptList, GetBuilding,AddUser,MdfUser,GetLoginUserInfo,GetTransferUserList,
+DisableUserByIds} from '@/api/api.js'
+import {infaces} from '../collaborativeSetting_modules/interfaces.js'
+// import echartImg from './echartImg'
+// import Vue from 'vue'
+export default {
+  data() {
+    return {
+      ruleForm: {
+        name: "",
+        region: ""
+      },
+      //列表--所有的人员名单里面要添加 show:false ，并通过这个来控制通讯录的显示隐藏问题
+      peopleList: [],
+      chartData:[],
+      isShowVoB:false,
+
+      showImg:'',
+      addUserParams:{//新增人员参数
+        ProjectID:localStorage.getItem('projectid'),
+        UserName:'',
+        Name:'',
+        Tel:'',
+        Email:'',
+        WeChatNo:'',
+        iSys_Dep_ID:'',
+        iSys_Company_ID:'',
+        Building:'',
+        CurUserID:''
+      },
+      orgList:[],//公司列表
+      departmentList:[],//部门列表
+      areaList:[],//负责区域列表
+      isAdd:false,//是否显示新增人员弹窗
+      rules: {
+        //表单效验
+        iSys_Company_ID: [
+          { required: true, message: "请选择所属公司", trigger: "change" }
+        ],
+        iSys_Dep_ID: [
+          { required: true, message: "请选择所属部门", trigger: "change" }
+        ],
+
+        UserName: [
+          { required: true, message: "请输入用户帐号", trigger: "blur" }
+        ],
+        Name: [
+          { required: true, message: "请输入用户姓名", trigger: "blur" }
+        ],
+        Tel: [
+          { required: true, message: "请选择联系电话", trigger: "blur" }
+        ],
+        WeChatNo: [
+          { required: true, message: "请输入微信号", trigger: "blur" }
+        ],
+        Email: [
+          { required: true, message: "请输入邮箱", trigger: "blur" }
+        ],
+        Building: [
+          { required: true, message: "请选择负责区域", trigger: "change" }
+        ]
+      },
+    };
+  },
+  components: { VoBasic , headerPeople},
+  // components: { echartImg , headerPeople},
+  created() {
+    this.getPeople();  
+    this.getOrg()
+    this.getBuild()
+  },
+  computed:{
+    iSys_Company_ID(){
+      return this.addUserParams.iSys_Company_ID
+    }
+  },
+  watch:{
+    iSys_Company_ID(orgId){
+      console.log(orgId)
+      this.getDept(orgId)
+    },
+  },
+  methods: {
+    async getPeople(){
+      this.load();
+      let res = await this.Request(GetPositionConfig({projectId:localStorage.getItem('projectid')}))
+        if(res.StatusCode=='200'){
+          this.peopleList=[];
+         
+          // 岗位配置
+          this.peopleList=res.Detiel[0].DeptList;
+          for(var i=0;i<this.peopleList.length;i++){
+            for(var x=0;x<this.peopleList[i].UserRoleList.length;x++){
+              var key = "show";
+              var value = false;
+              this.peopleList[i].UserRoleList[x][key]=value;
+              // Vue.set(this.peopleList[i].UserRoleList[x],show,false)
+            }
+          }
+          console.log(this.peopleList);
+
+          //项目组织架构图---树状图
+          var text=''
+          this.peopleList[0].UserRoleList.forEach(element => {
+               text+=element.cName+','
+          });
+          console.log(text)
+          this.chartData={
+            name:this.peopleList[0].DepartmentName,
+            children:[{
+              // name:this.peopleList[0].UserRoleList[0].cName+'/'+this.peopleList[0].UserRoleList[1].cName,
+              name:text.slice(0,text.length-1),
+              children:[]
+            }]
+          }
+          for(var y=1;y<this.peopleList.length;y++){
+            var ai={name:this.peopleList[y].DepartmentName,children:[]}
+            for(var z=0;z<this.peopleList[y].UserRoleList.length;z++){
+                var list={name:this.peopleList[y].UserRoleList[z].cName}
+                ai.children.push(list);
+            }
+            this.chartData.children[0].children.push(ai);
+          }
+          this.isShowVoB=true;
+          setTimeout(()=>{
+            this.showMidden()
+          },1500)
+
+
+          //项目组织架构图---树状图
+          // this.chartData={
+          //   name:res.Detiel[0].ProjMgr.Name,
+          //   children:[{
+          //     name:res.Detiel[0].DeputyProMgr.Name,
+          //     children:[]
+          //   }]
+          // };
+          // for(var y=0;y<res.Detiel[0].DeptList.length;y++){
+          //   var ai={name:res.Detiel[0].DeptList[y].DepartmentName,children:[]};
+          //   for(var z=0;z<res.Detiel[0].DeptList[y].UserRoleList.length;z++){
+          //       var list={name:res.Detiel[0].DeptList[y].UserRoleList[z].cName}
+          //       ai.children.push(list);
+          //   }
+          //   this.chartData.children[0].children.push(ai);
+          // }
+          // // }
+          // this.isShowVoB=true;
+          // setTimeout(()=>{
+          //   this.showMidden()
+          // },1500)
+          
+        }else{
+          this.$message({
+              type: "error",
+              message: res.Message,
+              center: "true"
+          });
+        }
+        this.$toast.clear();
+        
+    },
+
+    // 获取公司列表 
+    getOrg(){
+      let params = {
+        projectId: localStorage.getItem("projectid")
+      };
+      infaces(this, GetOrgList, params).then(res => {
+        console.log(res);
+        this.orgList= res.Detiel
+      });
+    },
+    // 获取楼栋列表
+    getBuild(){
+      let params = {
+        projectId: localStorage.getItem("projectid")
+      };
+      infaces(this, GetBuilding, params).then(res => {
+        console.log(res);
+        this.areaList= res.Detiel
+      });
+    },
+    // 按公司获取部门数据列表
+    getDept(orgId){
+      let params = {
+        orgId
+      };
+      infaces(this, GetDeptList, params).then(res => {
+        console.log(res);
+        this.departmentList= res.Detiel
+      });
+    },
+    //点击下载图片
+    timeToDownLine(){
+        document.querySelector('.vo-basic ').style.width=2400+'px';  //vo-basic   orgchart>table:first-child
+        html2canvas(document.querySelector('.orgchart>table:first-child'),{
+            backgroundColor: null
+        }).then((canvas) => {
+            let dataURL = canvas.toDataURL("image/png");
+            this.fileDownload(dataURL);
+        });
+    },
+    //显示中间区域
+    showMidden(){
+        var width=document.querySelector('.orgchart>table:first-child').clientWidth;
+        var minWidth=document.querySelector('.orgchart').clientWidth;
+        document.querySelector('.orgchart>table:first-child').style.left=-(width-minWidth)/2+'px';
+    },
+    //下载图片
+    fileDownload(downloadUrl) {
+      let aLink = document.createElement("a");
+      aLink.style.display = "none";
+      aLink.href = downloadUrl;
+      aLink.download = "组织架构图.png";
+      //添加到页面上-触发点击-然后移除
+      document.body.appendChild(aLink);
+      aLink.click();
+      document.body.removeChild(aLink);
+    },
+    /**
+     * 新增人员弹窗
+     */
+    addprop(){
+      console.log('新增人员弹窗')
+      this.isAdd = true
+    },
+    onClose(){
+      this.isAdd = false
+      this.addUserParams={//新增人员参数
+        ProjectID:localStorage.getItem('projectid'),
+        UserName:'',
+        Name:'',
+        Tel:'',
+        Email:'',
+        WeChatNo:'',
+        iSys_Dep_ID:'',
+        iSys_Company_ID:'',
+        Building:'',
+        CurUserID:''
+      }
+    },
+    /**
+     * 确定
+     */
+    submitForm(formName) {
+      console.log(this.ruleForm)
+      this.$refs[formName].validate(valid => {
+        console.log(valid)
+        let param={}
+        if (valid) {
+          console.log('提交')
+          // let params = {
+          //   orgId
+          // };
+          infaces(this, AddUser, this.addUserParams).then(res => {
+            console.log(res);
+            // this.departmentList= res.Detiel
+            this.$message({type:'success',message:'提交成功',center:"true"})
+            this.isAdd = false;
+            //添加数据
+            this.getPeople();
+          });
+
+            
+        } else {
+          console.log("error submit!!");
+          return false;
+        }
+      });
+    },
+
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.organPeople {
+  display: inline-block;
+  height: 15rem;
+  width: 74%;
+  margin-left: 1%;
+  float: left;
+  box-sizing: border-box;
+  
+
+  .organ_all_list {
+    width: 45%;
+    height: 100%;
+    box-sizing: border-box;
+    display: inline-block;
+    background-color: #ffffff;
+    overflow: hidden;
+    margin-right: 1%;
+    .collabora_title {
+      background: #435089;
+      height: 40px;
+      line-height: 40px;
+      padding: 0 20px;
+      font-size: 18px;
+      color: #fff;
+      font-weight: 400;
+    }
+
+    .company_div {
+      overflow-y: scroll;
+      overflow-x: hidden;
+      width: 100%;
+      height: 15rem;
+
+      .company_div_title {
+        color: #B2B2B2;
+        font-size: 18px;
+        padding-left: 20px;
+        padding-top: 20px;
+
+        .company_div_title_left {
+          padding-left: 40px;
+        }
+      }
+    }
+  }
+  
+  .organ_all_img {
+    width: 54%;
+    height: 100%;
+    box-sizing: border-box;
+    display: inline-block;
+    background-color: #ffffff;
+    overflow: hidden;
+    
+    .collabora_title {
+      background: #435089;
+      height: 40px;
+      line-height: 40px;
+      padding: 0 20px;
+      font-size: 18px;
+      color: #fff;
+      font-weight: 400;
+    }
+  }
+}
+.popup-center-item {
+      height: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background-color: rgba(0,0,0,.6);
+      z-index 200
+      .popup-center-item-form {
+        width: 560px;
+        // height: 496px;
+        margin: 0 auto;
+        /* box-sizing: border-box; */
+        margin-top: 100px;
+        background-color: white;
+        padding: 0 50px 50px;
+
+        .popup-center-item-form-btn {
+          font-size: 16px;
+          font-family: SourceHanSansCN-Medium;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 1);
+
+          .popup-center-item-form-btn-cancel {
+            width: 120px;
+            height: 40px;
+            background: rgba(153, 153, 153, 1);
+            box-shadow: 0px 2px 4px 0px rgba(81, 81, 81, 0.5);
+            border-radius: 4px;
+            font-size: 16px;
+            font-family: SourceHanSansCN-Medium;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 1);
+            border-width: 0;
+            margin-right: 30px;
+          }
+
+          .popup-center-item-form-btn-affirm {
+            width: 120px;
+            height: 40px;
+            background: rgba(71, 117, 202, 1);
+            box-shadow: 0px 2px 4px 0px rgba(161, 192, 250, 1);
+            border-radius: 4px;
+          }
+        }
+
+        .popup-center-item-form-content {
+          .disabled-label {
+            font-size: 24px;
+            font-family: SourceHanSansCN-Medium;
+            font-weight: 500;
+            color: rgba(252, 96, 92, 1);
+          }
+
+          .disabled-form-item {
+            margin-top: 34px;
+          }
+        }
+      }
+    } 
+</style>
+
+<style>
+.popup-center-item-form-content  .disabled-label {
+
+      font-size: 24px;
+      font-family: SourceHanSansCN-Medium;
+      font-weight: 500;
+      color: rgba(252, 96, 92, 1);
+}
+ .fack{
+      
+        font-size: 24px;
+    width: 100%;
+    /* background: linear-gradient(225deg, rgba(105, 86, 255, 1) 0%, rgba(84, 138, 255, 1) 100%); */
+    text-align: center;
+    line-height: 60px; 
+    margin-bottom: 20px;  
+ }
+   .popup-center-item-form-content  .disabled-form-item {
+
+      margin-top: 34px;
+   }
+    
+.organ_all_img_body {
+  width:100%; height:600px;
+}
+.organ_all_img_body .downLoadBtn {
+  background-color: #fda143;
+  color: #fff;
+  width: 120px;
+  height: 40px;
+  padding: 11px 40px;
+  float: right;
+  margin-top: 20px;
+  margin-right:40px;
+}
+.organ_all_img_body .vo-basic .title {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #f6f6f6;
+  border-radius: 6px;
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+  line-height: 40px;
+  background-color: #fff;
+  color: #333;
+}
+/* 180-68 */
+.organ_all_img_body .vo-basic .node {
+  width: 90px;    
+  height: 50px;
+}
+
+.organ_all_img_body .vo-basic .orgchart .node.focused,
+.organ_all_img_body  .vo-basic .orgchart .node:hover {
+  background-color: rgba(71, 117, 202, 0.1);
+}
+.organPeople .organ_all_img_body .vo-basic .orgchart > table > tr.nodes>td>table>tr:first-child .title {
+  width: 180px;    
+  height: 0.74rem;
+  position: relative;
+  left:-60px;
+}
+.organ_all_img_body .vo-basic .orgchart > table > tr:first-child .title {
+  background-color: #4775ca;
+  color: #fff;
+}
+.organ_all_img_body #chart-container {
+  height: 560px;
+  padding-top: 50px;
+  box-sizing: border-box;
+}
+
+
+.company_div::-webkit-scrollbar{
+  /*滚动条整体样式*/
+  width: 6px; /*高宽分别对应横竖滚动条的尺寸*/
+  height: 1px;
+}
+.company_div::-webkit-scrollbar-thumb{
+  /*滚动条里面小方块*/
+  border-radius: 10px;
+  width: 5px;
+  -webkit-box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.1);
+  background: #ccc;
+}
+.company_div::-webkit-scrollbar-track{
+  /*滚动条里面轨道*/
+  -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background: #ededed;
+}
+/* .vo-basic{
+  overflow: scroll!important;
+} */
+
+.organ_all_img_body .orgchart>table:first-child {
+    margin: 0.37037rem auto;
+    position: absolute;
+    /* left: -650%; */
+}
+
+.popup-center-item-form-content .el-select .el-input__inner {
+  color: #666;
+}
+
+.popup-center-item-form-content .el-select {
+  width: 100%;
+  height: 40px;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+  border-radius: 4px;
+}
+.popup-center-item-form-content .el-input--suffix .el-input__inner {
+  border: none;
+}
+.popup-center-item-form-content .el-input__suffix {
+  background: rgba(67, 80, 137, 1);
+  border-radius: 0px 4px 4px 0px;
+  right: 0;
+  width: 40px;
+}
+.popup-center-item-form-content .el-icon-arrow-up:before {
+  /* content: "\e60b"; */
+  content: "\e60c";
+  color: rgba(255, 255, 255, 1);
+}
+.popup-center-item-form-content .center-select {
+  margin: 0 20px;
+}
+.popup-center-item-form-content
+  .input-number
+  .el-input-group--append
+  .el-input__inner,
+.popup-center-item-form-content .el-input-group__prepend {
+  height: 40px;
+  background: rgba(248, 248, 248, 1);
+  border-radius: 4px;
+  border: 1px solid rgba(229, 229, 229, 1);
+  border-right: 1px dashed #979797;
+}
+.popup-center-item-form-content .el-input__inner {
+  background: rgba(248, 248, 248, 1);
+  border-radius: 4px;
+  border: 1px solid rgba(229, 229, 229, 1);
+}
+.popup-center-item-form-btn .el-form-item__content {
+  margin-left: 0 !important;
+  margin-top: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.disabled-form-item .el-form-item__content {
+  margin-left: 0 !important;
+}
+.popup-center-item-form-btn .el-form-item::after,
+.popup-center-item-form-btn .el-form-item::before {
+  display: none;
+}
+.subjoin {
+  margin-top: -20px;
+}
+.popup-center-b{
+  height: 481px !important;
+
+}
+.popup-center-item-form-b {
+  width: 408px !important;
+  height: 200px !important;
+}
+.popup-center-item-b {
+  height: 431px !important;
+}
+</style>

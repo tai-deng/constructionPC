@@ -1,0 +1,78 @@
+
+//范围管理 楼栋 --> 专业 --> 楼层
+const userID = localStorage.getItem("userId"); //用户ID
+const projectid = localStorage.getItem("projectid");
+export const dataResetBSF = (that, category) => {
+    if (category == 'BuildName') {
+        that.FloorbyList = []; // 楼层下拉
+        that.SpecialtyList = []; // 专业下拉
+        that.filterForm.Specialty = ""; // 专业
+        that.filterForm.Floor = ""; // 楼层
+        that.filterForm.Name = ""; // 查询内容
+    } else if (category == 'Specialty') {
+        that.FloorbyList = []; // 楼层下拉
+        that.filterForm.Floor = ""; // 楼层
+        that.filterForm.Name = ""; // 查询内容
+    } else if (category == 'Floor') {
+        that.filterForm.Name = ""; // 查询内容
+    }
+}
+
+// 获取楼栋
+export const getBuildList = (that, GetBuilding, cb) => {
+    // that.load();
+    that.buildLoading = true;
+    GetBuilding({ projectid: projectid }).then(res => {
+        // that.$toast.clear();
+        that.buildLoading = false;
+        if (res.StatusCode == 200) {
+            that.BuildNameList = res.Detiel;
+            if (typeof cb == 'function')
+                cb()
+        }
+    }, () => { that.buildLoading = false; });
+}
+
+// 楼栋 -> 获取专业
+export const getSpecialtyList = (that, GetSpecialtybyBuilding) => {
+    // that.load();
+    that.specLoading = true;
+    GetSpecialtybyBuilding({ projectid: projectid, building: that.filterForm.BuildName }).then(
+        res => {
+            // that.$toast.clear();
+            that.specLoading = false;
+            if (res.StatusCode == 200) {
+                that.SpecialtyList = res.Detiel;
+            }
+        }, () => { that.SpecialtyList = false; }
+    );
+}
+
+// 楼栋 -> 专业 -> 获取模型楼层
+export const getFloorList = (that, GetFloorbyBuilding) => {
+    // that.load();
+    that.floorLoading = true;
+    GetFloorbyBuilding({ projectid: projectid, building: that.filterForm.BuildName, Specialty: that.filterForm.Specialty }).then(
+        res => {
+            // that.$toast.clear();
+            that.floorLoading = false;
+            if (res.StatusCode == 200) {
+                that.FloorbyList = res.Detiel;
+            }
+        }, () => { that.floorLoading = false; }
+    );
+}
+
+// 楼栋 -> 获取项目名称
+export const getProjectNames = (that, GetProjectName) => {
+    that.load();
+    GetProjectName({ projectid: projectid, BuildName: that.buildname }).then(
+        res => {
+            that.$toast.clear();
+            if (res.StatusCode == 200) {
+                that.projectNameList = res.Detiel;
+            }
+        }
+    );
+
+}

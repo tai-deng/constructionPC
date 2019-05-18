@@ -1,0 +1,604 @@
+<!-- 清单调优qingDrab -->
+<template>
+    <div class="container-qing-drab">
+        <div class="container_head">
+            <div class="right-form">
+                <el-form :inline="true" :model="formInline" class="demo-form-inline">
+                    <!--整体模型-->
+                    <el-form-item prop="model">
+                        <el-select v-model="formData.curBuilding" placeholder="整体模型" clearable @change="buildChange">
+                            <el-option v-for="(item,index) in  buildings"
+                                    :key="index" :label="item.text" :value="item.text"
+                                   ></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <!--专业-->
+                    <el-form-item prop="region">
+                        <el-select v-model="formData.curMajor" placeholder="专业" clearable @focus="selectMajor" @change='buildChange'>
+                            <el-option v-for="(item,index) in  majortybyBuilding"
+                                    :key="index"    :label="item.text"     :value="item.text"
+                                      ></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <!--楼层-->
+                    <el-form-item prop="floor">
+                        <el-select v-model="formData.curFloor" placeholder="楼层" clearable @focus="selectFloor" @change="buildChange">
+                            <el-option v-for="(item,index) in  floorsbyBuilding"
+                                  :key="index"  :label="item.text"  :value="item.text"
+                                   ></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <!--资源类别-->
+                    <el-form-item prop="resources">
+                        <el-select v-model="formData.curResorceName" placeholder="资源类别" clearable  @change="buildChange">
+                            <el-option v-for="(item,index) in allElementResorceNames"
+                                    :key="index" :label="item"  :value="item"
+                                  ></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <!--搜索-->
+                    <el-form-item>
+                        <el-input placeholder="请输入内容"   v-model="formData.input_search">
+                          <el-button slot="append" style="border-radius:0px 4px 4px 0px;position:relative;top:2px;background-color:#435089;height:38px "
+                               @click="searchBtn">
+                               <img src="../../../assets/imgs/search_grass.png" style="position:relative;top:-1px;" alt="">
+                               </el-button>
+                        </el-input>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-input-number type="text" v-model="input_number" placeholder="请输入修正值" :controls='false' class="percent-inp" :precision="2" :step="0.1"/>
+                    </el-form-item>
+                    <el-button class="correct-btn" @click="allRemake">一键修正</el-button>
+                </el-form>
+            </div>
+            <!-- <div class="left-contain">
+                <img src="../../../assets/imgs/order_tree.png" alt="">
+            </div> -->
+        </div>
+        <div class="left_contain">
+            <div class="model-container">
+              <div ref="modelContainer" class="model-container"></div>
+            </div>
+        </div>
+        <div class="right-contain">
+                <div class="data-table">
+                    <el-table id='qing_table'
+                            :data="BIMLists"
+                            style="width:100%"
+                            @row-click="rowClick"
+                            :row-class-name="tableRowClassName"
+                            :header-cell-style="{'background-color':'#435089','color':'#ffffff'}">
+                        <!--序号-->
+                        <el-table-column  align="center" label="序号" type="index"
+                            :index="indexMethod"></el-table-column>
+                        <!--资源名称-->
+                        <el-table-column  align="center" :show-overflow-tooltip="true"
+                                prop="ResorceName"
+                                label="资源名称"
+                        ></el-table-column>
+                        <!--楼栋-->
+                        <el-table-column  align="center"
+                                prop="BuildingName"
+                                label="楼栋"
+                        ></el-table-column>
+                        <el-table-column  align="center"
+                                prop="Specialty"
+                                label="专业"
+                        ></el-table-column>
+                        <el-table-column  align="center" :show-overflow-tooltip="true"
+                                prop="Floor"
+                                label="楼层"
+                        ></el-table-column>
+                        <!--施工图预算量-->
+                        <el-table-column  align="center"
+                                prop="BIMUse"
+                                label="施工图预算量"
+                                width="94px"
+                        ></el-table-column>
+                        <!--系数-->
+                        <el-table-column label="系数"  align="center" >
+                          <template slot-scope="scope">
+                            <!-- <el-input-number type="text" v-model="scope.row.number" :controls='false' class="table_input" :precision="2" :step="0.1"></el-input-number> -->
+                            <el-input-number type="text" v-model="scope.row.xishu" @change="changeRatio(scope.row)" :controls='false' class="table_input" :precision="2" :step="0.1" :placeholder="String(scope.row.xishu)"></el-input-number>
+                          </template>
+                        </el-table-column>
+                        <!--施工预算量-->
+                        <el-table-column  align="center"
+                                prop="PlanUse"
+                                label="施工预算量"
+                        ></el-table-column>
+                        <!--差额-->
+                        <el-table-column  align="center" prop="differ" label="差额" >
+                          
+                        </el-table-column>
+                    </el-table>
+                </div>
+                
+                <!--分页-->
+                <div class="page_padding" id="qingDrab_page_padding" >
+                    <el-pagination
+                      background 
+                      layout="prev, pager, next"
+                      :prev-text="first" :next-text="last" :total="alltotal" @current-change='changPage'>
+                    </el-pagination>
+                </div>
+                <p class="careful-txt">*注：施工图工程量以“step7清单导入”最终拆分量之和为准 </p>
+            </div>
+
+    </div>
+</template>
+<!--textecmascript-6-->
+<script>
+import { GetDefaultModelId,GetBIMList,GetBuilding,GetFloorbyBuilding,GetSpecialtybyBuilding,GetAllElementResorceName,UpdatePlanUse,UpdateOnePlanUse} from '@/api/api.js'
+import { mapMutations } from "vuex";
+export default {
+   data() {
+      return {
+        // coefficient:1.00,   //系数
+        formInline: {
+          user: '',
+          region: ''},
+        formData: {
+          //表单提交对象
+          curBuilding:'',  // 选中的楼栋信息
+          curMajor:'',   // 选中的专业
+          curFloor:'',   // 选中的楼层信息
+          curResorceName:'',  // 选中的构件清单资源名称 
+          input_search:'',  //关键字
+        },
+        input_number:1,//输入修正值
+        //分页相关的事件
+        first:'上一页',
+        last:'下一页',
+        alltotal:0,//数据总条数
+        currentPage:1,//当前页码
+        defaultModelID:'', //  默认模型ID
+        BIMLists:[], //BIM列表
+        projectId:'',  // 工程ID
+        buildings:[], //模型的楼栋信息
+        floorsbyBuilding:[],  // 根据楼栋获取到的模型的楼层
+        majortybyBuilding:[],  // 根据楼栋获取到的模型的专业
+        allElementResorceNames:[],  // 构件清单资源名称 
+        curPage:0  ,//当前页码
+        // curBuilding:'',
+        // curFloor:'',
+        // curMajor:'', 
+        // curResorceName:'', 
+        highLightElementIDs:[],//高亮显示的构件
+      }
+  },
+  created(){
+    this.getBuilding()
+    this.getBIMList(1,this.formData)
+    this.getModel()
+    this.getAllElementResorceName()
+    this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          console.log(res)
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: this.highLightElementIDs, // 高亮显示的构件
+            functionNumber: [42,34] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+  },
+  //  mounted(){
+  //    this.alltotal=this.BIMLists.length
+  //  },
+   methods: {
+     ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    }),
+    // 获取模型的楼栋信息 
+    async getBuilding(){
+      this.projectId = localStorage.getItem('projectid')
+      let building = await this.Request(GetBuilding({projectid:this.projectId}))
+      console.log("%c 【楼栋信息】",'color:red',building)
+      if(building.StatusCode == 200){
+        if(building.Detiel.length!=0){
+          this.buildings=building.Detiel
+        }else{
+          this.$message({type:'error',message:'无数据',center:'true'})
+        }
+      }else{
+        this.$message({type:'error',message:building.message?building.message:'后台异常',center:'true'})
+      }
+    },
+    // 根据楼栋获取模型的专业 
+    async getSpecialtybyBuilding(val){
+      let specialtybyBuilding = await this.Request(GetSpecialtybyBuilding({projectid:this.projectId,building:val}))
+      console.log("%c 【【获取模型的楼栋信息】",'color:red',specialtybyBuilding)
+      if(specialtybyBuilding.StatusCode == 200){
+        if(specialtybyBuilding.Detiel.length!=0){
+          this.majortybyBuilding=specialtybyBuilding.Detiel
+        }else{
+          this.$message({type:'error',message:'无数据',center:'true'})
+        }
+      }else{
+        this.$message({type:'error',message:specialtybyBuilding.message?specialtybyBuilding.message:'后台异常',center:'true'})
+      }
+    },
+    // 根据楼栋获取模型的楼层
+    async getFloorbyBuilding(val){
+      let floorbyBuilding = await this.Request(GetFloorbyBuilding({projectid:this.projectId,building:val}))
+      if(floorbyBuilding.StatusCode == 200){
+        if(floorbyBuilding.Detiel.length!=0){
+          this.floorsbyBuilding=floorbyBuilding.Detiel;
+        }else{
+          this.$message({type:'error',message:'无数据',center:'true'})
+        }
+      }else{
+        this.$message({type:'error',message:floorbyBuilding.message?floorbyBuilding.message:'后台异常',center:'true'})
+      }
+    },
+    // 获取构件清单资源名称 
+    async getAllElementResorceName(){
+      let allElementResorceName = await this.Request(GetAllElementResorceName({projectid:this.projectId}))
+      console.log("%c 【【【获取构件清单资源名称】",'color:red',allElementResorceName)
+      if(allElementResorceName.StatusCode == 200){
+        if(allElementResorceName.Detiel.length!=0){
+          this.allElementResorceNames=allElementResorceName.Detiel
+        }else{
+          this.$message({type:'error',message:'无数据',center:'true'})
+        }
+      }else{
+        this.$message({type:'error',message:allElementResorceName.message?allElementResorceName.message:'后台异常',center:'true'})
+      }
+    },
+    selectMajor(){
+      console.log('【选中的楼栋】',this.formData.curBuilding)
+      this.getSpecialtybyBuilding(this.formData.curBuilding)
+    },
+    selectFloor(){
+      this.getFloorbyBuilding(this.formData.curBuilding)
+    },
+    // 选中楼层触发的事件
+    buildChange(val){
+      this.getBIMList(1,this.formData)
+    },
+    //查询模型数据
+    async getModel(){
+      //获取默认模型ID
+      let defaultModelId = await this.Request(GetDefaultModelId({projectId:this.projectId}))
+      if(defaultModelId.StatusCode == 200){
+        this.defaultModelID = defaultModelId.Result
+      }else{
+        this.$message({type:'error',message:BIMList.message?BIMList.message:'后台异常',center:'true'})
+      }
+    },
+    //  清单调优列表
+    async getBIMList(curPage,obj){
+      console.log("%c 搜索参数：",'color:red',obj)
+      let param={modelId:this.defaultModelID,projectId:this.projectId,building:obj.curBuilding,
+              specialty:obj.curMajor,floor:obj.curFloor,resourceName:obj.curResorceName,keyword:obj.input_search,pageIndex:curPage,pageSize:10}
+      let BIMList = await this.Request(GetBIMList(param))
+      console.log("%c 清单调优列表",'color:green',BIMList)
+      if(BIMList.StatusCode == 200){
+        this.BIMLists = BIMList.Detiel
+        this.alltotal = BIMList.Count
+        console.log("%c 总数",'color:blue',this.alltotal)
+        if(BIMList.Detiel.length!=0){
+          this.BIMLists.forEach(e => {
+            if(e.BIMUse!=null){
+              e.BIMUse =  e.BIMUse + e.Unit
+            }
+            if(e.PlanUse!=null){
+              e.PlanUse =  e.PlanUse + e.Unit
+            }
+          });
+        }else{
+          this.$message({type:'error',message:'无数据',center:'true'})
+        }
+      }else{
+        this.$message({type:'error',message:BIMList.message?BIMList.message:'后台异常',center:'true'})
+      }
+     
+    },
+
+    // // 一键修正工程量
+    async updatePlan(perc){
+      // let percents = Number(perc*100+'%')  formData.curFloor
+      console.log("【一键修正量参数】",perc)
+      this.load();
+      let params={projectid:this.projectId,modelId:this.defaultModelID,building:'',specialty:this.formData.curMajor,floor:this.formData.curFloor,
+                resourceName:this.formData.curResorceName,keyword:this.formData.input_search,percent:perc}
+      let updatePlanUse = await this.Request(UpdatePlanUse(params))
+      console.log("%c 【【【【一键修正工程量】",'color:red',updatePlanUse)
+      if(updatePlanUse.StatusCode == 200){
+        this.getBIMList(this.curPage,this.formData)
+      }else{
+        this.$message({type:'error',message:updatePlanUse.message?updatePlanUse.message:'后台异常',center:'true'})
+      }
+      this.$toast.clear(); 
+    },
+
+    // 根据单个系数修改单条工程量
+    async getUpdateOnePlanUse(obj){
+      let params={projectid:this.projectId,modelId:this.defaultModelID,building:obj.BuildingName,specialty:obj.Specialty,floor:obj.Floor,
+            resourceName:obj.ResorceName,xishu:obj.xishu}
+      let updateOnePlanUse = await this.Request(UpdateOnePlanUse(params))
+      console.log("%c 【根据单个系数修改单条工程量】",'color:red',updateOnePlanUse)
+      if(updateOnePlanUse.StatusCode == 200){
+        this.getBIMList(this.curPage,this.formData)
+      }else{
+        this.$message({type:'error',message:updateOnePlanUse.message?updateOnePlanUse.message:'后台异常',center:'true'})
+      }
+    },
+    // 系数改变时，触发的函数
+    changeRatio(val){
+      console.log('系数】】',val)
+      this.getUpdateOnePlanUse(val)
+    },
+    //表格单双隔层的颜色变化
+    tableRowClassName({row, rowIndex}) {
+        if (rowIndex%2 === 1) {
+          return 'warning-row';
+        } else{
+          return false;
+        }
+    },
+    //分页中改变当前页的时候，触发事件
+    changPage(page){
+      this.curPage=page;
+      this.getBIMList(page,this.formData)
+    },
+    //点击搜索输入框旁边的搜索图标
+    searchBtn(){
+      this.getBIMList(1,this.formData)
+    },
+    //点击一键修正
+    allRemake(){
+      console.log("修正值：",this.input_number)
+      this.updatePlan(this.input_number*100)
+      // for(var i=0;i<this.tableData.length;i++){
+      //   this.tableData[i].number=this.input_number;
+      // }
+    },
+    //表格的索引
+    indexMethod(index){
+      return index+1;
+    },
+
+    //点击表格的时候--模型上面显示高亮 this.highLightElementIDs
+    rowClick(row){
+      console.log(row);
+
+    },
+  },
+}
+
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+    @import '../../../assets/stylus/variable.styl'
+    .container-qing-drab
+        position relative
+        width 100%
+        height 100%
+        padding 5px 30px
+        box-sizing border-box
+        background-color rgba(240,240,240,1)
+
+    .container_head
+        width 100%
+        height 60px
+    .left-contain
+        float left
+        padding-top 19px
+       
+    .right-contain
+        float right
+        width  16rem
+        height 14.5rem
+        background #fff
+        overflow scroll
+        box-sizing border-box
+        z-index 20
+        font-size 16px
+    .left_contain
+        float left
+        width 14.5rem
+        height 14rem
+        box-sizing border-box
+    .model-container
+        width 100%
+        height 100%
+    .careful-txt
+        margin-top 20px
+        margin-left 30px
+        margin-bottom 10px
+        font-size 16px
+        color #A6A6A6
+    .page_padding
+      padding-top 42px
+   .right-form
+    float right
+    padding-top 19px
+
+    .el-form-item__content .search
+        display flex
+        align-items center
+        width 282px
+        height 38px
+        border-radius 30px
+        border 1px solid rgba(255, 255, 255, 0)
+        background #fff
+    .el-form-item__content .search input
+        width 200px
+        height 24px
+        outline none
+        border none
+    .el-form-item__content .search span
+        display flex
+        align-items center
+        justify-content center
+        width 24px
+        height 24px
+        text-align center
+        margin-left 12px
+        margin-right 20px
+        font-size 18px
+    .el-form-item__content .percent-inp
+        width 150px
+        height 40px
+        border-radius 5px
+        color rgba(136,136,136,1)
+        font-family Roboto
+      .correct-btn
+        color #ffffff
+        background-color #FDA143
+        border-radius  5px
+        height 42px
+        vertical-align middle
+        font-size 20px
+        padding 0px 28px
+        float right
+        border:1px solid #FDA143
+        box-shadow 0px 2px 4px 0px rgba(176,148,119,0.5)
+      .correct-btn:hover,.correct-btn:focus
+        border:1px solid #FDA143
+      .correct-btn[disabled]
+        background-color #DDDDDD
+</style>
+<style>
+    .el-table .cell {
+        text-align: center;
+    }
+
+    .dataTable .el-table__body tbody {
+        padding: 0 10px;
+    }
+
+    .container-qing-drab .el-select {
+        width: 150px;
+        flex: 1;
+        height: 40px;
+        background: rgba(255, 255, 255, 1);
+        box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+        border-radius: 4px;
+    }
+    .container-qing-drab .el-input--suffix .el-input__inner {
+        border: none;
+    }
+
+    .container-qing-drab .el-input__suffix {
+        background: rgba(67, 80, 137, 1);
+        border-radius: 0px 4px 4px 0px;
+        right: 0;
+        width: 40px;
+    }
+
+    .container-qing-drab .el-icon-arrow-up:before {
+        content: "\e60c";
+        color: rgba(255, 255, 255, 1);
+    }
+
+    .container-qing-drab .has-gutter th {
+        background-color: #DDD;
+        font-size: 18px;
+        height: 50px;
+
+    }
+
+    #qing_table .table_input {
+        width: 80px;
+        text-align: center;
+    }
+    .data-table {
+      font-size: 16px;
+      height:700px;
+    }
+
+    /*分页*/
+    
+
+    #qingDrab_page_padding  li {
+        color: #333333;
+        background-color: #ffffff;
+        font-size: 16px;
+        border:1px solid #EAEAEA;
+        border-radius: 5px;
+        display: inline-block;
+        width: 50px;
+        height: 40px;
+        line-height: 40px;
+        text-align: center;
+        cursor: pointer;
+    }
+    #qingDrab_page_padding  li:hover{
+      background-color: #4775CA;
+      color: #ffffff;
+    }
+    #qingDrab_page_padding  li.active{
+      background-color: #4775CA;
+      color: #ffffff;
+    }
+     #qingDrab_page_padding  button:hover{
+      background-color: #4775CA;
+      color: #ffffff;
+    }
+    #qingDrab_page_padding  button{
+      color: #333333;
+        background-color: #ffffff;
+        font-size: 16px;
+        border:1px solid #EAEAEA;
+        border-radius: 5px;
+        display: inline-block;
+        width: 80px;
+        height: 40px;
+        line-height: 40px;
+        text-align: center;
+    }
+    #qingDrab_page_padding  button:disabled{
+        background-color:#F5F6FA;
+        color:#333333;
+    }
+    #qingDrab_page_padding  span{
+      line-height: 40px
+    }
+    #qingDrab_page_padding{
+      text-align: center
+    }
+
+
+    /* 表格单双颜色变化 */
+    .right-contain .el-table .warning-row {
+      background-color: #F4F6FF;
+    }
+    /* 搜索输入框 */
+    .el-input-group__append button.el-button{
+      background-color: #435089;
+      height: 39px;
+    }
+.right-contain::-webkit-scrollbar ,.model_ul_list::-webkit-scrollbar{
+  /*滚动条整体样式*/
+  width: 6px; /*高宽分别对应横竖滚动条的尺寸*/
+  height: 1px;
+}
+.right-contain::-webkit-scrollbar-thumb ,.model_ul_list::-webkit-scrollbar-thumb{
+  /*滚动条里面小方块*/
+  border-radius: 10px;
+  width: 5px;
+  -webkit-box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.1);
+  background: #ccc;
+}
+.right-contain::-webkit-scrollbar-track,.model_ul_list::-webkit-scrollbar-track{
+  /*滚动条里面轨道*/
+  -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background: #ededed;
+}
+    
+    
+
+
+</style>

@@ -1,0 +1,194 @@
+import {
+  GetElementTree
+} from '@/api/api'
+export default {
+  methods: {
+    /**
+     * 获取构件树结构
+     * @param {String} projectid  项目ID
+     * @param {String} buildname  楼栋
+     * @param {Number} ordertype	排序类型 1.为楼层在上面（施工图） 2为楼层在下面（全费用）
+     */
+    GetElementTree(floorId) {
+      this.floorId = floorId
+      let param = {
+        projectid: this.projectid,
+        buildname: this.floorId,
+        ordertype: this.listType
+      }
+      GetElementTree(param).then(data => {
+        let arr = data.Detiel
+        let newArr = []
+        let parentList = []
+        arr.forEach(item => {
+          parentList.push(item.BuildingName)
+        })
+        // 一级楼栋
+        parentList = [...new Set(parentList)]
+        parentList.forEach(item => {
+          this.expandedKeys.push(item)
+          newArr.push({
+            id: item,
+            label: item,
+            children: []
+          })
+        })
+        // 二级专业
+        newArr.forEach(item => {
+          arr.forEach(obj => {
+            if (obj.BuildingName === item.id) {
+              item.children.push({
+                id: obj.Specialty,
+                label: obj.Specialty,
+                parentId: item.id,
+                children: []
+              })
+            }
+          })
+          let temp = {}
+          item.children = item.children.reduce((item, next) => {
+            temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+            return item
+          }, [])
+        })
+        if (this.listType === 1 || this.listType === 3) {
+          // 三级楼层
+          newArr.forEach(item => {
+            item.children.forEach(treeItem => {
+              arr.forEach(fromArr => {
+                if (fromArr.Specialty === treeItem.id) {
+                  treeItem.children.push({
+                    id: fromArr.Floor,
+                    label: fromArr.Floor,
+                    parentId: treeItem.id,
+                    children: []
+                  })
+                }
+              })
+              let temp = {}
+              treeItem.children = treeItem.children.reduce((item, next) => {
+                temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+                return item
+              }, [])
+            })
+          })
+          // 四级族
+          newArr.forEach(item => {
+            item.children.forEach(treeItem => {
+              treeItem.children.forEach(fourItem => {
+                arr.forEach(fromArr => {
+                  if (fromArr.Floor === fourItem.id) {
+                    fourItem.children.push({
+                      id: fromArr.FamilyName,
+                      label: fromArr.FamilyName,
+                      parentId: fourItem.id,
+                      children: []
+                    })
+                  }
+                })
+                let temp = {}
+                fourItem.children = fourItem.children.reduce((item, next) => {
+                  temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+                  return item
+                }, [])
+              })
+            })
+          })
+          // 五级族类型
+          newArr.forEach(item => {
+            item.children.forEach(treeItem => {
+              treeItem.children.forEach(fourItem => {
+                fourItem.children.forEach(fiveItem => {
+                  arr.forEach(fromArr => {
+                    if (fromArr.FamilyName === fiveItem.id) {
+                      fiveItem.children.push({
+                        id: fromArr.FamilyTypeName,
+                        label: fromArr.FamilyTypeName,
+                        elementId: fromArr.RaletionElementID,
+                        parentId: fourItem.id
+                      })
+                    }
+                  })
+                  let temp = {}
+                  fiveItem.children = fiveItem.children.reduce((item, next) => {
+                    temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+                    return item
+                  }, [])
+                })
+              })
+            })
+          })
+        } else if (this.listType === 2) {
+          // 三级族
+          newArr.forEach(item => {
+            item.children.forEach(treeItem => {
+              arr.forEach(fromArr => {
+                if (fromArr.Specialty === treeItem.id) {
+                  treeItem.children.push({
+                    id: fromArr.FamilyName,
+                    label: fromArr.FamilyName,
+                    parentId: treeItem.id,
+                    children: []
+                  })
+                }
+              })
+              let temp = {}
+              treeItem.children = treeItem.children.reduce((item, next) => {
+                temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+                return item
+              }, [])
+            })
+          })
+          // 四级族类型
+          newArr.forEach(item => {
+            item.children.forEach(treeItem => {
+              treeItem.children.forEach(fourItem => {
+                arr.forEach(fromArr => {
+                  if (fromArr.FamilyName === fourItem.id) {
+                    fourItem.children.push({
+                      id: fromArr.FamilyTypeName,
+                      label: fromArr.FamilyTypeName,
+                      parentId: fourItem.id,
+                      children: []
+                    })
+                  }
+                })
+                let temp = {}
+                fourItem.children = fourItem.children.reduce((item, next) => {
+                  temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+                  return item
+                }, [])
+              })
+            })
+          })
+          // 五级楼层
+          newArr.forEach(item => {
+            item.children.forEach(treeItem => {
+              treeItem.children.forEach(fourItem => {
+                fourItem.children.forEach(fiveItem => {
+                  arr.forEach(fromArr => {
+                    if (fromArr.Floor === fiveItem.id) {
+                      fiveItem.children.push({
+                        id: fromArr.FamilyName,
+                        label: fromArr.FamilyName,
+                        parentId: fourItem.id,
+                        elementId: fromArr.RaletionElementID
+                      })
+                    }
+                  })
+                  let temp = {}
+                  fiveItem.children = fiveItem.children.reduce((item, next) => {
+                    temp[next.id] ? '' : temp[next.id] = true && item.push(next)
+                    return item
+                  }, [])
+                })
+              })
+            })
+          })
+        }
+        this.array = newArr
+        this.loading = false
+      })
+    },
+  }
+}

@@ -1,0 +1,213 @@
+export default {
+  init: function (isColumn) {
+    gantt.config.scale_unit = "month";
+
+    gantt.config.date_scale = "%Y, %F";
+
+    gantt.config.scale_height = 50;
+
+    // 时间轴最小宽度
+    gantt.config.min_column_width = 30;
+
+    gantt.config.subscales = [{ unit: "day", step: 1, date: "%j" }];
+
+    // 模板可用于更改日期和标签的显示
+    // gantt.templates.task_text = function (start, end, task) {
+    // return task.text + ",<b>-</b> " + task.users;
+    // };
+
+    // 模板可用于更改日期和标签的显示
+    gantt.templates.task_text = function (start, end, task) {
+      return '';
+    };
+
+    // 开启智能渲染
+    gantt.config.smart_rendering = true;
+
+    // 设置链接箭头的大小
+    gantt.config.link_arrow_size = 6;
+
+    // 设置时间轴区域中依赖关系链接的宽度
+    gantt.config.link_line_width = 2;
+
+    gantt.templates.scale_row_class = function (scale) {
+      return "day_scale";
+    };
+
+    // 开启滚动
+    gantt.config.autoscroll = true;
+
+    // 速度
+    gantt.config.autoscroll_speed = 50;
+
+    gantt.config.task_height = 16;
+
+    gantt.config.row_height = 40;
+
+    // 显示全部
+    // gantt.config.autosize = "xy";
+
+    // 列的时间格式
+    gantt.config.date_grid = "%Y.%m.%d";
+
+    // 双击弹窗
+    // gantt.config.details_on_dblclick = false;
+
+    // 添加线条
+    // gantt.config.drag_links = false;
+
+    // 改变位置
+    // gantt.config.drag_move = false;
+
+    // 改变百分比
+    // gantt.config.drag_progress = false;
+
+    // 改变工期
+    // gantt.config.drag_resize = false;
+
+
+    // 年月日
+    gantt.templates.scale_row_class = function (scale) {
+      switch (scale.unit) {
+        case "day":
+          return "day_scale";
+
+        case "month":
+          return "month_scale";
+
+        default:// "week"
+          return "week_scale";
+      }
+    }
+
+    // 子任务类模板--没生效！
+    gantt.config.inherit_scale_class = true;
+
+    // 任务可以点击选中
+    gantt.config.select_task = true;
+
+    // 初始化的时候展开树结构--没生效！
+    gantt.config.open_tree_initially = false;
+
+    // 防止滚动冒泡
+    gantt.config.prevent_default_scroll = false;
+
+    // 只读模式
+    gantt.config.readonly = true;
+
+    // 页面布局设置
+    gantt.config.layout = {
+      css: "gantt_container",
+      rows: [
+        {
+          cols: [
+            { view: "grid", id: "grid", scrollX: "scrollHor", scrollY: "scrollVer" },
+            { view: "timeline", id: "timeline", scrollX: "scrollHor", scrollY: "scrollVer" },
+            { view: "scrollbar", id: "scrollVer" }
+          ]
+        },
+        { view: "scrollbar", id: "scrollHor" }
+      ]
+    };
+    let columns = [];
+    if (isColumn) {
+      columns = [
+        {
+          name: "wbs",
+          align: "center",
+          label: "序号",
+          width: 80,
+          template: gantt.getWBSCode,
+          resize: true
+        },
+        {
+          name: "text",
+          align: "left",
+          label: "任务列表",
+          tree: true,
+          min_width: 120,
+          width: 200,
+          resize: true
+        },
+        {
+          name: "start_date",
+          label: "计划时间",
+          align: "center",
+          width: 110,
+          resize: true
+        },
+        {
+          name: "duration",
+          align: "center",
+          label: "工期",
+          width: 80,
+          resize: true
+        }
+      ];
+    } else {
+      columns = [
+        {
+          name: "wbs",
+          align: "center",
+          label: "序号",
+          width: 80,
+          template: gantt.getWBSCode,
+          resize: true
+        },
+        {
+          name: "text",
+          align: "left",
+          label: "任务列表",
+          tree: true,
+          min_width: 120,
+          width: 300,
+          resize: true
+        },
+        {
+          name: "start_date",
+          label: "计划开始时间",
+          align: "center",
+          width: 140,
+          resize: true
+        },
+        {
+          name: "end_date",
+          label: "计划结束时间",
+          align: "center",
+          width: 140,
+          template: function (task) {
+            return gantt.templates.date_grid(task.end_date, task);
+          },
+          resize: true
+        },
+        {
+          name: "duration",
+          align: "center",
+          label: "工期",
+          width: 100,
+          resize: true
+        },
+        {
+          name: "type",
+          label: "状态",
+          align: "center",
+          width: 100,
+          resize: true
+        }
+      ];
+    }
+    // 左边标题设置
+    gantt.config.columns = columns;
+
+    // 灯箱常规设置
+    gantt.config.lightbox.sections = [
+      { name: "description", height: 70, map_to: "text", type: "textarea", focus: true },
+      {
+        name: "type", type: "typeselect", map_to: "type", filter: function (name, value) {
+          return !!(value != gantt.config.types.project);
+        }
+      },
+      { name: "time", type: "duration", map_to: "auto" }
+    ];
+  }
+}

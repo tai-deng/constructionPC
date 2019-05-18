@@ -1,0 +1,574 @@
+<!-- communication沟通管理 -->
+<template>
+  <div class="container-communication">
+    <div class="wrapper">
+      <el-row>
+        <el-col :span="12">
+          <div class="grid-content bg-purple">
+            <div class="container-cost-left">
+              <el-button @click="communication()">发起沟通</el-button>
+              <!-- 模型box -->
+              <div class="model-container">
+                <div ref="modelContainer" class="model-container"></div>
+              </div>
+            </div>
+          </div>
+        </el-col>
+        <el-col :span="12">
+          <div class="grid-content bg-purple-light">
+            <div class="container-cost-right">
+
+                <!-- <el-table
+                  ref="singleTable"
+                  :data="tableData"
+                  @row-click="goToDetail"
+                  highlight-current-row
+                  style="width: 100%"
+                >
+                  <el-table-column property="index" label="序号" width="50">
+                    <template slot-scope="scope">
+                      <div :class="scope.row.class">{{ scope.row.index }}</div>
+                    </template>
+                  </el-table-column>
+                  <el-table-column property="ComType" label="类型"></el-table-column>
+                  <el-table-column property="Subject" label="主题"></el-table-column>
+                  <el-table-column property="dCreateTime" label="发起时间"></el-table-column>
+                  <el-table-column property="Status" label="状态"></el-table-column>
+                  <el-table-column property="location" label="定位">
+                    <template slot-scope="scope">
+                      <img src="../../../assets/imgs/detail.png" alt width="16" @click="view(scope.row)" height="16">
+                    </template>
+                  </el-table-column>
+                </el-table> -->
+
+              <div class="filter-wrapper">
+                <div class="table">
+                  <div class="title">
+                    <el-table>
+                      <el-table-column align="left"  label="序号"></el-table-column>
+                      <el-table-column align="center"  label="类型"></el-table-column>
+                      <el-table-column align="center"  label="主题"></el-table-column>
+                      <el-table-column align="center"  label="发起时间"></el-table-column>
+                      <el-table-column align="center" label="状态"></el-table-column>
+                      <el-table-column align="center"  label="定位">
+                      </el-table-column>
+                    </el-table>
+                  </div>
+                  <div class="content">
+                    <el-collapse v-model="nowCollapse" >
+                      <el-collapse-item :title="`待接收（${ingPageTotal}）`" name="1">
+                        <el-table 
+                          :data="dataIng"
+                          :show-header="false" 
+                          v-loading="ingLoading" 
+                          @row-click="goToDetail"
+                          :class="{noDetail:dataIng.length===0}">
+                          <el-table-column align="center" prop="index"></el-table-column>
+                          <el-table-column align="center" prop="ComType"></el-table-column>
+                          <el-table-column align="center" prop="Subject"></el-table-column>
+                          <el-table-column align="center" prop="dCreateTime"></el-table-column>
+                          <el-table-column align="center" prop="Status"></el-table-column>
+                          <el-table-column align="center" >
+                            <template slot-scope="scope">
+                              <img style="margin-left: -6px;" :src="require('./img/gps.png')" @click.stop="onHandle(scope.row)">
+                            </template>
+                          </el-table-column>
+                        </el-table>
+                        <el-pagination 
+                          :total="ingPageTotal" 
+                          @current-change="ingCurrentChange" 
+                          :current-page.sync="ingCurrentPage"
+                          :page-size="pageSize" 
+                          background 
+                          layout="prev, pager, next" 
+                          v-show="this.ingPageTotal > this.pageSize" 
+                          class="text-center"
+                           >
+                        </el-pagination>
+                      </el-collapse-item>
+                       <el-collapse-item :title="`整改中（${handlePageTotal}）`" name="2">
+                        <el-table 
+                        :data="dataHandle" 
+                        :show-header="false" 
+                        v-loading="handleLoading"
+                        @row-click="goToDetail"
+                        :class="{noDetail:dataHandle.length===0}">
+                          <el-table-column align="center" prop="index"></el-table-column>
+                          <el-table-column align="center" prop="ComType"></el-table-column>
+                          <el-table-column align="center" prop="Subject"></el-table-column>
+                          <el-table-column align="center" prop="dCreateTime"></el-table-column>
+                          <el-table-column align="center" prop="Status"></el-table-column>
+                          <el-table-column align="center">
+                            <template slot-scope="scope">
+                              <img style="margin-left: -6px;" :src="require('./img/gps.png')" @click="onHandle(scope.row)">
+                            </template>
+                          </el-table-column>
+                        </el-table>
+                        <el-pagination 
+                          :total="handlePageTotal" 
+                          @current-change="handleCurrentChange" 
+                          :current-page.sync="handleCurrentPage"
+                          :page-size="pageSize" 
+                          background 
+                          layout="prev, pager, next" 
+                          v-show="this.handlePageTotal > this.pageSize" 
+                          class="text-center" >
+                        </el-pagination>
+                      </el-collapse-item>
+                      <el-collapse-item :title="`已整改（${overPageTotal}）`" name="3">
+                        <el-table 
+                        :data="dataOver" 
+                        :show-header="false" 
+                        v-loading="overLoading" 
+                        @row-click="goToDetail"
+                        :class="{noDetail:dataOver.length===0}">
+                          <el-table-column align="center" prop="index"></el-table-column>
+                          <el-table-column align="center" prop="ComType"></el-table-column>
+                          <el-table-column align="center" prop="Subject"></el-table-column>
+                          <el-table-column align="center" prop="dCreateTime"></el-table-column>
+                          <el-table-column align="center" prop="Status"></el-table-column>
+                          <el-table-column align="center">
+                            <template slot-scope="scope">
+                              <img :src="require('./img/gps.png')" @click="onHandle(scope.row)">
+                            </template>
+                          </el-table-column>
+                        </el-table>
+                        <el-pagination 
+                          :total="overPageTotal" 
+                          @current-change="overCurrentChange" 
+                          :current-page.sync="overCurrentPage"
+                          :page-size="pageSize" 
+                          background 
+                          layout="prev, pager, next" 
+                          v-show="this.overPageTotal > this.pageSize" 
+                          class="text-center" >
+                          <img :src="require('./img/gps.png')" @click="onHandle(scope.row)" />
+                          <img style="margin-left: -6px;" :src="require('./img/gps.png')" @click="onHandle(scope.row)">
+                        </el-pagination>
+                      </el-collapse-item>
+                    </el-collapse>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-col>
+      </el-row>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import { mapMutations } from "vuex";
+import {
+  GetCommunicateList,   //根据项目ID获取沟通管理列表
+  SaveCommunicate, //保存沟通管理数据
+  GetDetail     //获取沟通管理详情
+  } from '@/api/api.js'
+export default {
+  data() {
+    return {
+      allLoading: false,
+      ingLoading: false,
+      handleLoading: false,
+      overLoading: false,
+      allCurrentPage: 1,
+      allPageTotal: 0,  //总数
+      ingCurrentPage: 1,
+      ingPageTotal: 0,  //待接收数
+      handleCurrentPage: 1,
+      handlePageTotal: 0,  //整改中数
+      overCurrentPage: 1,
+      overPageTotal: 0,  //已整改数
+       /**[当前折叠面板] */
+      nowCollapse: ["1", "2", "3"],
+       /**[待接收] */
+      dataIng: [],
+      /**[整改中] */
+      dataHandle: [],
+      /**[待接收] */
+      dataOver: [],
+      data: "communication沟通管理",
+      formInline: {
+        user: "",
+        region: ""
+      },
+      tableData: [], //所有沟通数据
+      allData: [],  //所有沟通数据包括States
+      statusList: ['', '0','1','2'], //状态为空字符串时查询全部， 0： 待接收 1： 处理中 2： 已处理
+      currentRow: null,
+      pageIndex: 1,
+      pageSize: 10,
+      ElementIDs: []  // 构建ID
+    };
+  },
+  created(){
+    this.initModel();
+    // this.CommunicateList()
+    this.getcommunicating(this.statusList[0])
+    this.getcommunicating(this.statusList[1])
+    this.getcommunicating(this.statusList[2])
+    this.getcommunicating(this.statusList[3])
+  },
+  mounted(){
+    // this.CommunicateList()
+  },
+  methods: {
+    // 定位
+    onHandle(row) {
+      console.log("视点属性：", row);
+      console.log(row)
+      console.log("所有数据：", this.allData)
+      let handleID = row.ID
+      let handleItem = null
+      this.allData.forEach(item => {
+        if(item.Communicate.ID === handleID){
+          handleItem = item
+        }
+      })
+      let elementid = handleItem.States ? handleItem.States[0]:null
+      console.log(elementid)
+      if(elementid){
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [elementid], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [28] // 需要模型调用的函数编号数组
+          });
+      }
+    
+      
+    },
+    // 发起沟通
+    communication() {
+      this.$router.push({
+        path: "communication2"
+      });
+    },
+    // 跳转至详情
+    goToDetail(row, event, column) {
+      console.log(row)
+      console.log(event)
+      console.log(column)
+      this.$router.push({
+        path: "communication1",
+        query: {
+          id: row.ID,
+          status: row.Status
+        }
+      });
+    },
+    /**
+     * 加载模型
+     */
+    initModel(){
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          console.log(res)
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: this.ElementIDs, // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    }),
+    /**
+     * api接口
+     */
+    // 根据项目ID获取沟通管理列表
+    async CommunicateList (state){
+      let data = {
+        projectId: localStorage.getItem('projectid'),
+        status: state,
+        pageIndex: this.pageIndex,
+        pageSize: this.pageSize
+      }
+
+      let res = await this.Request(GetCommunicateList(data))
+      console.log('沟通管理......')
+      console.log(res)
+      if(res.StatusCode === 200) {
+        let newData = []
+        let tData = {}
+        res.Detiel.forEach((item, i) => {
+            tData = Object.assign({index: `${i+1}`},item.Communicate)
+            tData.dCreateTime = item.Communicate.dCreateTime.substr(0, 10)
+            newData.push(tData)
+        })
+       
+        if(data.status === '0'){ 
+          this.dataIng = newData
+          this.ingPageTotal = parseInt(res.Count)
+          this.ingLoading = false
+          console.log(this.dataIng)
+      
+        }else if(data.status === '1'){
+          this.dataHandle = newData
+          this.handlePageTotal = parseInt(res.Count)
+          this.handleLoading = false
+          console.log(this.dataHandle)
+        } else if( data.status === '2'){
+          this.dataOver = newData
+          this.overLoading = false 
+          this.overPageTotal = parseInt(res.Count)
+          console.log(this.dataOver)
+        } else if (data.status === ''){
+          this.allData = res.Detiel
+          this.tableData = newData
+          this.allPageTotal = parseInt(res.Count)
+          this.allLoading = false
+          this.allData = res.Detiel
+          console.log("所有数据",this.allData)
+        }
+        // return newData
+        // console.log(this.tableData)
+      }else {
+        this.$message({
+          type: 'error',
+          message: res.Message,
+          center: 'true'
+        })
+      }
+    },
+    /**
+     * 点击待接收当前行展示详情
+     */
+    openIngDetail(row, event, column){
+      this.$router.push({
+        path: "questionDetail",
+        query: {riskID: row.sort}
+      });
+    },
+     /**
+     * 翻页
+     */
+    allCurrentChange: function(val) {
+      this.allCurrentPage = val;
+      this.pageIndex = val
+      this.getcommunicating(this.statusList[0]);
+    },
+    ingCurrentChange: function(val) {
+      this.ingCurrentPage = val;
+      this.pageIndex = val
+      console.log(val)
+      this.getcommunicating(this.statusList[1]);
+    },
+    handleCurrentChange: function(val){
+      this.handleCurrentPage = val;
+      this.pageIndex = val
+      this.getcommunicating(this.statusList[2]);
+
+    },
+    overCurrentChange: function(val){
+      this.overCurrentPage = val;
+      this.pageIndex = val
+      this.getcommunicating(this.statusList[3]);
+    },
+
+    /**
+     * 根据项目ID和状态获取沟通管理问题列表
+     */
+    
+    getcommunicating(state){
+      if(state === '0') {
+        this.ingLoading = true;
+      }else if(state === '1'){
+        this.handleLoading = true
+      } else if(state === '2'){
+        this.overLoading = true
+      } else if(state === ''){
+        this.allLoading = true
+      } else {
+        return false
+      }
+      this.CommunicateList(state)
+    }
+  }
+};
+</script>
+<style lang='stylus' rel='stylesheet/stylus'>
+.container-communication {
+  width: 100%;
+  height: 100%;
+}
+
+.container-communication {
+  background: #f5f6fa;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.container-communication .grid-content .el-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 120px;
+  height: 40px;
+  line-height: 40px;
+  border: none !important;
+  padding: 0;
+  cursor: pointer;
+  background: #FDA143 !important;
+  color: #fff;
+  text-align: center;
+  z-index: 200;
+}
+
+.container-communication .container-cost-left {
+  position: relative;
+  background: #fff;
+  height: 100%;
+  margin-right: 20px;
+  border: 1px solid #ecedf1;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.container-communication .wrapper, .container-communication .el-row, .container-communication .el-col, .container-communication .grid-content {
+  height: 100%;
+}
+.container-communication .bg-purple-light {
+  background-color: #fff;
+}
+
+.container-communication .el-form-item {
+  width: 18%;
+  height: 40px;
+}
+
+.width20 {
+  width: 5%;
+  position: absolute;
+  right: 4px;
+}
+
+.container-communication .el-button {
+  height: 38px;
+  background: #4580fe;
+}
+
+.container-cost-right .el-select .el-input__inner {
+  border: 1px solid #ecedf1;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.container-communication .el-input__suffix {
+  width: 50px;
+  background: #44508a;
+  border-radius: 0 5px 5px 0;
+}
+
+.container-communication .el-input--suffix {
+  overflow: hidden;
+}
+
+.container-communication .el-select .el-input .el-select__caret {
+  color: #fff;
+}
+
+.container-communication .el-table .has-gutter th {
+  background: #44508a;
+  color: #fff;
+  text-align: center;
+}
+
+.container-communication .el-table--enable-row-transition .el-table__body td, .container-communication .el-table--enable-row-transition .el-table__body td .cell {
+  text-align: center;
+  padding: 0;
+}
+
+.container-communication .el-table--enable-row-transition .el-table__body td div {
+  padding: 12px;
+}
+
+.blueBorder {
+  border-left: 6px solid #4476cd;
+}
+
+.greenBorder {
+  border-left: 6px solid #05a663;
+}
+
+.lightGreenBorder {
+  border-left: 6px solid #9ce621;
+}
+
+.redBorder {
+  border-left: 6px solid #e63837;
+}
+
+.pinkBorder {
+  border-left: 6px solid #fe41b9;
+}
+
+.bottom {
+  clear: both;
+  text-align: center;
+}
+
+.item {
+  margin: 4px;
+}
+
+.left .el-tooltip__popper, .right .el-tooltip__popper {
+  padding: 8px 10px;
+}
+
+.new-form-inline {
+  position: relative;
+}
+
+//调整样式
+.filter-wrapper {
+  .table {
+    .title {
+      .el-table__body-wrapper{
+        display: none;
+        }
+      }
+  }
+  .text-center{
+      text-align: center;
+    }
+  .content {
+    .noDetail {
+       .el-table__body-wrapper{
+        display: none;
+        }
+    }
+  }
+     
+}
+
+</style>
+<style scoped>
+.model-container {
+  width: 98%;
+  height: 100%;
+  padding: 0 !important;
+  z-index:90;
+  padding-top: 50px;
+  box-sizing: border-box;
+}
+
+
+    
+
+ 
+</style>

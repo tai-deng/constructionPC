@@ -1,0 +1,437 @@
+<!-- 时间管理-施工员 time -->
+<template lang="pug" src="./index.pug"></template>
+<style lang="stylus" src="./index.styl" scoped></style>
+
+<script type="textecmascript-6">
+// import Timeline from "@/common/timeline/index";
+// import commonDialog from "@/common/common-dialog/index";
+// 引入api接口
+import {
+GetBuilding, //获取楼栋模型
+GetHomeSchedulePlan, //根据项目id 和选择模型获取进度信息
+GetACSchedulePlanList,  // 获取认证任务列表接口
+GetAuthenticationInfoByTaskId,  //查看认证详情接口
+AddModelAuthentication, //新增认证接口
+UploadImages
+} from '@/api/api.js'
+import { mapMutations } from "vuex";
+
+export default {
+  components: {
+    // Timeline,
+    // commonDialog
+  },
+  created() {
+    this.GetBuildingInfo()  //建筑模型列表信息
+    this.initModel(); //加载模型
+  },
+  mounted() {
+    this._initData("modelContainer1");
+    this._initData("modelContainer2");
+  },
+  data() {
+    return {
+      isProgressDetail: false,
+      progressDetailStyle: {
+        left: "160px"
+      },
+      /**[当前模型] */
+      type: 1,
+      /**[所有模型] 可选项 */
+      typeOptions: [
+        { label: "AAA", value: 1 },
+        { label: "BBB", value: 2 },
+        { label: "CCC", value: 3 }
+      ],
+      allProgress: 100, //整体进度
+      lagging: 2,  // 滞后天数
+      /**[进度所有数据] */
+      porgressOptions: [
+        // {
+        //   message: "error",
+        //   progress: "50%",
+        //   title: "活动按期开始",
+        //   start_time: "2019-01-05",
+        //   end_time: "2019-01-05",
+        //   isAdd: false
+        // },
+        // {
+        //   message: "success reverse",
+        //   progress: "50%",
+        //   title: "活动按期开始",
+        //   start_time: "2019-01-05",
+        //   end_time: "2019-01-05",
+        //   isAdd: false
+        // },
+        // {
+        //   message: "success add",
+        //   progress: "50%",
+        //   title: "活动按期开始",
+        //   start_time: "2019-01-05",
+        //   end_time: "2019-01-05",
+        //   isAdd: true
+        // },
+        // {
+        //   message: "success add",
+        //   progress: "50%",
+        //   title: "活动按期开始",
+        //   start_time: "2019-01-05",
+        //   end_time: "2019-01-05",
+        //   isAdd: true
+        // },
+        // {
+        //   message: "success reverse",
+        //   progress: "50%",
+        //   title: "活动按期开始",
+        //   start_time: "2019-01-05",
+        //   end_time: "2019-01-05",
+        //   isAdd: false
+        // }
+      ],
+      dialogType: "add",
+      /**[表单] */
+      dialogForm: {
+        time: "",
+        progress: "",
+        name: ""
+      },
+      imgList1: [{ name: "11", url: require("./img2.jpg") }],
+      // imgList2: [{ name: "11", url: require("./img2.jpg") }],
+      index: -1, //记录点击列表的索引值
+      flag: false,  //控制是新增还是修改的开关
+      isChange: false, //确认是否修改了
+    };
+  },
+  computed: {},
+  methods: {
+    _initData(ref) {
+      /**
+       * 模型状态管理
+       */
+      console.log("aaa");
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, ref).then(res => {
+          console.log(res);
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    }),
+    listenWrapper() {
+      this.isProgressDetail = false;
+    },
+    onEditProgress(item, index) {
+      // 获取对应的TaskID值
+      let taskid = item.TaskId || ''
+      if (item.isAdd) {  //如果isAdd为true 则进行添加认证操作
+        this.imgList1 = [];
+        this.dialogForm = {};
+        this.flag = true   //打开新增开关
+      } else {
+        this.flag = false   //关闭新增开关 调用认证详情借口
+         // 调用查询认证详情接口
+         this.AuthenticationInfoByTaskId(taskid)
+      }
+      this.progressDetailStyle = {
+        left: 160 + index * (250 - index * 30) + "px"
+      };
+      this.index = index
+      this.$nextTick(() => {
+        this.toggleDetail();
+      }, 400);
+    },
+    // 切换详情面板函数
+    toggleDetail() {
+      this.isProgressDetail = !this.isProgressDetail;
+    },
+
+    handlePictureCardPreview(a, b) {
+      console.log(a, b);
+    },
+
+    // 获取图片上传URL
+    async handleAvatarSuccess(file, fileList) {
+    //  设置参数对象列表
+    let params = [{
+      key: 'files', value: file.raw
+    }]
+    console.log('params',params)
+    // 上传图片
+    let upload_images = await this.Request(UploadImages(params))
+
+    if(upload_images.StatusCode === 200){
+      // 如果是新增就将地址URL添加进去
+      if(this.flag){ 
+        let img_obj = {
+          name: "11",
+          url: ''
+        }
+        img_obj.url = `${upload_images.Detiel[0].TokenUrL}${upload_images.Detiel[0].URL}`
+        this.imgList1.push(img_obj) 
+
+        console.log(this.imgList1)
+      }
+      
+    }
+    },
+    handleRemove() {},
+
+    // 确认提交按钮
+    submit() {
+      
+      console.log(this.dialogForm);
+      console.log(this.index)
+      // 根据index 获取相应数据 用来调用接口
+      let data = {}
+      data.TaskId = this.porgressOptions[this.index].TaskId
+      data.Percentage = this.dialogForm.progress
+      data.UploadTime = this.dialogForm.time
+     if( this.imgList1.length ) {
+      //  获取URL
+      //  let URL = `${this.imgList1[0].url},${this.imgList1[1]}`
+      let URL = ''
+      this.imgList1.forEach((item) => {
+        URL += `${item.url},`
+      })
+      URL = URL.substr(0,(URL.length-1))
+      data.PicturePath = URL
+     }
+      console.log(data)
+      console.log(this.isChange)
+      if(this.flag) {
+        // 新增
+        this.GetAddModelAuthentication(data)
+      }else if(this.isChange) {
+        
+        // 修改任务进度
+        this.GetAddModelAuthentication(data)
+      }
+      this.$nextTick(() => {
+          this.toggleDetail();
+        }, 400);
+        
+      },
+      lookDetail(){
+        this.$router.push({
+          name: '5D模拟',
+          params: {
+            modelName: this.type
+          }
+        })
+      },
+
+    /**
+     * api接口
+     */
+    //获取建筑模型列表信息
+    async GetBuildingInfo() {
+      let res = await this.Request(GetBuilding({projectid: localStorage.getItem('projectid')}))
+      if(res.StatusCode == 200){
+        this.typeOptions = res.Detiel
+        console.log(res)
+        this.type = res.Detiel[0].text;
+      }else{
+          this.$message({
+              type: "error",
+              message: res.Message,
+              center: "true"
+          });
+        }
+    },
+    //获取进度
+    async schedulePlan(data) {
+      if(!data){
+        this.$toast('没有选中模型')
+        return
+      }
+      let result = await this.Request(GetHomeSchedulePlan({ProjectID: localStorage.getItem('projectid'), BuildingName: data}))
+        console.log(result)
+        if(result.StatusCode === 200) {
+          // 判断后台是否真的有数据
+          let isTrue = parseInt(result.Detiel[0].TotalDuration)
+          if(isTrue){
+            this.progressData = result.Detiel[0]
+          }else {
+            this.$toast({
+              message: '后台无数据',
+              duration: 600
+            })
+          }
+        }else {
+          this.$message({
+            type: 'error',
+            message: res.Message,
+            center: "true"
+          })
+        } 
+    },
+    // 查看认证任务列表
+    async ACSchedulePlanList(B_Name){
+      if(!B_Name){
+        this.$toast('没有选择模型')
+        return 
+      }
+      let res = await this.Request(GetACSchedulePlanList({ProjectID: localStorage.getItem("projectid"), BuildingName: B_Name}))
+      if(res.StatusCode === 200){
+        this.allProgress = parseInt(res.Detiel[0].OverallProgress)
+        this.lagging = res.Detiel[0].lagging
+        let progressInfo = res.Detiel[0].ACSchedulePlanList
+        this.porgressOptions = []
+        progressInfo.forEach((item) => {
+          let option = {}
+          option.progress = item.PercenTage
+          option.title = item.TaskName
+          option.start_time = item.BaseStartTime.substr(0,10)
+          if(!item.UploadTime) {
+            option.message = "success add"
+            option.isAdd = true
+          } else if( item.states =="正常" || item.states == null) {
+            option.message = "success reverse"
+            option.isAdd = false
+          } else {
+            option.message = " error"
+            option.isAdd = false
+          }
+          option.end_time = item.UploadTime ? item.UploadTime.substr(0,10): ''
+          option.PicturePath = item.UploadTime ? item.PicturePath: ''
+          option.TaskId = item.TaskId
+          option.message
+          this.porgressOptions.push(option)
+        })
+      }else {
+          this.$message({
+            type: 'error',
+            message: res.Message,
+            center: "true"
+          })
+        } 
+    },
+    //查询认证详情
+    async AuthenticationInfoByTaskId(id){
+      if(!id){
+        this.$toast('传入数据有误')
+        return
+      }
+      let res = await this.Request(GetAuthenticationInfoByTaskId({TaskId: id}))
+
+      if(res.StatusCode === 200){
+       
+        this.imgList1 = [{ name: "11", url: res.Detiel[0].PicturePath.split(',')[0] }];
+        this.imgList2 = [{ name: "11", url: res.Detiel[0].PicturePath.split(',')[1] }];
+        this.dialogForm.time = res.Detiel[0].UploadTime
+        this.dialogForm.name = res.Detiel[0].cName
+        this.dialogForm.progress = `${parseInt(res.Detiel[0].Percentage)}%`
+        // 将监听开关重置为false
+        this.isChange = false
+      }else {
+        this.$message({
+          type: 'error',
+          message: res.Message,
+          center: 'true'
+        })
+      }
+    },
+    //新增认证
+    async GetAddModelAuthentication(data={}){
+      
+      let TaskId = data.TaskId
+      let Percentage = parseInt(data.Percentage)
+      let PicturePath = data.PicturePath
+      let UploadTime = data.UploadTime
+      let userId = parseInt(localStorage.getItem('userId'))
+      let res = await this.Request(AddModelAuthentication(
+        {TaskId, Percentage, PicturePath, UploadTime, userId}))
+        console.log(res)    
+     if(res.StatusCode === 200){
+        this.$message({
+          type : 'success',
+          message: res.Message,
+          center: 'true'
+        })
+        this.porgressOptions[this.index].message = 'success reverse'
+        this.porgressOptions[this.index].isAdd = false
+      }else {
+        this.$message({
+          type: 'error',
+          message: res.Message,
+          center: 'true'
+        })
+      }
+      
+    },
+    /**
+     * 加载模型
+     */
+    initModel() {
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          console.log(res);
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: false, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    })
+  },
+  watch: {
+    type(data){
+      //根据type值变化获取进度
+      this.schedulePlan(data)
+      // 根据type值查询认证任务列表
+      this.ACSchedulePlanList(data)
+    },
+    dialogForm: {
+      //form数据变化了 isChange 为true
+      handler(newValue){
+        console.log('111')
+        this.isChange = true
+      },
+      deep: true
+      
+    },
+    imgList1: {
+      //imgList1 isChange 为true
+      handler(newList){
+        this.ischange = true
+      },
+      deep: true
+    }
+  }
+};
+</script>
+<style scoped>
+.model-container {
+  width: 98%;
+  height: 100%;
+  padding: 0 !important;
+  z-index: 90;
+  margin-top: 50px;
+}
+</style>

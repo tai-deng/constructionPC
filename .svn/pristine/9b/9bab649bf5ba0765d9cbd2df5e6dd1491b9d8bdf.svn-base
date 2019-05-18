@@ -1,0 +1,530 @@
+<template>
+    <div class="company_box">
+          <ul class="firstUl">
+            <!-- <li
+              :class="i==peopleList.length-1?'firstList firstList_line':'firstList'"
+              v-for="(item, i) in peopleList"
+              :key="i"
+            >
+              <span class="box_span_height"></span>
+              <span :class="i==0?'firstSpan firstSpanColor':'firstSpan'">{{item.DepartmentName}}</span>
+              <span class="box_span_line firstLine_line"></span>
+              <ul class="position_remove">
+                <li class="scondList" v-for="(item, index) in item.UserRoleList" :key="index">
+                  <span class="box_span_line"></span>
+                  <span class="box_span_border">{{item.cRoleName==null?'***':item.cRoleName}}</span>
+                  <span class="box_span_line"></span>
+                  <span  @click="clickItem(item,index,i)" :class="item.show==false?'box_span_border box_show_pointer':'box_span_border box_show_pointer box_show_color'">{{item.cName==''?'***':item.cName}}</span>
+                  <span class="box_span_line"  v-show="item.Building==null?false:true"></span>
+                  <span class="box_span_border" v-show="item.Building==null?false:true">{{(item.Building==null || item.Building=='')?'***':item.Building}}</span>
+                  <div class="click_box_show" v-show="item.show">
+                    <p>电话：{{item.cPhone}}</p>
+                    <p>邮箱：{{item.Email}}</p>
+                    <p>微信：{{item.WeChatNo}}</p>
+                  </div>
+                </li>
+              </ul>
+            </li> -->
+
+
+
+            <!-- <li class="org" v-for="(comItem,index) in peopleList" :key="index">
+              <span class="columnLine"></span>
+              <span class="orgHeader">{{(comItem.OrgName==null || comItem.OrgName=='')?'***':comItem.OrgName}}</span>
+              <span class="ulBottom"></span>
+              <ul class="secondUl">
+                <li
+                  :class="i==comItem.Department.length-1?'firstList firstList_line':'firstList'"
+                  v-for="(it, i) in comItem.Department"
+                  :key="i"
+                >
+                  <div class="content">
+                    <span class="box_span_height"></span>
+                    <span :class="i==0?'firstSpan firstSpanColor':'firstSpan'" :style="{position: 'relative', top: '0px'}">{{(it.DepartmentName==null || it.DepartmentName=='')?'***':it.DepartmentName}}</span>
+                    <span class="box_span_line firstLine_line" :style="{position: 'relative', top: '0px',left: '1px'}"></span>
+                    <ul class="position_remove">
+                      <li :class="it.UserRoleList.length === 1? 'onlyOne':'scondList'" v-for="(item, index) in it.UserRoleList" :key="index">
+                        <span class="box_span_line"></span>
+                        <span class="box_span_border">{{item.cRoleName==null?'***':item.cRoleName}}</span>
+                        <span class="box_span_line"></span>
+                        <span  @click="clickItem(item,index,i)" :class="item.show==false?'box_span_border box_show_pointer':'box_span_border box_show_pointer box_show_color'">{{item.cName==''?'***':item.cName}}</span>
+                        <span class="box_span_line"  v-show="item.Building==null?false:true"></span>
+                        <span class="box_span_border" v-show="item.Building==null?false:true">{{(item.Building==null || item.Building=='')?'***':item.Building}}</span>
+                        <div class="click_box_show" v-show="item.show">
+                          <p>电话：{{item.cPhone}}</p>
+                          <p>邮箱：{{item.Email}}</p>
+                          <p>微信：{{item.WeChatNo}}</p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </li>
+              </ul>
+              
+            </li> -->
+            <li class="orgList" v-for="(comItem,index) in peopleList" :key="index">
+              <div class="orgTitle" >{{(comItem.OrgName==null || comItem.OrgName=='')?'***':comItem.OrgName}}</div>
+              <div :class="comItem.Department.length > 0?'line':'onlyOneLine'"></div>
+              <ul class="orgBody">
+                <li class="depart" v-for="(it, i) in comItem.Department" :key="i">
+                  <div class="departName">
+                    <div class="colLine"></div>
+                    <span class="depNamContent">{{(it.DepartmentName==null || it.DepartmentName=='')?'***':it.DepartmentName}}</span>
+                    <span class="rowLine"></span>
+                  </div>
+                  <ul class="departDetail">
+                    <li class="content" v-for="(item, j) in it.UserRoleList" :key="j">
+                      <div class="managementTitle">
+                        <span class="rowLine"></span>
+                        <span class="manTitContent">
+                          {{item.cRoleName==null?'***':item.cRoleName}}
+                        </span>
+                        <!-- <span class="rowLine"></span> -->
+                      </div>
+                      <div class="managementName">
+                        <span class="rowLine"></span>
+                        <span class="manNamContent" @click="clickItem(item,j,i,index)" :class="item.show==false?'box_show_pointer':'box_show_pointer box_show_color'">
+                          {{item.cName==''?'***':item.cName}}
+                        </span>
+                        <!-- <span class="rowLine"></span> -->
+                      </div>
+                      <div class="buildingName">
+                        <span class="rowLine"></span>
+
+                        <span class="buiNamContent">
+                          {{(item.Building==null || item.Building=='')?'***':item.Building}}
+                        </span>
+                      </div>
+                      <div @click="hideShow(item)" class="click_box_show" v-show="item.show">
+                          <p>电话：{{item.cPhone}}</p>
+                          <p>邮箱：{{item.Email}}</p>
+                          <p>微信：{{item.WeChatNo}}</p>
+                        </div>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+    </div>
+</template>
+<script>
+export default {
+    data(){
+        return{}
+    },
+    props: ['peopleList'],
+    methods:{
+      //点击单个人员的时候-显示高亮-只显示一个弹出框
+      clickItem(item,index,list,topList){
+        for(let i=0;i<this.peopleList.length;i++){
+          for(let x=0;x<this.peopleList[i].Department.length;x++){
+            for(let z = 0; z<this.peopleList[i].Department[x].UserRoleList.length; z++){
+              if(this.peopleList[i].Department[x].UserRoleList[z].show){
+                this.peopleList[i].Department[x].UserRoleList[z].show=false;
+              }
+            }
+          }
+        }
+        item.show=!item.show;
+        this.$forceUpdate();//强制刷新，解决页面不会重新渲染的问题
+      },
+      hideShow(item){
+        item.show = false
+        this.$forceUpdate();
+      }
+    }
+}
+</script>
+<style lang="stylus" scoped>
+.company_box {
+        padding: 20px;
+        font-size: 18px;
+        position: relative;
+        
+        span {
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          text-align: center;
+          line-height: 30px;
+        }
+
+        .orgList {
+          position: relative;
+          margin-bottom: 20px;
+          .orgTitle {
+            height: 30px;
+            width: 40%;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            text-align: center;
+            line-height: 30px;
+            background-color: #4775CA;
+            box-sizing: border-box;
+            color: #fff;
+          }
+          .line{
+            height: 30px
+            width: 0px;
+            border-left: 1px solid #E5E5E5;
+            margin-left: 50px;
+          }
+          .onlyOneLine {
+            position: absolute;
+            top: 30px;
+            left: 50px
+            height: 50px
+            width: 0px;
+            border-left: 1px solid #E5E5E5;
+          }
+          .depart{
+            display: flex;
+            .departName {
+              position: relative;
+              width: 25%;
+              >.colLine {
+                width: 0px;
+                height: 100%;
+                border-left: 1px solid #E5E5E5;
+                position: absolute;
+                top: 0px;
+                left: 50px;
+                z-index 1;
+
+              }
+              >.depNamContent {
+                position: relative;
+                display: inline-block;
+                width: 80%;
+                height: 30px;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                text-align: center;
+                line-height: 30px;
+                background-color: #65a53d;
+  
+                box-sizing: border-box;
+                color: #fff;  
+                z-index: 2
+              }
+              >.rowLine {
+                display: inline-block;
+                width: 20%
+                height: 15px;
+                border-top: 1px solid #E5E5E5;
+              }
+            }
+            .departDetail {
+              width: 75%
+              .content {
+                position: relative;
+                display:flex;
+                margin-bottom: 20px;
+                .managementTitle {
+                  flex: 1;
+                  height: 30px;
+                  display: flex
+ 
+                  .manTitContent {
+                    display: inline-block;
+                    width: 100px;
+                    height: 30px;
+                    background-color: #fff;
+                    border:1px solid rgba(229,229,229,1)
+                    box-sizing: border-box;
+                    color: #333;
+                  }
+                  >.rowLine {
+                    flex: 1;
+                    display: block;
+                    height: 15px;
+                    border-bottom: 1px solid #E5E5E5;
+                    box-sizing: border-box;
+
+                  }
+                }
+                .managementName {
+                  flex: 1
+                  height: 30px;
+                  display: flex
+
+                  .manNamContent {
+                    display: inline-block;
+                    width: 100px;
+                    height: 30px;
+                    background-color: #fff;
+                    border:1px solid rgba(229,229,229,1)
+                    box-sizing: border-box;
+                    color: #333
+                  }
+                  >.rowLine {
+                    flex: 1;
+                    display: block;
+                    height: 15px;
+                    border-bottom: 1px solid #E5E5E5;
+                    box-sizing: border-box;
+
+                  }
+                }
+                .click_box_show {
+                  z-index: 200;
+                  position: absolute;
+                  margin-left: 80px;
+                  font-size: 16px;
+                  padding: 5px 10px;
+                  background: rgba(0, 0, 0, 0.4);
+                  color: #ffffff;
+                  width: 240px;
+                  height: 81px;
+                  margin-top: 5px;
+                }
+                .buildingName {
+                  flex: 1
+                  height: 30px;
+                  display: flex
+
+                  .buiNamContent {
+                    display: inline-block;
+                    width: 100px;
+                    height: 30px;
+                    background-color: #fff;
+                    border:1px solid rgba(229,229,229,1)
+                    box-sizing: border-box;
+                    color: #333
+                  }
+                  >.rowLine {
+                    flex: 1;
+                    display: block;
+                    height: 15px;
+                    border-bottom: 1px solid #E5E5E5;
+                    box-sizing: border-box;
+
+                  }
+                }
+              }
+              .content:not(:last-child):before {
+                position: absolute;
+                top: 15px;
+                left: 0px;
+                content: '';
+                width: 0px;
+                height: 50px;
+                border-left: 1px solid #E5E5E5;
+              }
+            }
+          }
+          .depart:first-child {
+            .depNamContent {
+              background-color: #FDA143;
+            }
+          }
+          .depart:last-child {
+            .departName {
+              .colLine {
+                height: calc(100% + 20px)!important;
+              }
+            }
+          }
+        }
+        .orgList:last-child {
+          >div:nth-child(2){
+            display: none;
+          }
+        }
+
+        // .org {
+        //   position:relative;
+        //   margin-bottom: 20px;
+        // }
+
+        // .org:last-child {
+        //   .ulBottom {
+        //     border-left: 1px solid transparent;
+        //   }
+        //   .columnLine {
+        //     border-left: 1px solid transparent;
+
+        //   }
+        // }
+
+        // .orgHeader{
+        //   position:relative;
+        //   top: 0px;
+        //   left: 0px;
+        //   width: 200px;
+        //   height: 30px;
+        //   // overflow: hidden;
+        //   white-space: nowrap;
+        //   text-overflow: ellipsis;
+        //   text-align: center;
+        //   line-height: 30px;
+        //   display: inline-block;
+        //   background-color: #4775CA;
+    
+        //   box-sizing: border-box;
+        //   color: #fff;
+        // }
+
+        // .onlyOne {
+        //   border-left: 1px solid transparent;
+        //   position: relative;
+        //   // top: -12px;
+        //   left: 0;
+        // }
+
+        // .ulBottom {
+        //   position: absolute 
+        //   bottom: -50px;
+        //   left: 50px;
+        //   width:0px
+        //   height: 50px;
+        //   border-left: 1px solid #1e4797;
+        //   z-index: 0
+        // }
+
+        // .columnLine{
+        //   display: inline-block;
+        //   // position:relative
+        //   width: 0px;
+        //   height: 40px;
+        //   border-left: 1px solid #1e4797;
+        //   transform: translate(50px,45px)
+        // }
+
+        // .company_box ul {
+        //   position: relative;
+        //   padding-left: 60px;
+        //   margin: 0;
+        // }
+
+        // .scondList:not(:first-child) {
+        //   display: flex;
+        //   border-left: 1px solid #1e4797;
+        //   position: relative;
+        //   // top: -12px;
+        //   left: 0;
+        // }
+        //   .scondList:first-child {
+        //     display: flex;
+        //     .box_span_line:first-child {
+        //       width: 28px;
+        //       height: 10px;
+        //       transform: translate(0px, 12px)
+        //       border-left: 1px solid #1e4797;
+        //       border-top: 1px solid #1e4797;
+        //       border-bottom: 1px solid transparent;
+
+        //     }
+        // }
+        // .scondList:last-child {
+        //   border-left: 1px solid transparent;
+        //   .box_span_line:first-child {
+        //     width: 28px;
+        //     height: 40px;
+        //     transform: translate(-1px, 0px)
+        //     border-left: 1px solid #1e4797;
+        //     border-top: 1px solid transparent;
+        //     border-bottom: 1px solid #1e4797;
+            
+        //   }
+
+        // }
+
+        // .content {
+        //   display: flex;
+        //   transform: translate(-50px,0px)
+        // }
+
+        // .firstList {
+        //   border-left: 1px solid #1e4797;
+        //   position: relative;
+        //   // top: 50px;
+        //   left: 50px;
+        // }
+
+        // .firstList_line {
+        //   border-left: 1px solid #1e4797;
+        // }
+
+        // .firstSpan {
+        //   width: 100px;
+        //   height: 30px;
+        //   // overflow: hidden;
+        //   white-space: nowrap;
+        //   text-overflow: ellipsis;
+        //   text-align: center;
+        //   line-height: 30px;
+        //   display: inline-block;
+        //   background-color: #65a53d;
+    
+        //   position: relative;
+        //   color: #ffffff;
+        //   top: 0px;
+        //   left: 0px;
+        //   box-sizing: border-box;
+        // }
+
+        // .firstSpanColor {
+        //   background-color: #FDA143;
+        // }
+
+        // .box_span_border {
+    
+        //   display: inline-block;
+        //   width: 100px;
+        //   height: 30px;
+        //   background-color: #65a53d;
+        //   color: #fff;
+        //   // overflow: hidden;
+        //   white-space: nowrap;
+        //   text-overflow: ellipsis;
+        //   text-align: center;
+        //   line-height: 30px;
+        //   margin-top: 20px;
+        // }
+        .box_show_pointer{
+          cursor:pointer;
+        }
+        .box_show_color{
+          border 1px solid #1e4797;
+        }
+
+        // .box_span_border:hover {
+        //   background-color: #F5F6FA;
+        //   color: #333;
+        // }
+
+        // .box_span_line {
+        //   width: 28px;
+        //   border-bottom: 1px solid #1e4797;
+        //   display: inline-block;
+        //   height: 30px;
+        // }
+
+        // .position_remove {
+        //   display: inline-block;
+        //   position: relative;
+        //   top: 0px;
+        //   left: 0px;
+        // }
+
+        // .box_span_height {
+        //   height: 100%;
+        //   width: 0;
+        //   display: inline-block;
+        //   border-left: 1px solid #333333;
+        // }
+
+        // .firstLine_line {
+        //   // position: relative;
+        //   // top: -40px;
+        //   // left: -50px;
+        // }
+
+        
+      }
+</style>
+

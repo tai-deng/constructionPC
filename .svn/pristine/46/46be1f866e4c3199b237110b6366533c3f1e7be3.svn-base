@@ -1,0 +1,85 @@
+.container-scope(class="container-box-list new-scope")
+    .house-model(:span="12")
+        .model-container
+            //- el-col(:span="10")
+            //-     element-tree(:options="options" :expandedKeys="expandedKeys" :checkedKeys="checkedKeys" :array="array" :defaultProps="defaultProps" @GetElementTree="GetElementTree" @handleCheckChange="handleCheckChange" @handleNodeClick="handleNodeClick")
+            .model-container(ref="modelContainer")
+    .filter-wrapper
+        .button-wrapper
+            el-button-group
+                el-button(:type="activeTab ? 'primary' : ''" @click="onPurchaseBtn" :autofocus="activeTab") 物资需求
+                el-button(:type="!activeTab ? 'primary' : ''" @click="onChangeBtn" :autofocus="!activeTab") 工程变更
+
+            el-button(type="warning" @click="startChange") {{ activeTab ? '发起采购' : '发起变更' }}
+        br
+        //- 变更列表
+        template(v-if="!activeTab")
+            ScopeChangeList(@showChangeDetail="showChangeDetail")
+        template(v-else)        
+            .filter
+                el-form(
+                ref="filterFormRef"
+                    :model="filterForm"
+                        :inline="true"
+                        :validate-on-rule-change="false"
+                )
+                    el-form-item
+                        el-select(v-model="filterForm.BuildName" placeholder="楼栋"  v-loading="buildLoading")
+                            
+                            el-option(
+                            v-for="(item,index) in BuildNameList"
+                                :key="index"
+                                    :label="item.text"
+                                    :value="item.text"
+                            )
+                    el-form-item
+                        el-select(v-model="filterForm.Specialty" placeholder="专业" v-loading="specLoading")
+                            el-option(
+                            v-for="(item,index) in SpecialtyList"
+                                :key="index"
+                                    :label="item.text"
+                                    :value="item.text"
+                            )
+                    el-form-item
+                        el-select(v-model="filterForm.Floor" placeholder="楼层" v-loading="floorLoading")
+                            el-option(
+                            v-for="(item,index) in FloorbyList"
+                                :key="index"
+                                    :label="item.text"
+                                    :value="item.text"
+                            )
+                    el-form-item(class="ser-bg")
+                        el-input(v-model="filterForm.Name" placeholder="楼栋、专业、楼层、资源")
+                            i(slot="prefix" class="el-input__icon el-icon-search")
+
+            el-card(class="box-card new-box-card"
+                v-for="(item,index) in PurchaseList" :key="index" v-loading="listLoading"
+            )
+                div(class='scope-status')
+                    img(src='../../../../assets/imgs/scope_load.png' v-if="item.WorkStatus==0")
+                    img(src='../../../../assets/imgs/scope_ing.png' v-if='item.WorkStatus==3')
+                    img(src='../../../../assets/imgs/scope_done.png' v-if='item.WorkStatus==4')
+                div( slot="header" class="clearfix border-bottom" @click="onPosition(item)")
+                    span 采购批次:{{item.Code}}
+                    el-button(style="float: right" type="primary" round @click.stop="toPurchaseDetail(item.ID)") 采购详情
+                    div(class="text item new-list-item")
+                        el-row
+                            el-col( :span="8")
+                                div(class="grid-content bg-purple") 申请人:{{item.ApplyPersonName}}
+                            el-col( :span="8")
+                                div(class="grid-content bg-purple-light text-center") 发起日期:{{item.dCreateTime}}
+                            el-col( :span="8")
+                                div(class="grid-content bg-purple text-right") 需用日期:{{item.DemandTime}}
+                
+
+
+            el-pagination( v-show="PurchaseList.length == paging.rows" :total="totalNum" @current-change="curChange" :page-size="paging.rows" :current-page.sync='paging.page' background layout="prev, pager, next" class="text-center" )
+        //- 采购详情
+    //- template(v-if="dialogType === dialogTypeOptions.purchaseDetail")
+    //-     ScopeDetail(:purchaseDetailId="purchaseDetailId")
+    //- CommonDialog(ref="dialogRef" :title="dialogTitle" width="50%" :okText="okText" :closeText="okText" @ok="dialogOk" @close="dialogClose")
+        //- 变更详情 
+        //- template(v-else-if="dialogType === dialogTypeOptions.changeDetail")
+            //- ScopeChangeDetail
+
+            

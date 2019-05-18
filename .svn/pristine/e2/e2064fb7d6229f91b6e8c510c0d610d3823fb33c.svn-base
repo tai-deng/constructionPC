@@ -1,0 +1,443 @@
+<template>
+  <div class="container-cost cost-detail">
+    <div class="wrapper">
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <!-- 模型box -->
+          <div class="model-container">
+            <div ref="modelContainer" class="model-container"></div>
+          </div>
+        </el-col>
+        <el-col :span="12">
+          <div class="grid-content bg-purple-light">
+            <div class="container-cost-right">
+              <div class>
+                <el-form
+                  :inline="true"
+                  :model="formInline"
+                  class="demo-form-inline new-form-inline"
+                >
+                  <el-form-item class="width92">
+                    <div class="cost-detail-text">
+                      <span>
+                        <span class="b">资源名称:</span>
+                        <span>{{resourceName}}</span>
+                      </span>
+                      <span>
+                        <span class="b">楼栋:</span>
+                        <span>{{buildName}}</span>
+                      </span>
+                      <span>
+                        <span class="b">楼层:</span>
+                        <span>{{floor}}</span>
+                      </span>
+                    </div>
+                  </el-form-item>
+                  <el-form-item class="width20">
+                    <el-button type="primary" @click="onSubmit">返回列表</el-button>
+                  </el-form-item>
+                </el-form>
+              </div>
+              <div class="container-cost-right">
+                <el-table
+                  ref="singleTable"
+                  :data="tableData"
+                  :span-method="objectSpanMethod"
+                  show-summary
+                  highlight-current-row
+                  style="width: 100%"
+                >
+                  <el-table-column type="index" label="序号"></el-table-column>
+                  <el-table-column label="施工预算量">
+                    <template slot-scope="scope">{{adjustBOQ}}</template>
+                  </el-table-column>
+                  <el-table-column label="入库">
+                    <el-table-column prop="InDate" label="时间"></el-table-column>
+                    <el-table-column prop="InNum" label="数量"></el-table-column>
+                  </el-table-column>
+                  <el-table-column label="出库">
+                    <el-table-column prop="OutDate" label="时间"></el-table-column>
+                    <el-table-column prop="OutNum" label="数量"></el-table-column>
+                  </el-table-column>
+                  <el-table-column label="退还">
+                    <el-table-column prop="BackDate" label="时间"></el-table-column>
+                    <el-table-column prop="BackNum" label="数量"></el-table-column>
+                  </el-table-column>
+                  <el-table-column property="StoreNum" label="库存"></el-table-column>
+                  <el-table-column property="OverNum" label="节超">
+                    <template slot="header" slot-scope="scope">
+                      <el-tooltip class="item" effect="dark" content="节超" placement="bottom">
+                        <span>
+                          节超
+                          <i @click="view(scope.row)" class="el-icon-question"></i>
+                        </span>
+                      </el-tooltip>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+            </div>
+          </div>
+        </el-col>
+      </el-row>
+    </div>
+  </div>
+</template>
+<script ></script>
+<script type='textecmascript-6'>
+import { mapMutations } from "vuex";
+import {QueryCostItem} from "@/api/api.js";
+export default {
+  data() {
+    return {
+      data: "成本管理cost",
+      buildName: "",
+      specialty: "",
+      floor: "",
+      taskId: "",
+      resourceName: "",
+      adjustBOQ: "",
+      formInline: {
+        user: "",
+        region: ""
+      },
+      tableData: [
+        {
+          index: "1",
+          ConstructionPlansBudget: "1000",
+          inTime: "1.1",
+          inNum: "110.00m",
+          outTime: "120.00m",
+          outNum: "10.00m",
+          toTime: "1.00%",
+          toNum: "1",
+          stock: "1",
+          super: "1"
+        },
+        {
+          index: "2",
+          ConstructionPlansBudget: "100.00m",
+          inTime: "1.1",
+          inNum: "110.00m",
+          outTime: "120.00m",
+          outNum: "10.00m",
+          toTime: "1.00%",
+          toNum: "1",
+          stock: "1",
+          super: "1"
+        },
+        {
+          index: "3",
+          ConstructionPlansBudget: "100.00m",
+          inTime: "1.1",
+          inNum: "110.00m",
+          outTime: "120.00m",
+          outNum: "10.00m",
+          toTime: "1.00%",
+          toNum: "1",
+          stock: "1",
+          super: "1"
+        },
+        {
+          index: "4",
+          ConstructionPlansBudget: "100.00m",
+          inTime: "1.1",
+          inNum: "110.00m",
+          outTime: "120.00m",
+          outNum: "10.00m",
+          toTime: "1.00%",
+          toNum: "1",
+          stock: "1",
+          super: "1"
+        },
+        {
+          index: "5",
+          ConstructionPlansBudget: "100.00m",
+          inTime: "1.1",
+          inNum: "110.00m",
+          outTime: "120.00m",
+          outNum: "10.00m",
+          toTime: "1.00%",
+          toNum: "1",
+          stock: "1",
+          super: "1"
+        }
+      ],
+      currentRow: null
+    };
+  },
+  created() {
+    this.buildName = this.$route.query.BuildName; //楼栋
+    this.specialty = this.$route.query.Specialty; //专业
+    this.floor = this.$route.query.Floor; //楼层
+    this.taskId = this.$route.query.TaskId; //进度ID
+    this.resourceName = this.$route.query.ResourceName; //资源名称
+    this.adjustBOQ = this.$route.query.AdjustBOQ; //施工预算量
+    if (this.resourceName == "") {
+      this.$router.push({
+        path: "cost"
+      });
+    }
+    this.getCostDetail()
+    this.initModel();
+  },
+  methods: {
+    /**
+     * @name 加载模型
+     */
+    initModel(){
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          console.log(res)
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    onSubmit() {
+      this.$router.push({
+        path: "cost"
+      });
+    },
+    objectSpanMethod({ row, column, rowIndex, columnIndex }) {
+      if (columnIndex === 1) {
+        if (rowIndex % 5 === 0) {
+          return {
+            rowspan: 5,
+            colspan: 1
+          };
+        } else {
+          return {
+            rowspan: 0,
+            colspan: 0
+          };
+        }
+      }
+    },
+    /**
+     * 成本管理详情
+     */
+    async getCostDetail(){
+      let params = {
+        ProjectID: localStorage.getItem("projectid"),
+        BuildName: this.buildName,
+        Specialty: this.specialty,
+        Floor: this.floor,
+        TaskId: this.taskId,
+        ResourceName: this.resourceName
+      };
+      let costDetailData = await this.Request(QueryCostItem(params))
+      if(costDetailData.StatusCode == 200){
+        if(costDetailData.Detiel.length > 0){
+          this.tableData = costDetailData.Detiel
+          console.log("详情：",costDetailData)
+        }else{
+          this.$message({
+            type: 'warning',
+            message: "没有数据",
+            center: 'true'
+          })
+          this.tableData = []
+        }
+      }else{
+        this.$message({
+          type: 'error',
+          message: costData.message ? costData.message : '后台异常',
+          center: 'true'
+        })
+      }
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    })
+  }
+};
+</script>
+<style lang='stylus' rel='stylesheet/stylus'>
+.container-cost {
+  width: 100%;
+  height: 100%;
+}
+
+.container-cost .el-table td, .container-cost .el-table th.is-leaf {
+  border-bottom: 1px solid #ebeef5;
+}
+
+.container-cost {
+  background: #f5f6fa;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.container-cost-left {
+  background: #fff;
+  height: 100%;
+  margin-right: 20px;
+  border: 1px solid #ecedf1;
+}
+
+.container-cost .wrapper, .container-cost .el-row, .container-cost .el-col, .container-cost .grid-content {
+  height: 100%;
+}
+
+.container-cost .el-form-item {
+  width: 18%;
+  height: 40px;
+}
+
+.container-cost .width20 {
+  width: 5%;
+  position: absolute;
+  right: 4px;
+}
+
+.container-cost .el-button {
+  height: 38px;
+  background: #4580fe;
+}
+
+.container-cost-right .el-select .el-input__inner {
+  border: 1px solid #ecedf1;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.container-cost .el-input__suffix {
+  width: 50px;
+  background: #44508a;
+  border-radius: 0 5px 5px 0;
+}
+
+.container-cost .el-input--suffix {
+  overflow: hidden;
+}
+
+.container-cost .el-select .el-input .el-select__caret {
+  color: #fff;
+}
+
+.container-cost .el-table th {
+  background: #44508a;
+  color: #fff;
+  text-align: center;
+}
+
+.container-cost .el-table--enable-row-transition .el-table__body td, .container-cost .el-table--enable-row-transition .el-table__body td .cell {
+  text-align: center;
+  padding: 0;
+}
+
+.container-cost .el-table--enable-row-transition .el-table__body td div {
+  padding: 12px;
+}
+
+.blueBorder {
+  border-left: 6px solid #4476cd;
+}
+
+.greenBorder {
+  border-left: 6px solid #05a663;
+}
+
+.lightGreenBorder {
+  border-left: 6px solid #9ce621;
+}
+
+.redBorder {
+  border-left: 6px solid #e63837;
+}
+
+.pinkBorder {
+  border-left: 6px solid #fe41b9;
+}
+
+.bottom {
+  clear: both;
+  text-align: center;
+}
+
+.item {
+  margin: 4px;
+}
+
+.left .el-tooltip__popper, .right .el-tooltip__popper {
+  padding: 8px 10px;
+}
+
+.new-form-inline {
+  position: relative;
+}
+
+.container-cost .el-input__suffix {
+  right: 0;
+}
+
+.container-cost-right .el-table thead.is-group th, .container-cost-right .el-table thead {
+  background: #435089;
+}
+
+.cost-detail .el-table--enable-row-transition .el-table__body td .cell {
+  padding: 10px;
+}
+
+.cost-detail .el-table__footer-wrapper tbody td {
+  background: #fff;
+  border-top: 0;
+  text-align: center;
+}
+
+.cost-detail .el-table__footer-wrapper tbody th {
+  width: auto;
+  display: block !important;
+}
+
+.cost-detail .width92 {
+  width: 85% !important;
+}
+
+.cost-detail .b {
+  font-weight: bold;
+}
+
+.cost-detail .width92 .el-form-item__content {
+  width: 100%;
+}
+
+.cost-detail .cost-detail-text {
+  width: 100%;
+  text-align: right;
+  font-size: 14px;
+}
+
+.cost-detail .cost-detail-text span {
+  margin-right: 20px;
+  padding-right: 20px;
+}
+
+.cost-detail .width20 {
+  right: 40px;
+}
+
+.cost-detail .el-button {
+  border-color: #FDA143;
+  background: #FDA143;
+}
+
+.container-cost .model-container {
+  width: 100%;
+  height: 100%;
+  padding: 0 !important;
+  z-index:100
+}
+</style>

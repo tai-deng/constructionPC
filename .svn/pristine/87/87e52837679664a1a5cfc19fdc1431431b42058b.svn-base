@@ -1,0 +1,521 @@
+<!-- 弹窗 popup -->
+<template>
+  <div class="popup-container flex-row">
+    <!-- {{popupValue.title}} -->
+    <div class="popup-center" :class="{'popup-center-b':popupValue.title=='禁用'}">
+      <div class="popup-center-title flex-row">
+        <div class="popup-center-title-m">{{popupValue.title}}</div>
+        <div class="popup-center-title-close el-icon-close" @click="onClose"></div>
+      </div>
+      <div class="popup-center-item flex-row" :class="{'popup-center-item-b':popupValue.title=='禁用'}" >
+        <el-form
+          :model="ruleForm"
+          :rules="rules"
+          ref="ruleForm"
+          label-width="100px"
+          class="popup-center-item-form flex-column"
+          :class="{'popup-center-item-form-b':popupValue.title=='禁用'}"
+        >
+          <div class="popup-center-item-form-content" :class="{'subjoin':popupValue.title=='编辑人员'||'新增人员'}">
+            <template v-if="popupValue.title=='部门'">
+              <el-form-item label="所属公司">
+                <el-select v-model="ruleForm.region" placeholder="选择所属公司">
+                  <el-option :label="org.Name" :value="org.ID" v-for="org in OrgList" :key="org.index"></el-option>
+                </el-select>
+              </el-form-item>
+
+              <!-- <el-form-item label="部门编码">
+                <el-input v-model="ruleForm.name" placeholder="请输入部门编码" key="department-code"></el-input>
+              </el-form-item> -->
+
+              <el-form-item label="部门名称">
+                <el-input v-model="ruleForm.name" :placeholder=" Object.prototype.hasOwnProperty.call(popupValue.value, 'cName')?popupValue.value.cName:'请输入部门名称'" key="department-title"></el-input>
+              </el-form-item>
+            </template>
+
+            <template v-else-if="popupValue.title=='编辑人员'||'新增人员'">
+              <el-form-item label="所属公司">
+                <el-select v-model="addUserParams.iSys_Company_ID" placeholder="选择所属公司">
+                  <el-option :label="org.Name" :value="org.ID" v-for="org in orgList" :key="org.index"></el-option>
+                </el-select>
+              </el-form-item>
+
+              <el-form-item label="所属部门">
+                <el-select v-model="addUserParams.iSys_Dep_ID" placeholder="选择所属部门">
+                  <el-option :label="dep.text" :value="dep.id" v-for="dep in departmentList" :key="dep.index"></el-option>
+                </el-select>
+              </el-form-item>
+
+              <el-form-item label="用户账号">
+                <el-input v-model="addUserParams.UserName" placeholder="请输入用户账号" key="personnel-account"></el-input>
+              </el-form-item>
+
+              <el-form-item label="用户姓名">
+                <el-input v-model="addUserParams.Name" placeholder="请输入用户姓名" key="personnel-username"></el-input>
+              </el-form-item>
+
+              <el-form-item label="联系电话">
+                <el-input v-model="addUserParams.Tel" placeholder="请输入联系号码" key="personnel-phone"></el-input>
+              </el-form-item>
+
+              <el-form-item label="微信号码">
+                <el-input v-model="addUserParams.WeChatNo" placeholder="请输入微信号码" key="personnel-wechat"></el-input>
+              </el-form-item>
+
+              <el-form-item label="邮箱">
+                <el-input v-model="addUserParams.Email" placeholder="请输入邮箱" key="personnel-email"></el-input>
+              </el-form-item>
+
+              <el-form-item label="所负责区域">
+                <el-select v-model="addUserParams.Building" placeholder="请选择负责区域">
+                  <el-option :label="area.text" :value="area.id" v-for="area in areaList" :key="area.index"></el-option>
+                </el-select>
+              </el-form-item>
+            </template>
+
+            <template v-else-if="popupValue.title=='角色'">
+              <!-- <el-form-item label="角色编码">
+                <el-input v-model="ruleForm.name" placeholder="请输入角色编码" key="role-code"></el-input>
+              </el-form-item> -->
+
+              <el-form-item label="角色名称">
+                <el-input v-model="ruleForm.name" :placeholder="Object.prototype.hasOwnProperty.call(popupValue.value, 'text')?popupValue.value.text:'请输入角色名称'" key="role-title"></el-input>
+              </el-form-item>
+            </template>
+
+            <template v-else-if="popupValue.title=='禁用'">
+              <div class="disabled-label">是否确定禁用该人员?禁用后不可恢复</div>
+
+              <el-form-item class="disabled-form-item">
+                <el-select v-model="ruleForm.region" placeholder="选择项目转接人员">
+                  <el-option label="区域一" value="shanghai"></el-option>
+                  <el-option label="区域二" value="beijing"></el-option>
+                </el-select>
+              </el-form-item>
+            </template>
+          </div>
+          <el-form-item class="popup-center-item-form-btn">
+            <el-button class="popup-center-item-form-btn-cancel" @click="onClose">取消</el-button>
+            <el-button
+              class="popup-center-item-form-btn-affirm"
+              type="primary"
+              @click="submitForm('ruleForm')"
+            >确认</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import {AddRole,UpdateRole,AddDept,GetOrgList,UpdateDept,GetDeptList, GetBuilding,AddUser,MdfUser,GetLoginUserInfo} from '@/api/api.js'
+import {infaces} from '../module/interfaces.js'
+export default {
+  name: "popups",
+  data() {
+    return {
+      ruleForm: {
+        name: "",
+        region: ""
+      },
+      addUserParams:{//新增人员参数
+        ProjectID:localStorage.getItem('projectid'),
+        UserName:'',
+        Name:'',
+        Tel:'',
+        Email:'',
+        WeChatNo:'',
+        iSys_Dep_ID:'',
+        iSys_Company_ID:'',
+        Building:'',
+        CurUserID:''
+      },
+      // editUserParams:{},//编辑人员的信息
+      orgList:[],//公司列表
+      departmentList:[],//部门列表
+      areaList:[],//负责区域列表
+      isEditor:false,//false为新增人员，true为编辑人员
+      rules: {
+        // name: [
+        //   { required: true, message: "请输入活动名称", trigger: "blur" },
+        //   { min: 3, max: 5, message: "长度在 3 到 5 个字符", trigger: "blur" }
+        // ],
+        // region: [
+        //   { required: true, message: "请选择活动区域", trigger: "change" }
+        // ]
+      },
+      userId:Number(localStorage.getItem('userId')),
+      projectId:localStorage.getItem('projectid'),
+      OrgList:[],//公司（单位）列表
+    };
+  },
+  computed:{
+    iSys_Company_ID(){
+      return this.addUserParams.iSys_Company_ID
+    }
+  },
+  watch:{
+    iSys_Company_ID(orgId){
+      console.log(orgId)
+      this.getDept(orgId)
+    }
+  },
+  props: {
+    popupValue: null
+  },
+  created(){
+    console.log(this.popupValue)
+    this._initData()
+  },
+  methods: {
+    _initData(){
+      //如果是部门弹窗，需要获取公司（单位）列表
+      if(this.popupValue.title=='部门'){
+      //获取公司（单位）列表
+      infaces(this,GetOrgList,{projectId:this.projectId}).then(res=>{
+        console.log(res)
+        this.OrgList = res.Detiel
+      })
+    }
+      this.getOrg()
+      this.getBuild()
+
+      //如果是编辑人员，获取人员信息
+      console.log(this.popupValue,Object.prototype.hasOwnProperty.call(this.popupValue.value,'id'))
+      if(Object.prototype.hasOwnProperty.call(this.popupValue.value,'id')){
+        this.getUserInfo(Number(this.popupValue.value.id))
+      }
+    },
+    /**
+     * 获取公司列表 
+     */
+    getOrg(){
+      let params = {
+        projectId: localStorage.getItem("projectid")
+      };
+      infaces(this, GetOrgList, params).then(res => {
+        console.log(res);
+        this.orgList= res.Detiel
+      });
+    },
+    /**
+     * 获取楼栋列表
+     */
+    getBuild(){
+      let params = {
+        projectId: localStorage.getItem("projectid")
+      };
+      infaces(this, GetBuilding, params).then(res => {
+        console.log(res);
+        this.areaList= res.Detiel
+      });
+    },
+    /**
+     * 按公司获取部门数据列表
+     */
+    getDept(orgId){
+      let params = {
+        orgId
+      };
+      infaces(this, GetDeptList, params).then(res => {
+        console.log(res);
+        this.departmentList= res.Detiel
+      });
+    },
+    /**
+     * 获取用户列表
+     */
+    getUser(){
+      let params = {
+        projectId: localStorage.getItem("projectid"),
+        keyword: this.input_search,
+        pageIndex: this.page.currentPage,
+        pageSize: this.page.currentSize
+      };
+      infaces(this, GetUserList, params).then(res => {
+        console.log(res);
+        this.tableData = res.Detiel;
+        this.page.alltotal = res.Count;
+      });
+    },
+    /**
+     * 根据用户ID获取用户详情接口
+     */
+    getUserInfo(curUserId){
+      infaces(this, GetLoginUserInfo, {curUserId}).then(res => {
+        console.log(res);
+        // this.tableData = res.Detiel;
+        // this.page.alltotal = res.Count;
+        let s = res.Detiel[0].loginUserInfo
+        this.addUserParams = {
+          ProjectID:localStorage.getItem('projectid'),
+          UserName:s.cUserName,
+          Name:s.cName,
+          Tel:s.cPhone,
+          Email:s.Email,
+          WeChatNo:s.WeChatNo,
+          iSys_Dep_ID:s.iSys_Dep_ID,
+          iSys_Company_ID:s.iSys_Company_ID,
+          Building:s.Building,
+          CurUserID:s.ID
+        }
+      });
+    },
+
+
+    // 关闭
+    onClose() {
+      this.$emit("onClose");
+    },
+    /**
+     * 确定
+     */
+    submitForm(formName) {
+      console.log(this.ruleForm)
+      this.$refs[formName].validate(valid => {
+        console.log(valid)
+        let param={}
+        if (valid) {
+          console.log('提交')
+          switch(this.popupValue.title){
+            case '部门':
+            if(!this.ruleForm.region){
+              this.$message({type:'error',message:'请选择公司',center:'true'})
+              return
+            }
+            if(!this.ruleForm.name){
+              this.$message({type:'error',message:'请输入部门名称',center:'true'})
+              return
+            }
+
+
+             if(!Object.prototype.hasOwnProperty.call(this.popupValue.value, 'cName')){ // 如果有父组件传过来的人员信息，表示为编辑部门。 没有值，则为新增部门
+              //新增部门
+              param={
+                deptName:this.ruleForm.name,
+                orgId:this.ruleForm.region,
+                userId:this.userId,
+              }
+              this.infacesFun(AddDept,param,'添加成功','refreshOrgList')
+            }else{
+               //编辑部门
+               param = {
+                 deptId:this.popupValue.value.ID,
+                 deptName:this.ruleForm.name,
+                  orgId:this.ruleForm.region,
+                  userId:this.userId,
+               }
+               this.infacesFun(UpdateDept,param,'编辑成功','refreshOrgList')
+            }
+            break
+
+            case '角色':
+            if(!this.ruleForm.name){
+              this.$message({type:'error',message:'请输入角色名称',center:'true'})
+              return
+            }
+            if(!Object.prototype.hasOwnProperty.call(this.popupValue.value, 'text')){ // 如果有父组件传过来的人员信息，表示为编辑角色。 没有值，则为新增角色
+              //新增角色
+              param = {roleName:this.ruleForm.name,userId:Number(localStorage.getItem('userId'))}
+              this.infacesFun(AddRole,param,'添加成功','refreshRoleList')
+            }else{
+               //编辑角色
+               param = {roleName:this.ruleForm.name,roleId:Number(this.popupValue.value.id),userId:Number(localStorage.getItem('userId'))}
+              this.infacesFun(UpdateRole,param,'编辑成功','refreshRoleList')
+            }
+            break
+            case '新增人员':
+            console.log('新增人员')
+            this.infacesFun(AddUser,this.addUserParams,'添加成功','refreshUserList')
+            break
+            case '编辑人员':
+               this.infacesFun(MdfUser,this.addUserParams,'编辑成功','refreshUserList')
+            break
+          }
+        } else {
+          console.log("error submit!!");
+          return false;
+        }
+      });
+    },
+    /**
+     * 公共函数
+     * inface:接口名
+     * param:参数
+     * message:提示信息
+     * refreshName:刷新哪个子组件
+     */
+    infacesFun(inface,param,message,refreshName){
+      infaces(this,inface,param).then(res=>{
+        console.log(res)
+        this.$message({type:'success',message,center:'true'})
+        this.$emit('onClose',refreshName)//关闭弹窗，且刷新公司部门列表
+      })
+    },
+    resetForm(formName) {
+      this.$refs[formName].resetFields();
+    }
+  },
+};
+</script>
+
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.popup-container {
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 999;
+  background-color: rgba(0, 0, 0, 0.6);
+
+  .popup-center {
+    width: 1000px;
+    height: 715px;
+    background-color: #fff;
+
+    .popup-center-item {
+      height: 675px;
+
+      .popup-center-item-form {
+        width: 560px;
+        height: 496px;
+
+        .popup-center-item-form-btn {
+          font-size: 16px;
+          font-family: SourceHanSansCN-Medium;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 1);
+
+          .popup-center-item-form-btn-cancel {
+            width: 120px;
+            height: 40px;
+            background: rgba(153, 153, 153, 1);
+            box-shadow: 0px 2px 4px 0px rgba(81, 81, 81, 0.5);
+            border-radius: 4px;
+            font-size: 16px;
+            font-family: SourceHanSansCN-Medium;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 1);
+            border-width: 0;
+            margin-right: 30px;
+          }
+
+          .popup-center-item-form-btn-affirm {
+            width: 120px;
+            height: 40px;
+            background: rgba(71, 117, 202, 1);
+            box-shadow: 0px 2px 4px 0px rgba(161, 192, 250, 1);
+            border-radius: 4px;
+          }
+        }
+
+        .popup-center-item-form-content {
+          .disabled-label {
+            font-size: 24px;
+            font-family: SourceHanSansCN-Medium;
+            font-weight: 500;
+            color: rgba(252, 96, 92, 1);
+          }
+
+          .disabled-form-item {
+            margin-top: 34px;
+          }
+        }
+      }
+    }
+
+    .popup-center-title {
+      height: 40px;
+      background: linear-gradient(225deg, rgba(105, 86, 255, 1) 0%, rgba(84, 138, 255, 1) 100%);
+      font-size: 18px;
+      font-family: SourceHanSansCN-Medium;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 1);
+      position: relative;
+
+      .popup-center-title-close {
+        position: absolute;
+        right: 19px;
+        top: 10px;
+      }
+    }
+  }
+}
+</style>
+<style>
+.popup-center-item-form-content .el-select .el-input__inner {
+  color: #666;
+}
+
+.popup-center-item-form-content .el-select {
+  width: 100%;
+  height: 40px;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+  border-radius: 4px;
+}
+.popup-center-item-form-content .el-input--suffix .el-input__inner {
+  border: none;
+}
+.popup-center-item-form-content .el-input__suffix {
+  background: rgba(67, 80, 137, 1);
+  border-radius: 0px 4px 4px 0px;
+  right: 0;
+  width: 40px;
+}
+.popup-center-item-form-content .el-icon-arrow-up:before {
+  /* content: "\e60b"; */
+  content: "\e60c";
+  color: rgba(255, 255, 255, 1);
+}
+.popup-center-item-form-content .center-select {
+  margin: 0 20px;
+}
+.popup-center-item-form-content
+  .input-number
+  .el-input-group--append
+  .el-input__inner,
+.popup-center-item-form-content .el-input-group__prepend {
+  height: 40px;
+  background: rgba(248, 248, 248, 1);
+  border-radius: 4px;
+  border: 1px solid rgba(229, 229, 229, 1);
+  border-right: 1px dashed #979797;
+}
+.popup-center-item-form-content .el-input__inner {
+  background: rgba(248, 248, 248, 1);
+  border-radius: 4px;
+  border: 1px solid rgba(229, 229, 229, 1);
+}
+.popup-center-item-form-btn .el-form-item__content {
+  margin-left: 0 !important;
+  margin-top: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.disabled-form-item .el-form-item__content {
+  margin-left: 0 !important;
+}
+.popup-center-item-form-btn .el-form-item::after,
+.popup-center-item-form-btn .el-form-item::before {
+  display: none;
+}
+.subjoin {
+  margin-top: -20px;
+}
+.popup-center-b{
+  height: 481px !important;
+
+}
+.popup-center-item-form-b {
+  width: 408px !important;
+  height: 200px !important;
+}
+.popup-center-item-b {
+  height: 431px !important;
+}
+</style>
+

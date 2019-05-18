@@ -1,0 +1,340 @@
+
+<template>
+  <div class='particular-container'>
+    <div class="content-top">
+      <!-- 新增按钮 -->
+      <button @click="addFunc()"><img src="@/assets/imgs/add_model.png" /><span>新增</span></button>
+      <!-- 搜索按钮 -->
+      <div class='search-container'>
+        <input
+          type="text"
+          value="名称"
+        />
+        <i class="el-icon-search"></i>
+      </div>
+    </div>
+    <!-- 内容 -->
+    <div class="content-bottom">
+      <mainmodel
+        :list="newData"
+        :dataList="dataList"
+        :dataNameList="titleName"
+      ></mainmodel>
+    </div>
+    <!-- 模态框 -->
+    <div
+      class="layer-container"
+      v-show="model_show"
+    >
+      <div class="contentBox">
+        <div class="model_title">
+          新增
+          <i> <img
+              class="model_show_time_img"
+              src="../../../../assets/imgs/close_model.png"
+              alt="关闭模态框"
+              @click="closeUploadModel()"
+            > </i>
+        </div>
+
+        <div class="model_content">
+          <ul>
+            <li>
+              <span><b>*</b>{{titleName[0]}}</span>
+              <input
+                v-model="formStatus.itemName"
+                type="text"
+                name="itemName"
+              >
+            </li>
+            <li>
+              <span><b>*</b>{{titleName[1]}}</span>
+              <input
+                class="others"
+                type="text"
+                v-model="formStatus.limitTime"
+                name="limitTime"
+              >
+              <span>天</span>
+            </li>
+          </ul>
+
+        </div>
+        <div class="model_bottom">
+          <span
+            class="cancelBtn"
+            @click="model_show = false"
+          >取消</span>
+          <span
+            class="commitBtn"
+            @click="addDataCommit()"
+          >提交</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import mainmodel from "./subcomponents/mainmodel";
+// import search from "./subcomponents/search";
+
+export default {
+  data() {
+    return {
+      model_show: false,
+      formStatus: {
+        itemName: "",
+        limitTime: "",
+        time: ""
+      },
+      titleName: ["特殊情形", "工期", "操作"],
+      dataList: [
+        { id: 0, itemName: "软基处理，堆载预压", time: "210天" },
+        { id: 1, itemName: "软基处理，真空预压", time: "120天" },
+        { id: 2, itemName: "软基处理，搅拌桩处理", time: "30天" },
+        { id: 3, itemName: "管桩桩端持力层遇水软化岩层", time: "25天" },
+        { id: 4, itemName: "基坑底打桩", time: "40天" },
+        { id: 5, itemName: "底板外防水", time: "25天" },
+        { id: 6, itemName: "底板外防水", time: "3天" },
+        { id: 7, itemName: "底板外防水", time: "50天" }
+      ],
+      newData: null
+    };
+  },
+  components: {
+    mainmodel
+  },
+  methods: {
+    //新增按钮
+    addFunc() {
+      this.model_show = true;
+    },
+    // 取消模态框函数
+    closeUploadModel() {
+      this.model_show = false;
+    },
+    // 字符串去空格符
+    trim(str) {
+      return str.replace(/(^\s*)|(\s*$)/g, "");
+    },
+    //添加数据函数
+    addDataCommit(data) {
+      data = this.formStatus;
+      // console.log(data);
+      // if (!this.trim(data.floor)) {
+      //   this.$toast({
+      //     duration: 500,
+      //     message: "请输入正确楼层"
+      //   });
+      //   return;
+      // }
+      // if (!this.trim(data.limitWorkDay)) {
+      //   this.$toast({
+      //     duration: 500,
+      //     message: "请输入红线工期"
+      //   });
+      //   return;
+      // }
+      // if (!this.trim(data.workDay)) {
+      //   this.$toast({
+      //     duration: 500,
+      //     message: "请输入工期"
+      //   });
+      //   return;
+      // }
+      this.newData = data;
+      this.model_show = false;
+      console.log(this.newData);
+    }
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+
+@import '../../../../assets/stylus/variable.styl';
+
+.particular-container {
+  width: 100%;
+  height: 100%;
+  background-color: #eff3ff;
+
+  .content-top {
+    margin: 20px;
+    overflow: hidden;
+    zoom: 1;
+
+    button {
+      width: 120px;
+      height: 40px;
+      margin-left: 20px;
+      color: #fff;
+      font-size: 16px;
+      background-color: #4775CA;
+      border: none;
+      border-radius: 4px;
+
+      img {
+        float: left;
+        width: 18px;
+        height: 18px;
+        margin-left: 20px;
+        vertical-align: middle;
+        background-size: cover;
+      }
+
+      span {
+        margin-right: 30px;
+      }
+    }
+
+    .search-container {
+      position: relative;
+      float: right;
+      height: 100%;
+
+      input {
+        width: 340px;
+        height: 40px;
+        padding-left: 60px;
+        color: #999999;
+        font-size: $font-size-16;
+        box-shadow: 0px 1px 7px 0px rgba(216, 223, 238, 0.75);
+        border-radius: 20px;
+      }
+
+      i {
+        position: absolute;
+        top: 10px;
+        left: 20px;
+        font-size: $font-size-20;
+        color: #999999;
+      }
+    }
+  }
+
+  .content-top:after {
+    content: '';
+    height: 0;
+    inline-height: 0;
+    display: block;
+    visibility: hidden;
+    clear: both;
+  }
+
+  .content-bottom {
+    height: 100%;
+  }
+
+  .layer-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: rgba(121, 121, 121, 0.4);
+    z-index: 99;
+
+    .contentBox {
+      position: relative;
+      margin: 270px 0 0 460px;
+      width: 1000px;
+      height: 540px;
+      background-color: #ffffff;
+
+      .model_title {
+        height: 30px;
+        background: -webkit-gradient(linear, left center, right center, from(#548AFF), to(#6956FF));
+        text-align: center;
+        color: #fff;
+        font-size: $font-size-18;
+        padding-top: 10px;
+
+        .model_show_time_img {
+          float: right;
+          display: inline-block;
+          width: 18px;
+          height: 18px;
+          margin-right: 25px;
+          margin-top: 5px;
+          cursor: pointer;
+        }
+      }
+
+      .model_content {
+        margin-top: 40px;
+
+        ul {
+          li {
+            margin-bottom: 20px;
+
+            span {
+              
+              display: inline-block;
+              height: 40px;
+              line-height: 40px;
+              text-align: right;
+              font-size: $font-size-18;
+              padding: 0 10px;
+              b {
+              position: relative;
+              top: -0.06rem;
+              left: 0;
+              color: #FC605C;
+              font-size: $font-size-10;
+            }
+            }
+
+            span:first-child {
+              width: 230px;
+            }
+
+            input {
+              display: inline-block;
+              padding-left: 10px;
+              height: 40px;
+              width: 600px;
+              font-size: $font-size-18;
+              background-color: #E5E5E5;
+            }
+
+            .others {
+              width: 200px !important;
+            }
+          }
+        }
+      }
+
+      .model_bottom {
+        position: absolute;
+        bottom: 85px;
+        left: 390px;
+
+        span, submit {
+          display: inline-block;
+          width: 100px;
+          height: 34px;
+          line-height: 34px;
+          color: #fff;
+          text-align: center;
+          box-shadow: 0px 1px 7px 0px rgba(188, 188, 188, 0.65);
+          border-radius: 4px;
+          font-size: $font-size-18;
+        }
+
+        .cancelBtn {
+          background: rgba(153, 153, 153, 1);
+          margin-right: 20px;
+        }
+
+        .commitBtn {
+          background: rgba(71, 117, 202, 1);
+        }
+      }
+    }
+  }
+}
+</style>
+<style >
+</style>

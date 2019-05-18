@@ -1,0 +1,134 @@
+<!-- listingImport清单导入 -->
+<template>
+  <div class="container-listing-import">
+    <div class="wrapper">
+      <!-- 入口 -->
+      <import-index @jump="jumpPages" v-if="statePage==0"></import-index>
+      <!-- 施工图预算导入页面 -->
+      <import-construction
+        v-if="statePage==1"
+        :XlsxTableNamelist="XlsxTableNamelist"
+        @back="back"
+        @toSuccessPage="successPage"
+      ></import-construction>
+      <!-- 导入成功页面 -->
+      <import-success v-if="statePage==2" @back="back" @jump="jumpPages"></import-success>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+// 子组件
+import importIndex from "./components/import_index";
+import importConstruction from "./components/import_construction";
+import importSuccess from "./components/import_success";
+import { GenerateElementList } from "@/api/api.js";
+// vuex
+import { mapMutations } from "vuex";
+export default {
+  data() {
+    return {
+      statePage: 0, // 0: 入口  1：施工图预算导入页面  2：导入成功页面
+      XlsxTableNamelist: [] //xlsx表解析结果数组
+    };
+  },
+  components: {
+    importIndex,
+    importConstruction,
+    importSuccess
+  },
+  created() {
+    this.modelBox({
+      isShowModel: false, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+      isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+      zIndex: 100, //模型层级
+      background: "",
+      ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+      highLightElementIDs: [], // 高亮显示的构件
+      functionNumber: [] // 需要模型调用的函数编号数组
+    });
+    try {
+      let sp = localStorage.getItem(statePage);
+      if (sp) {
+        console.log(sp);
+        this.statePage = Number(sp);
+        localStorage.setItem("statePage", Number(sp)); //
+      }
+    } catch (error) {
+      this.statePage = 0;
+      localStorage.setItem("statePage", 0); //
+    }
+  },
+  methods: {
+    /**
+     * 选择入口
+     * statePage:入口
+     *  0：表示在入口页面
+     *  1：表示在施工图和全费用（共用同一组件）
+     *  2：表示构件清单生成
+     */
+    jumpPages(id, XlsxTableNamelist) {
+      console.log(id, XlsxTableNamelist);
+
+      this.XlsxTableNamelist = XlsxTableNamelist; //下拉表菜单
+      switch (id) {
+        case 0:
+          // 施工图
+          this.statePage = 1;
+          localStorage.setItem("statePage", 1);
+          break;
+        case 1:
+          // 全费用清单页面与施工图导入为同一组件
+          this.statePage = 1;
+          localStorage.setItem("statePage", 1);
+          break;
+        case 2:
+          /**
+           * 生成构件清单
+           * @param {*} ProjectId
+           * @param {*} UserId
+           */
+          var ProjectId = localStorage.getItem("projectid"),
+            UserId = Number(localStorage.getItem("userId"));
+          // 构件清单生成  与成功导入页面为同一组件
+          this.generateing();
+          this.Request(GenerateElementList({ ProjectId, UserId })).then(res => {
+            console.log(res);
+            if (res.StatusCode === 200) {
+              this.statePage = 2;
+            } else {
+              this.$message({
+                type: "error",
+                message: res.Message,
+                center: "true"
+              });
+            }
+            this.$toast.clear();
+          });
+
+          localStorage.setItem("statePage", 2);
+          break;
+      }
+    },
+    back() {
+      this.statePage = 0;
+      localStorage.setItem("statePage", 0);
+    },
+    /**
+     * 打开导入成功页面
+     */
+    successPage() {
+      this.statePage = 2;
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    })
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-listing-import
+  width 100%
+  height 100%
+  background-color #F5F6FA
+</style>

@@ -1,0 +1,245 @@
+<!-- 人员 personnel -->
+<template>
+  <div class="personnel-container">
+    <div class="p-title flex-row">
+      <div class="p-title-text">人员</div>
+      <div class="p-title-btn el-icon-menu" @click="onPopup('')"></div>
+    </div>
+    <div class="p-set-content-warp">
+      <div
+        class="p-set-content"
+        @click.stop="onChoose(index)"
+        v-for="(item,index) in personnel_s"
+        :key="index"
+        :class="[i==index?'selClick':'']"
+      >
+        <div class="p-set flex-between">
+          <div class="p-set-l flex-between">
+            <div class="p-set-name">{{item.text}}</div>
+            <div class="p-set-phone">{{item.code}}</div>
+          </div>
+          <div class="p-set-r flex-end">
+            <div
+              class="p-set-reset"
+              :class="{'hidden':item.sate=='true'?true:false}"
+              @click.stop="onReset(item.id)"
+            >重置密码</div>
+            <div
+              class="p-set-reset"
+              :class="{'hidden':item.sate=='true'?true:false}"
+              @click.stop="onPopup(item)"
+            >编辑</div>
+            <div class="p-set-disabled" @click.stop="onDisabled(item.id)">禁用</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <el-dialog title="修改密码" :visible.sync="dialogFormVisible">
+      <el-form :model="form">
+        <el-form-item label="" :label-width="formLabelWidth">
+          <el-input v-model="form.name" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="活动区域" :label-width="formLabelWidth">
+          <el-select v-model="form.region" placeholder="请选择活动区域">
+            <el-option label="区域一" value="shanghai"></el-option>
+            <el-option label="区域二" value="beijing"></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogFormVisible = false">取 消</el-button>
+        <el-button type="primary" @click="closeReset">确 定</el-button>
+      </div>
+    </el-dialog>
+  </div>
+
+</template>
+<script>
+import {GetUserListByDept} from '@/api/api.js'
+import {infaces} from '../module/interfaces.js'
+export default {
+  name: "personnels",
+  props:['department_sel','refreshUserList'],
+  data() {
+    return {
+      data: null,
+      personnel_s: null,
+      i: 0,
+      personnel_sel: null,
+      isCreated:true,//是否是第一次加载
+
+      
+        dialogFormVisible: false,
+        form: {
+          name: '',
+          region: '',
+          date1: '',
+          date2: '',
+          delivery: false,
+          type: [],
+          resource: '',
+          desc: ''
+        },
+        formLabelWidth: '120px'
+      
+    };
+  },
+
+  watch: {
+    /**
+     * 根据项目ID和单位ID以及部门ID获取人员列表
+     */
+    department_sel(c) {
+      console.log(c)
+      this.onSelPersonnel(c);
+    },
+    
+    // 选中的人员
+    personnel_sel(id, o) {
+      this.$emit("get_personnel_sel", id);
+    },
+    //通知人员子组件刷新列表
+    refreshUserList(){
+      this.onSelPersonnel(this.department_sel);
+    }
+  },
+  methods: {
+    // 弹窗
+    onPopup(item) {
+      console.log(typeof item)
+      // if(typeof item!= 'string'){
+      //   console.log('编辑人员')
+      //   //
+      // }
+      this.$emit("onPopup", "personnel",item);
+    },
+
+    // 选中
+    onChoose(index) {
+      this.i = index;
+      this.personnel_sel = this.personnel_s[index].id;
+    },
+    // 重置密码
+    onReset(e) {
+      console.log('重置密码',e);
+      this.dialogFormVisible = true
+    },
+    closeReset(){
+      
+    },
+    // 编辑
+    onEdit(e) {
+      console.log(e);
+    },
+    // 禁用
+    onDisabled(e) {
+      console.log(e);
+      this.$emit("onPopup", "onDisabled");
+    },
+    // 获取部门人员列表
+    onSelPersonnel(param) {
+      infaces(this,GetUserListByDept,param).then(res=>{
+        console.log(res)
+        this.personnel_s = res.Detiel
+        if(this.isCreated){ //如果是第一次加载，则取第一个人为默认选中
+        console.log(res.Detiel[0])
+           this.$emit("get_personnel_sel", res.Detiel[0].id);
+           this.isCreated = false
+        }
+      })
+      // let data = null;
+      // if (id % 2 == 0) {
+      //   data = this.data[1];
+      // } else {
+      //   data = this.data[0];
+      // }
+      // this.personnel_s = data;
+      // this.personnel_sel = this.personnel_s[0].id;
+    }
+  },
+  computed: {}
+};
+</script>
+
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.personnel-container {
+  width: 24.44%;
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+  background-color: #fff;
+  position: relative;
+
+  .p-set-content {
+    padding: 0 20px;
+
+    .p-set {
+      height: 40px;
+      border-bottom: 1px solid #E5E5E5;
+
+      .p-set-l {
+        flex: 1;
+        font-size: 16px;
+        font-family: SourceHanSansCN-Normal;
+        font-weight: 400;
+        color: rgba(51, 51, 51, 1);
+
+        .p-set-l-name {
+          flex: 1;
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+
+        .p-set-phone {
+          width: 110px;
+        }
+      }
+
+      .p-set-r {
+        font-size: 18px;
+        font-family: SourceHanSansCN-Medium;
+        font-weight: 500;
+        width: 185px;
+
+        .p-set-reset {
+          color: rgba(69, 128, 255, 1);
+          margin-right: 15px;
+          font-size 18px
+        }
+
+        .p-set-disabled {
+          color: rgba(252, 96, 92, 1);
+        }
+      }
+    }
+  }
+
+  .p-set-content-warp {
+    padding-top: 50px;
+    height: 95.6%;
+    overflow-y: auto;
+  }
+
+  .p-title {
+    width: 100%;
+    height: 50px;
+    background: rgba(67, 80, 137, 1);
+    font-size: 20px;
+    font-family: SourceHanSansCN-Medium;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 1);
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+
+    .p-title-btn {
+      position: absolute;
+      top: 0;
+      right: 21px;
+      line-height: 50px;
+    }
+  }
+}
+</style>

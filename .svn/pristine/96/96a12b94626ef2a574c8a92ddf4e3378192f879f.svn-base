@@ -1,0 +1,262 @@
+<template>
+  <div class="organPeople">
+    <!-- 岗位配置 -->
+    <div class="organ_all_list">
+      <div class="collabora_title">Step3.2 岗位配置</div>
+      <div class="company_div">
+        <div class="company_div_title">
+          <p>*注：此处岗位配置数据为用户注册时自动生成</p>
+          <p class="company_div_title_left">如需编辑请到项目配置中修改</p>
+        </div>
+        <headerPeople :peopleList='peopleList'></headerPeople>  
+        
+      </div>
+    </div>
+    <!-- 项目组织框架图 -->
+    <div class="organ_all_img">
+      <div class="collabora_title">Step3.3 项目组织架构图</div>
+      <div class="organ_all_img_body">
+        <vo-basic
+          v-if="isShowVoB"
+          ref="chart"
+          :data="chartData"
+          :export-button="true"
+          exportButtonName="下载"
+          export-filename="testpic"
+          :pan="true"
+          :zoom="true"
+        ></vo-basic>
+        
+        <!-- <echartImg :plan_table="chartData"></echartImg> -->
+    
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import { VoBasic } from "vue-orgchart";
+import {GetPositionConfig} from '@/api/api.js'
+import headerPeople from './headerPeople'
+// import echartImg from './echartImg'
+export default {
+  data() {
+    return {
+      //列表--所有的人员名单里面要添加 show:false ，并通过这个来控制通讯录的显示隐藏问题
+      peopleList: [],
+      chartData:[],
+      isShowVoB:false,
+
+    };
+  },
+  components: { VoBasic , headerPeople},
+  // components: { echartImg , headerPeople},
+  created() {
+    this.getPeople();
+  },
+  methods: {
+    
+    async getPeople(){
+      this.load();
+      let res = await this.Request(GetPositionConfig({projectId:localStorage.getItem('projectid')}))
+        if(res.StatusCode=='200'){
+          this.peopleList=[];
+          // 岗位配置
+          var text={DepartmentName:'领导',UserRoleList:[{cDepName:'项目经理',cName:res.Detiel[0].ProjMgr.Name,show:false},{cDepName:'项目经理',cName:res.Detiel[0].DeputyProMgr.Name,show:false}]}
+          this.peopleList[0]=text;
+          for(var i=0;i<res.Detiel[0].DeptList.length;i++){
+              for(var x=0;x<res.Detiel[0].DeptList[i].UserRoleList.length;x++){
+                  var key = "show";
+                  var value = false;
+                  res.Detiel[0].DeptList[i].UserRoleList[x][key]=value;
+              }
+              this.peopleList.push(res.Detiel[0].DeptList[i]);
+          }
+          
+
+          //项目组织架构图---树状图
+
+
+          this.chartData={
+            name:'项目经理'+res.Detiel[0].ProjMgr.Name,
+            children:[{
+              name:'项目副经理'+res.Detiel[0].DeputyProMgr.Name,
+              children:[]
+            }]
+          };
+          for(var y=0;y<res.Detiel[0].DeptList.length;y++){
+            var ai={name:res.Detiel[0].DeptList[y].DepartmentName,children:[]};
+            for(var z=0;z<res.Detiel[0].DeptList[y].UserRoleList.length;z++){
+                var list={name:res.Detiel[0].DeptList[y].UserRoleList[z].cName}
+                ai.children.push(list);
+            }
+            this.chartData.children[0].children.push(ai);
+          }
+
+
+          // this.chartData=[{name: '项目经理'+res.Detiel[0].ProjMgr.Name,
+          //       symbolSize: [70, 30],symbol: 'rectangle',
+          //       itemStyle: {normal: {borderWidth: 1,borderColor: 'black'}},
+          //       children: [{name: '项目副经理'+res.Detiel[0].DeputyProMgr.Name,
+          //             symbolSize: [70, 30],symbol: 'rectangle',
+          //             itemStyle: {normal: {borderWidth: 1,borderColor: 'black'}},
+          //             children: []
+          //         }]
+          // }];
+          // for(var y=0;y<res.Detiel[0].DeptList.length;y++){
+          //   var ai={name:res.Detiel[0].DeptList[y].DepartmentName,children:[],symbolSize: [70, 30],symbol: 'rectangle',
+          //       itemStyle: {normal: {borderWidth: 1,borderColor: 'black'}}};
+          //   for(var z=0;z<res.Detiel[0].DeptList[y].UserRoleList.length;z++){
+          //       var list={name:res.Detiel[0].DeptList[y].UserRoleList[z].cName,symbolSize: [60, 30],symbol: 'rectangle',
+          //             itemStyle: {normal: {borderWidth: 1,borderColor: 'black'}}}
+          //       ai.children.push(list);
+          //   }
+          //   this.chartData[0].children[0].children.push(ai);
+          // }
+
+          this.isShowVoB=true;
+
+        }else{
+          this.$message({
+              type: "error",
+              message: res.Message,
+              center: "true"
+          });
+        }
+        this.$toast.clear();
+    },
+  }
+};
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.organPeople {
+  display: inline-block;
+  height: 15rem;
+  width: 74%;
+  margin-left: 1%;
+  float: left;
+  box-sizing: border-box;
+
+  .organ_all_list {
+    width: 45%;
+    height: 100%;
+    box-sizing: border-box;
+    display: inline-block;
+    background-color: #ffffff;
+    overflow: hidden;
+    margin-right: 1%;
+    .collabora_title {
+      background: #435089;
+      height: 40px;
+      line-height: 40px;
+      padding: 0 20px;
+      font-size: 18px;
+      color: #fff;
+      font-weight: 400;
+    }
+
+    .company_div {
+      overflow-y: scroll;
+      overflow-x: hidden;
+      width: 100%;
+      height: 15rem;
+
+      .company_div_title {
+        color: #B2B2B2;
+        font-size: 18px;
+        padding-left: 20px;
+        padding-top: 20px;
+
+        .company_div_title_left {
+          padding-left: 40px;
+        }
+      }
+    }
+  }
+
+  .organ_all_img {
+    width: 54%;
+    height: 100%;
+    box-sizing: border-box;
+    display: inline-block;
+    background-color: #ffffff;
+    overflow: hidden;
+    
+    .collabora_title {
+      background: #435089;
+      height: 40px;
+      line-height: 40px;
+      padding: 0 20px;
+      font-size: 18px;
+      color: #fff;
+      font-weight: 400;
+    }
+  }
+}
+</style>
+
+<style>
+.organ_all_img_body {
+  width:100%; height:600px;
+}
+#chart-container .oc-export-btn {
+  background-color: #fda143;
+  color: #fff;
+  width: 120px;
+  height: 40px;
+  padding: 11px 40px;
+  position: relative;
+  top: 20px;
+  left: 240px;
+  border: 0;
+}
+#chart-container .title {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #f6f6f6;
+  border-radius: 6px;
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+  line-height: 60px;
+  background-color: #fff;
+  color: #333;
+}
+#chart-container .node {
+  width: 180px;
+  height: 68px;
+}
+#chart-container .orgchart .node.focused,
+#chart-container .orgchart .node:hover {
+  background-color: rgba(71, 117, 202, 0.1);
+}
+#chart-container .orgchart > table > tr:first-child .title {
+  background-color: #4775ca;
+  color: #fff;
+}
+.organ_all_img_body #chart-container {
+  height: 560px;
+  padding-top: 50px;
+  box-sizing: border-box;
+}
+
+
+.company_div::-webkit-scrollbar{
+  /*滚动条整体样式*/
+  width: 6px; /*高宽分别对应横竖滚动条的尺寸*/
+  height: 1px;
+}
+.company_div::-webkit-scrollbar-thumb{
+  /*滚动条里面小方块*/
+  border-radius: 10px;
+  width: 5px;
+  -webkit-box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.1);
+  background: #ccc;
+}
+.company_div::-webkit-scrollbar-track{
+  /*滚动条里面轨道*/
+  -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background: #ededed;
+}
+/* .vo-basic{
+  overflow: scroll!important;
+} */
+</style>

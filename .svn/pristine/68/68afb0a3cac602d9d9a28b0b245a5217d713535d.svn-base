@@ -1,0 +1,164 @@
+
+//范围管理 楼栋 --> 专业 --> 楼层
+const userID = localStorage.getItem("userId"); //用户ID
+const projectid = localStorage.getItem("projectid");
+import {GetChangeInfo,QueryPurchaseInfoItems,QueryPurchaseSumElement} from '../../../../api/api'
+
+export const dataResetBSF = (that, category) => {
+    if (category == 'BuildName') {
+        that.FloorbyList = []; // 楼层下拉
+        that.SpecialtyList = []; // 专业下拉
+        that.filterForm.Specialty = ""; // 专业
+        that.filterForm.Floor = ""; // 楼层
+        that.filterForm.Name = ""; // 查询内容
+    } else if (category == 'Specialty') {
+        that.FloorbyList = []; // 楼层下拉
+        that.filterForm.Floor = ""; // 楼层
+        that.filterForm.Name = ""; // 查询内容
+    } else if (category == 'Floor') {
+        that.filterForm.Name = ""; // 查询内容
+    }
+}
+
+// 获取楼栋
+export const getBuildList = (that, GetBuilding) => {
+    that.load();
+    GetBuilding({ projectid: projectid }).then(res => {
+        that.$toast.clear();
+        if (res.StatusCode == 200) {
+            that.BuildNameList = res.Detiel;
+            that.options = res.Detiel;
+        }
+    });
+}
+
+// 楼栋 -> 获取专业
+export const getSpecialtyList = (that, GetSpecialtybyBuilding) => {
+    that.load();
+    GetSpecialtybyBuilding({ projectid: projectid, building: that.filterForm.BuildName }).then(
+        res => {
+            that.$toast.clear();
+            if (res.StatusCode == 200) {
+                that.SpecialtyList = res.Detiel;
+            }
+        }
+    );
+}
+
+// 楼栋 -> 专业 -> 获取模型楼层
+export const getFloorList = (that, GetFloorbyBuilding) => {
+    that.load();
+    GetFloorbyBuilding({ projectid: projectid, building: that.filterForm.BuildName, Specialty: that.filterForm.Specialty }).then(
+        res => {
+            that.$toast.clear();
+            if (res.StatusCode == 200) {
+                that.FloorbyList = res.Detiel;
+            }
+        }
+    );
+}
+
+// 发起采购
+export const initPurchase = (that, SaveRangeInfo) => {
+    that.load();
+    let listItems = that.listItems.filter(item => {
+        if (item.isSel) {
+            return item
+        }
+    })
+    let listFlow = that.listFlow.map(item => {
+        return {
+            Priority: item.Priority,
+            OrgId: item.OrgId.id,
+            DepId: item.DepId.id,
+            Person: item.Person.id,
+            Status: item.Status,
+        }
+    })
+    SaveRangeInfo(
+        { projectid: projectid, userid: userID },
+        {
+            IsApprove: that.form.check,
+            Type: that.form.Type,
+            StartTime: that.filterForm.starttime,
+            EndTime: that.filterForm.endtime,
+            DemandTime: that.form.DemandTime,
+            ApplyPerson: userID,
+            Status: 0,
+            listFlow,
+            listItems
+        }
+    ).then(
+        res => {
+            that.$toast.clear();
+            if (res.StatusCode == 200) {
+                that.$message({
+                    type: "success",
+                    message: res.Message,
+                    center: "true"
+                });
+                that.$router.go(-1);
+            }
+        }
+    );
+}
+
+// 楼栋 -> 获取项目名称
+export const getProjectNames = (that, GetProjectName) => {
+    that.load();
+    GetProjectName({ projectid: projectid, BuildName: that.buildname }).then(
+        res => {
+            that.$toast.clear();
+            if (res.StatusCode == 200) {
+                that.projectNameList = res.Detiel;
+            }
+        }
+    );
+
+}
+
+// 定位
+export const onHandle = (that,par,flag) => {
+    let api=null;
+    if(flag=='bg'){
+        api = GetChangeInfo;
+    }else
+    if(flag=='wz'){
+        api=QueryPurchaseInfoItems;
+    }else if(flag=='cg'){
+        api=QueryPurchaseSumElement;
+    }
+    that.load();
+    api(par).then(res => {
+        that.$toast.clear();
+        if (res.StatusCode == 200) {
+            let state = null;
+            if(flag=='bg'){
+                res.Result.listViewPoint.forEach(element => {
+                    if(element.MasterID== id){
+                        state= element.State
+                    }
+                });
+            }
+            // 物资列表的时候返回的字段还不知道是不是一样的
+            if(flag=='wz'){
+
+            }
+            if(flag=="cg"){
+                state = res.Result;
+            }
+            if (state) {
+                console.log('%c state','color:red',state)
+                that.modelBox({
+                  isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+                  isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+                  zIndex: 100, //模型层级
+                  background: "",
+                  ElementIDs: [state], // 所有要显示的构件数组，包括半隐藏构件
+                  highLightElementIDs: [], // 高亮显示的构件
+                  functionNumber: [28] // 需要模型调用的函数编号数组
+                });
+            }
+        }
+    })
+}

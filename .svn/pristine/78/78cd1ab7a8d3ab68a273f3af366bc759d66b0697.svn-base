@@ -1,0 +1,754 @@
+<!-- scope2变更详情 -->
+<template>
+  <div class="changeDetail">
+    <div class="leftBox">
+      <div class="box-card">
+        <div class="title">
+          <i class="el-icon-menu icon"></i>
+        </div>
+        <!-- 模型box -->
+        <div class="model-container">
+          <div ref="modelContainer" class="model-container"></div>
+        </div>
+      </div>
+    </div>
+    <div class="rightBox">
+      <div class="box-card">
+        <!-- 详情 -->
+        <div class="detail" v-show="alteration">
+          <div class="titleBg notice">
+            变更详情
+            <i class="el-icon-close" @click="close()"></i>
+          </div>
+          <el-row>
+            <el-col :span="24">
+              <el-form ref="form" :model="form" label-width="130px">
+                <el-form-item label="编码:">
+                  <div class="info">{{data.Code}}</div>
+                </el-form-item>
+                <el-form-item label="主题:">
+                  <div class="info">{{data.Theme}}</div>
+                </el-form-item>
+                <el-form-item label="变更类型:">
+                  <div class="info">{{data.TypeName}}</div>
+                </el-form-item>
+                <el-form-item label="选择:">
+                  <div class="info select">
+                    <span>{{data.Building}}</span>
+                    <span>{{data.Specialty}}</span>
+                    <span>{{data.Floor}}</span>
+                  </div>
+                </el-form-item>
+                <el-form-item label="详情位置:">
+                  <div class="info">{{data.DetailPoint}}</div>
+                </el-form-item>
+                <el-form-item label="发起时间:">
+                  <div class="info">{{data.StartTime}}</div>
+                </el-form-item>
+                <el-form-item label="发起人:">
+                  <div class="info">{{data.StartPersonName}}</div>
+                </el-form-item>
+                <el-form-item label="变更内容:">
+                  <div class="info">{{data.Content}}</div>
+                </el-form-item>
+                <el-form-item label="现场照片:">
+                  <ul class="uploadImg img" v-for="(item,index) in data.listFile" :key="index">
+                    <li class="imgWrap">
+                      <img :src="item.Url" alt>
+                    </li>
+                  </ul>
+                </el-form-item>
+                <el-form-item label="模型视点:">
+                  <div
+                    class="imgWrap model"
+                    v-for="(item,index) in data.listViewPoint"
+                    :key="index"
+                  >
+                    <img :src="item.Snapshot" alt>
+                  </div>
+                </el-form-item>
+                <el-form-item label="状态:"></el-form-item>
+                <div class="item">
+                  <el-form-item>
+                    <el-steps align-center :active="active">
+                      <el-step
+                        v-for="(item,index) in data.listFlow"
+                        :title="item.DeptName"
+                        :description="item.PersonName"
+                        :key="index"
+                      ></el-step>
+                    </el-steps>
+                  </el-form-item>
+                </div>
+                <div class="item">
+                  <el-form-item label="现场照片:" v-if="isMe && WorkStatus == 3">
+                    <div class="wrap">
+                      <div class="upload" style="display: inline-block;">
+                        <el-upload
+                          action
+                          list-type="picture-card"
+                          :on-preview="handlePictureCardPreview2"
+                          :on-remove="handleRemove2"
+                          multiple
+                          :limit="3"
+                          :on-change="uploadPicture"
+                          :auto-upload="false"
+                        >
+                          <i class="el-icon-plus"></i>
+                        </el-upload>
+                      </div>
+                      <el-dialog :modal="false" :visible.sync="dialogVisible2">
+                        <img width="100%" :src="dialogImageUrl2" alt>
+                      </el-dialog>
+                      <span class="tip">(最多上传3张)</span>
+                    </div>
+                  </el-form-item>
+                </div>
+                <div class="item">
+                  <el-form-item>
+                    <div class="tableData">
+                      <el-table :data="data.listElementList" border style="width: 100%">
+                        <el-table-column prop="ResourceName" label="物料名称"></el-table-column>
+                        <el-table-column prop="BuildName" label="楼栋" width="70"></el-table-column>
+                        <el-table-column prop="Floor" label="楼层" width="80"></el-table-column>
+                        <el-table-column prop="BOQ" label="变更前施工预算量" width="80"></el-table-column>
+                        <el-table-column prop="AdjustBOQ" label="变更后施工预算量" width="80"></el-table-column>
+                        <el-table-column prop="DiffBOQ" label="差额" width="80"></el-table-column>
+                      </el-table>
+                    </div>
+                  </el-form-item>
+                </div>
+
+                <el-form-item label-width="0" align="center" v-if="isMe && WorkStatus == 3">
+                  <el-button type="primary" @click="onAudit">确认审核</el-button>
+                </el-form-item>
+
+                <el-form-item v-if="isMe && WorkStatus == 0">
+                  <div class="btn">
+                    <el-button @click="onSubmit(2)">拒收</el-button>
+                    <el-button type="primary" @click="onSubmit(3)">接收</el-button>
+                  </div>
+                </el-form-item>
+              </el-form>
+            </el-col>
+          </el-row>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script type='textecmascript-6'>
+import { mapMutations } from "vuex";
+import {
+  GetChangeInfo,
+  GetLoginUserInfo,
+  AddModelAuthentication,
+  UploadImages,
+  ReceiveChange
+} from "../../../api/api.js";
+
+export default {
+  data() {
+    return {
+      active: 0,
+      isMe: true,
+      WorkStatus: 3, // 0 待接收  3进行中  4完成
+      data: "",
+      listAuthPhoto: [], // 认证照片data
+      UserInfo: "",
+      userID: localStorage.getItem("userId"), //用户ID
+      Person: "",
+      photoList: [], // 凭证
+      WorkFlowId: "",
+
+      putData: "",
+      form: {},
+      alteration: true, //详情弹框
+      dialogImageUrl1: "", //认证照片
+      dialogVisible1: false, //认证照片列表
+      tableData: [],
+      dialogImageUrl2: "", //上传凭证
+      dialogVisible2: false //上传凭证图片列表
+    };
+  },
+  methods: {
+    _initData() {
+      /**
+       * 模型状态管理
+       */
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    // 获取详情数据
+    getData(id) {
+      this.load();
+      GetChangeInfo({ id }).then(res => {
+        this.$toast.clear();
+        if (res.StatusCode == 200) {
+          this.active = 0;
+          this.WorkStatus = res.Result.WorkStatus;
+          res.Result.listFlow.forEach((element, index) => {
+            if (this.active == 0 && element.ID == res.Result.CurrentStepIndex) {
+              this.active = index + 1;
+              this.Person = element.Person;
+              this.WorkFlowId = element.ID;
+              if (this.userID == element.Person) {
+                this.isMe = true;
+              } else {
+                this.isMe = false;
+              }
+              this.par = {
+                Priority: element.Priority,
+                OrgId: element.OrgId,
+                DepId: element.DepId,
+                Person: element.Person,
+                ID: element.ID
+              };
+            }
+          });
+          this.data = res.Result;
+        }
+      });
+    },
+    close() {
+      //关闭详情
+      this.$router.go(-1);
+    },
+    // 接受/拒收
+    onSubmit(Status) {
+      this.load();
+      ReceiveChange({
+        ID: this.data.ID,
+        Theme: this.data.Theme,
+        Content: this.data.Content,
+        WorkFlowId: this.WorkFlowId,
+        photoList: this.photoList,
+        Status
+      }).then(res => {
+        this.$toast.clear();
+        if (res.StatusCode == 200) {
+          this.$message({
+            type: "success",
+            message: "处理成功！",
+            center: "true"
+          });
+          this.close();
+        }
+      });
+    },
+    /**
+     * 获取当前登录用户详情
+     */
+    getLoginUserInfoDate() {
+      this.load();
+      GetLoginUserInfo({ curUserId: this.userID }).then(data => {
+        this.$toast.clear();
+        if (data.StatusCode === 200) {
+          let item = data.Detiel[0].loginUserInfo;
+          this.UserInfo = item;
+        }
+      });
+    },
+    // 审核/认证
+    onAudit() {
+      this.load();
+      let val = Object.assign(this.par, {
+        listAuthPhoto: this.photoList,
+        Status: 4
+      });
+      ReceiveChange(val).then(res => {
+        this.$toast.clear();
+        if (res.StatusCode == 200) {
+          this.$emit("close");
+          this.$message({
+            type: "success",
+            message: "处理成功！",
+            center: "true"
+          });
+          this.close();
+        }
+      });
+    },
+    // 删除图片
+    handleRemove2(file, fileList) {
+      this.photoList = fileList;
+    },
+    handlePictureCardPreview2(file) {
+      //点击文件列表中已上传的文件
+      this.dialogImageUrl2 = file.url;
+      this.dialogVisible2 = true;
+    },
+    // 上传：文件状态改变时的钩子，添加文件、上传成功和上传失败时都会被调用
+    async uploadPicture(file) {
+      let params = [
+        {
+          key: "files",
+          value: file.raw
+        }
+      ];
+      let data = await this.Request(UploadImages(params));
+      if (data.StatusCode == 200) {
+        this.imagesDetiel = data.Detiel;
+        this.photoList.push({
+          Id: this.imagesDetiel[0].Id, //上传后的文件名
+          URL: this.imagesDetiel[0].URL, //文件地址
+          smallPhotoURL: this.imagesDetiel[0].smallPhotoURL, //如果存在小图则返回小图地址
+          Type: this.imagesDetiel[0].Type, //文件类型
+          TokenUrL: this.imagesDetiel[0].TokenUrL //域名地址
+        });
+      } else {
+        this.$message({
+          type: "error",
+          message: data.message ? data.message : "后台异常",
+          center: "true"
+        });
+      }
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    })
+  },
+  mounted() {
+    // this._initData();
+    this.getLoginUserInfoDate();
+    this.putData = JSON.parse(this.$route.query.data);
+  },
+  computed: {},
+  watch: {
+    putData: {
+      handler(val, oldval) {
+        console.log(val);
+        this.getData(val.ID);
+      }
+    }
+  }
+};
+</script>
+<style lang='stylus' rel='stylesheet/stylus'>
+.changeDetail {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.avatar-uploader .el-upload {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.tip {
+  color: #999999;
+  font-size: 18px;
+  padding-left: 10px;
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+.el-upload--picture-card {
+  background: #F8F8F8 !important;
+  width: 132px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-uploader .el-upload:hover {
+  border-color: #409EFF;
+}
+
+.model-container {
+  width: 98%;
+  height: calc(100% - 45px);
+  padding: 0 !important;
+  z-index: 90;
+}
+
+.changeDetail .el-form-item {
+  width: 100%;
+  height: auto !important;
+}
+
+.changeDetail .select span {
+  display: inline-block;
+  margin-left: 30px;
+}
+
+.changeDetail .avatar-uploader .el-upload {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.changeDetail .el-upload--picture-card {
+  background: #F8F8F8 !important;
+}
+
+.changeDetail .avatar-uploader .el-upload:hover {
+  border-color: #409EFF;
+}
+
+.changeDetail .avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 145px;
+  height: auto;
+  text-align: center;
+}
+
+.changeDetail .avatar {
+  width: 145px;
+  height: auto;
+  display: block;
+}
+
+.changeDetail .el-form-item__content .tip {
+  color: #999999;
+  font-size: 18px;
+  padding-left: 10px;
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+.changeDetail .authentication {
+  width: 100%;
+  display: flex;
+}
+
+.changeDetail .tableData {
+  padding: 0 20px;
+}
+
+.changeDetail .item {
+  margin: 0 !important;
+}
+
+.changeDetail .item .el-form-item__content {
+  margin-left: 0 !important;
+}
+
+.changeDetail .upload {
+  display: inline-block;
+  text-align: center;
+}
+
+.changeDetail .uploadImg {
+  float: left;
+}
+
+.changeDetail .img {
+  width: 100%;
+}
+
+.changeDetail .img li {
+  width: 160px;
+  margin-right: 20px;
+}
+
+.changeDetail .model {
+  width: 128px !important;
+  height: 100px !important;
+  background: #F8F8F8;
+}
+
+.changeDetail .model img {
+  width: 88px !important;
+  height: 89px !important;
+  display: block;
+  margin: 6px 20px 6px 20px;
+}
+
+.changeDetail .img li img {
+  width: 100%;
+}
+
+.changeDetail .imgWrap {
+  width: 25%;
+  float: left;
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.changeDetail:last-child .imgWrap {
+  padding-right: 0;
+}
+
+.changeDetail .imgWrap img, .el-upload--picture-card {
+  width: 130px;
+  height: 120px;
+  line-height: 130px;
+}
+
+.changeDetail .workflowBox {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  float: left;
+  margin: -20px 0 0 -80px;
+}
+
+.changeDetail .info {
+  color: #333;
+  font-size: 18px;
+  text-align: left;
+}
+
+.changeDetail .workflowBox .workflow1 {
+  width: 156px;
+  margin-right: 10px;
+}
+
+.changeDetail .workflowBox .add {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #435089;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.changeDetail .workflowBox .add i {
+  color: #435089;
+  font-size: 18px;
+}
+
+.changeDetail .el-table th {
+  text-align: center;
+  background: #44508a;
+  color: #fff;
+  font-size: 16px;
+}
+
+.changeDetail .has-gutter .el-table_1_column_4, .changeDetail .has-gutter .el-table_1_column_5 {
+  padding: 0 10px !important;
+}
+
+.changeDetail .el-table__body td {
+  text-align: center;
+}
+
+.changeDetail .el-step.is-horizontal .el-step__line {
+  top: 0.25rem;
+  background: #979797;
+  height: 1px;
+}
+
+.changeDetail .el-steps--horizontal {
+}
+
+.changeDetail .relevance {
+  width: 64px;
+  height: 40px;
+  border: 1px solid #E5E5E5;
+  background: #F8F8F8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.changeDetail .btn {
+  padding: 20px 25% 20px 5%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.changeDetail .el-step__icon.is-text {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #E5E5E5;
+  background: #F8F8F8;
+}
+
+.changeDetail .el-step__icon-inner {
+  color: #fff;
+  font-size: 20px;
+}
+
+.changeDetail .el-step__head {
+  border-color: #979797 !important;
+}
+
+.changeDetail .el-step.is-center .el-step__line {
+  left: 70%;
+  right: -30%;
+}
+
+.changeDetail .el-step__head.is-finish .is-text {
+  background: #4775CA;
+}
+
+.changeDetail .el-step__head.is-finish .el-step__icon-inner {
+  color: #fff !important;
+}
+
+.changeDetail .el-step__title.is-process {
+  font-weight: normal;
+}
+
+.changeDetail .el-step__main div {
+  color: #333 !important;
+}
+
+.changeDetail .el-button {
+  width: 100px;
+  color: #fff;
+}
+
+.changeDetail .el-button--default {
+  background: #999999;
+}
+
+.changeDetail .el-button--default:focus, .changeDetail .el-button--default:hover {
+  background: #999999;
+  color: #fff;
+}
+
+.changeDetail .el-button--primary {
+  background: #4775CA;
+}
+
+.changeDetail .el-button--primary:focus, .el-button--primary:hover {
+  background: #4775CA;
+  color: #fff;
+}
+
+// 图标颜色
+.changeDetail .icon {
+  color: #ffa147;
+}
+
+.changeDetail .titleBg {
+  background: #44508a;
+}
+
+.changeDetail .detail {
+  margin-bottom: 26px;
+}
+
+.changeDetail .el-row .el-col-24 {
+  font-size: 22px;
+  color: #28292b;
+}
+
+.changeDetail .detail .el-row .el-col-24 {
+  margin: 20px 0px;
+}
+
+.changeDetail .notice {
+  color: #fff;
+  font-size: 20px;
+  height: 40px;
+  line-height: 40px;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  // width: 800px;
+}
+
+.changeDetail .notice i {
+  font-size: 20px;
+  position: absolute;
+  right: 15px;
+  line-height: 40px;
+  cursor: pointer;
+}
+
+.changeDetail .el-form {
+  padding: 0 0px;
+}
+
+.changeDetail .el-form-item__label {
+  color: #333333;
+  font-size: 18px;
+}
+
+.changeDetail .el-step__icon.is-text {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #E5E5E5;
+  background: #ddd;
+}
+
+.changeDetail .el-step__line-inner {
+  border-width: 0 !important;
+}
+
+.changeDetail .leftBox, .changeDetail .rightBox {
+  width: 50%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  background: #f5f6fa;
+}
+
+.changeDetail .leftBox {
+  left: 0;
+  width: 910px;
+}
+
+.changeDetail .rightBox {
+  right: 0;
+  // margin: 15px;
+  width: 800px !important;
+}
+
+.changeDetail .leftBox .box-card {
+  width: calc(100% - 30px);
+  height: calc(100% - 45px);
+  margin: 20px 10px 20px 20px;
+}
+
+.changeDetail .rightBox .box-card {
+  width: 800px !important;
+  // calc(100% - 30px);
+  height: calc(100% - 45px);
+  padding: 0px 0px 0px 0px !important;
+  margin: 20px 10px 20px 0;
+  background: #f5f6fa;
+  border: none;
+  box-shadow: none;
+  background: #fff;
+  // overflow: auto;
+  overflow-y: auto;
+}
+
+/* 滚动条的宽度 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background-color: transparent;
+}
+
+/* 滚动条的滑块 */
+::-webkit-scrollbar-thumb {
+  background-color: #a1a3a9;
+  border-radius: 6px;
+}
+</style>
+
+
+

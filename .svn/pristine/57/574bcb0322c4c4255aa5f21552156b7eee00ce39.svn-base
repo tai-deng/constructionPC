@@ -1,0 +1,328 @@
+<!-- 采购详情 -->
+<template lang="html" src="./index.html"></template>
+<style lang="stylus" src="./index.styl" scoped></style>
+
+<script type='textecmascript-6'>
+import {
+  GetBuilding,
+  GetSpecialtybyBuilding,
+  GetFloorbyBuilding,
+  QueryPurchaseInfoItems,
+  PurcahseApprove,
+  GetLoginUserInfo,
+  UploadImages
+} from "../../../../../../api/api.js";
+import {
+  dataResetBSF,
+  getBuildList,
+  getSpecialtyList,
+  getFloorList
+} from "../../../util/util.js";
+import { mapMutations } from "vuex";
+
+export default {
+  props: {
+    // purchaseDetailId: {
+    //   type: Number,
+    //   default: null
+    // }
+  },
+  data() {
+    return {
+      active:0,
+      isMe:false,
+      WorkStatus:4, // 0 待接收  3进行中  4完成
+      userID: localStorage.getItem("userId"), //用户ID
+      projectid: localStorage.getItem("projectid"),
+      BuildNameList: [], // 楼栋下拉
+      SpecialtyList: [], // 专业下拉
+      FloorbyList: [], // 楼层下拉
+      paging: { page: 1, rows: 5 }, // [采购列表分页]
+      filterForm: {
+        BuildName: "", // 楼栋
+        Specialty: "", // 专业
+        Floor: "" // 楼层
+      },
+      data: [],
+      par: {
+        Priority: "",
+        OrgId: "",
+        DepId: "",
+        Person: "",
+        Status: 1
+      },
+      photoList: [], //现场照片
+      dialogImageUrl2: "", //上传凭证
+      dialogVisible2: false //上传凭证图片列表
+    };
+  },
+  methods: {
+    // 详情列表
+    getPurchaseListDetil() {
+      this.load();
+      QueryPurchaseInfoItems({
+        ID: this.$route.query.purchaseDetailId,
+        BuildName: this.filterForm.BuildName,
+        Specialty: this.filterForm.Specialty,
+        Floor: this.filterForm.Floor
+      }).then(res => {
+        this.$toast.clear();
+        if (res.StatusCode == 200) {
+          // 待接收 进行中 完成
+          this.active = 0;
+          res.Result.dCreateTime = res.Result.dCreateTime
+            ? require("moment")(res.Result.dCreateTime).format("YYYY/MM/DD")
+            : "/";
+          res.Result.DemandTime = res.Result.DemandTime
+            ? require("moment")(res.Result.DemandTime).format("YYYY/MM/DD")
+            : "/";
+          res.Result.listFlow.forEach((element, index) => {
+            
+            if (this.active == "" && element.ID == res.Result.CurrentStepIndex) {
+              this.active = index + 1;
+              this.WorkStatus= element.Status;
+              if(this.userID == element.Person){
+                this.isMe=true;
+              }else{
+                this.isMe=false;
+              }
+              this.par = {
+                Priority: element.Priority,
+                OrgId: element.OrgId,
+                DepId: element.DepId,
+                Person: element.Person,
+                ID:element.ID,
+              };
+            }
+          });
+          this.data = res.Result;
+        }
+      });
+    },
+    // 确认审核/认证
+    onAudit() {
+      this.load();
+      let val = Object.assign(this.par,{listAuthPhoto:this.photoList,Status: 4,})
+      PurcahseApprove(val).then(res => {
+        this.$toast.clear();
+        if (res.StatusCode == 200) {
+          this.$emit("close");
+          this.$message({
+            type: "success",
+            message: "处理成功！",
+            center: "true"
+          });
+          this.$router.go(-1);
+        }
+      });
+    },
+    // 接收--> 拒收
+    onReceive(flag){
+      if(flag==1){
+      this.load();
+      let val = Object.assign(this.par,{listAuthPhoto:this.photoList,Status: 3,})
+      PurcahseApprove(val).then(res => {
+        this.$toast.clear();
+        if (res.StatusCode == 200) {
+          this.$emit("close");
+          this.$message({
+            type: "success",
+            message: "处理成功！",
+            center: "true"
+          });
+          this.$router.go(-1);
+        }
+      });
+
+      }
+      if(flag==2){
+      this.load();
+      let val = Object.assign(this.par,{listAuthPhoto:this.photoList,
+              Status: 2,})
+      PurcahseApprove(val).then(res => {
+        this.$toast.clear();
+        if (res.StatusCode == 200) {
+          this.$emit("close");
+          this.$message({
+            type: "success",
+            message: "处理成功！",
+            center: "true"
+          });
+          this.$router.go(-1);
+        }
+      });
+
+      }
+    },
+    /** 
+     * 获取当前登录用户详情
+     */
+    getLoginUserInfoDate() {
+      // this.load();
+      GetLoginUserInfo({ curUserId: this.userID }).then(data => {
+        // this.$toast.clear();
+        if (data.StatusCode === 200) {
+          let item = data.Detiel[0].loginUserInfo;
+          this.UserInfo = item;
+        }
+      });
+    },
+    // 删除图片
+    handleRemove2(file, fileList) {
+      this.photoList = fileList;
+    },
+    handlePictureCardPreview2(file) {
+      //点击文件列表中已上传的文件
+      this.dialogImageUrl2 = file.url;
+      this.dialogVisible2 = true;
+    },
+    // 上传：文件状态改变时的钩子，添加文件、上传成功和上传失败时都会被调用
+    async uploadPicture(file) {
+      let params = [
+        {
+          key: "files",
+          value: file.raw
+        }
+      ];
+      let data = await this.Request(UploadImages(params));
+      if (data.StatusCode == 200) {
+        this.imagesDetiel = data.Detiel;
+        this.photoList.push({
+          Id: this.imagesDetiel[0].Id, //上传后的文件名
+          URL: this.imagesDetiel[0].URL, //文件地址
+          smallPhotoURL: this.imagesDetiel[0].smallPhotoURL, //如果存在小图则返回小图地址
+          Type: this.imagesDetiel[0].Type, //文件类型
+          TokenUrL: this.imagesDetiel[0].TokenUrL //域名地址
+        });
+      } else {
+        this.$message({
+          type: "error",
+          message: data.message ? data.message : "后台异常",
+          center: "true"
+        });
+      }
+    },
+    goto(){
+      this.$router.go(-1);
+    },
+
+    _initData() {
+      /**
+       * 模型状态管理
+       */
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          this.modelBox({
+            isShowModel: false, //是否显示模型 true:显示模型，如果模型已加载，则显示 false:隐藏模型
+            isLoadModel: true, //是否加载模型 true：加载模型，如果已经加载，不会重新加载， false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [34] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    })
+  },
+  computed: {
+    id() {
+      return this.$route.query.purchaseDetailId;
+    }
+  },
+
+  created() {
+    // 楼栋下拉
+    getBuildList(this, GetBuilding);
+    this.getPurchaseListDetil();
+    this.getLoginUserInfoDate();
+    this._initData()
+  },
+  watch: {
+    id(val, oldval) {
+      // 获取采购列表详情
+      console.log(id)
+      if (val != "") this.getPurchaseListDetil();
+    },
+    // 楼层
+    "filterForm.Floor": {
+      handler(val, oldval) {
+        if (val != "") {
+          dataResetBSF(this, "Floor");
+          this.getPurchaseListDetil();
+        }
+      }
+    },
+    // 专业
+    "filterForm.Specialty": {
+      handler(val, oldval) {
+        if (val != "") {
+          dataResetBSF(this, "Specialty");
+          getFloorList(this, GetFloorbyBuilding);
+          this.getPurchaseListDetil();
+        }
+      }
+    },
+    // 楼栋
+    "filterForm.BuildName": {
+      handler(val, oldval) {
+        if (val != "") {
+          dataResetBSF(this, "BuildName");
+          getSpecialtyList(this, GetSpecialtybyBuilding);
+          this.getPurchaseListDetil();
+        }
+      }
+    }
+  }
+};
+</script>
+<style>
+.container-scope-detail .model-container {
+  height: 0px;
+}
+/* 滚动条的宽度 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background-color: transparent;
+}
+
+/* 滚动条的滑块 */
+::-webkit-scrollbar-thumb {
+  background-color: #a1a3a9;
+  border-radius: 6px;
+}
+.container-scope-detail .el-form-item__label {
+  font-size: 20px !important;
+}
+.container-scope-detail .el-form-item__content {
+  font-size: 20px !important;
+}
+.container-scope-detail .el-step__icon.is-text {
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+}
+.container-scope-detail .el-step.is-horizontal .el-step__line {
+  top: 0.25rem;
+  background: #979797;
+  height: 1px;
+}
+.container-scope-detail .el-step.is-center .el-step__line {
+  left: 70%;
+  right: -30%;
+}
+.container-scope-detail .el-step__line-inner {
+  border-width: 0 !important;
+}
+.container-scope-detail .el-step__main div {
+  color: #333 !important;
+}
+</style>

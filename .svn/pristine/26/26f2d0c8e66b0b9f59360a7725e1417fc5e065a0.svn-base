@@ -1,0 +1,781 @@
+
+<!-- risk风险详情 -->
+<template>
+  <div class="container-risk2">
+    <div class="leftBox">
+      <div class="box-card">
+        <div class="title">
+          <div class="titleBox">
+            <i class="el-icon-menu icon"></i>
+            <el-button @click="onStartQuestion()">发起问题</el-button>
+          </div>
+        </div>
+        <!-- 模型box -->
+        <div class="model-container">
+            <div ref="modelContainer" class="model-container"></div>
+        </div>
+      </div>
+    </div>
+    <div class="rightBox">
+      <div class="box-card">
+        <!-- 详情 -->
+        <div class="riskManage">
+          <div class="titleBg notice">
+            <el-button round icon="el-icon-back" @click="goto()">返回列表</el-button>风险详情
+          </div>
+          <el-row class="is-scrolling" :style="riskManageHeight">
+            <el-col :span="24">
+              <el-form ref="riskForm" :model="riskForm" :rules="rules" label-width="140px">
+                <el-form-item label="主题：">
+                  <div class="info">{{theme}}</div>
+                </el-form-item>
+                <el-form-item label="问题类型：">
+                  <div class="info">{{problemType}}</div>
+                </el-form-item>
+                <el-form-item label="发起人：">
+                  <div class="info">{{initiator}}</div>
+                </el-form-item>
+                <el-form-item label="发起时间：">
+                  <div class="info">{{initiateTime}}</div>
+                </el-form-item>
+                <el-form-item label="问题描述：">
+                  <!-- <el-input type="textarea">{{problem}}</el-input> -->
+                  <div class="info">{{problem}}</div>
+                </el-form-item>
+                <el-form-item label="现场照片：">
+                  <ul class="uploadImg">
+                    <li class="imgWrap" v-for="(item, index) in photoList">
+                      <img :src="item" alt>
+                    </li>
+                  </ul>
+                </el-form-item>
+                <el-form-item label="模型视点：">
+                  <div class="imgWrap model" v-for="item in listViewpoints" :key="item.id">
+                    <img :src="item.Snapshot" alt @click="switchViewpoints(item.State)">
+                  </div>
+                </el-form-item>
+                <el-form-item label="接收人：">
+                  <div class="info">
+                    <span v-for="item in receiverList" style="margin-right:20px;">{{item.cName}}</span>
+                  </div>
+                </el-form-item>
+                <el-form-item label="整改截止时间：">
+                  <div class="box">
+                    <!-- <el-input v-model="eeadLine" placeholder=""></el-input> -->
+                    {{eeadLine}}
+                  </div>
+                </el-form-item>
+                <el-form-item label="认证照片：" v-if="state == 1">
+                  <div class="box">
+                    <div class="upload">
+                      <el-upload
+                        action
+                        list-type="picture-card"
+                        :on-change="uploadPicture"
+                        :auto-upload="false"
+                        multiple
+                        :limit="3"
+                      >
+                        <i class="el-icon-plus"></i>
+                      </el-upload>
+                    </div>
+                    <el-dialog :visible.sync="dialogVisible1">
+                      <img width="100%" :src="dialogImageUrl1" alt>
+                    </el-dialog>
+                  </div>
+                </el-form-item>
+                <el-form-item label="认证时间" v-if="state == 1" prop="AuthTime">
+                  <div class="box">
+                    <el-date-picker
+                      type="date"
+                      placeholder="选择日期"
+                      v-model="riskForm.AuthTime"
+                      style="width: 100%;"
+                    ></el-date-picker>
+                  </div>
+                </el-form-item>
+                <!-- <el-form-item label="状态:">
+                  <el-steps align-center :active="1">
+                    <el-step title="已接收"></el-step>
+                    <el-step title="整改中"></el-step>
+                    <el-step title="整改中"></el-step>
+                  </el-steps>
+                </el-form-item> -->
+                <el-form-item>
+                  <div class="btn" v-if="isShow && isMe && currentPersonState == 0">
+                    <el-button @click="onSubmit(2)">拒收</el-button>
+                    <el-button type="primary" @click="onSubmit(3)">接收</el-button>
+                  </div>
+                  <div class="btn" v-if="isShow && isMe && currentPersonState == 3">
+                    <el-button>取消</el-button>
+                    <el-button type="primary" @click="onSubmit(4)">认证</el-button>
+                  </div>
+                </el-form-item>
+              </el-form>
+            </el-col>
+          </el-row>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script type='textecmascript-6'>
+import { GetRiskInfoByID, DoRiskWork } from "@/api/api.js";
+import { dotoRiskWork } from "./util/util.js";
+import { mapMutations } from "vuex";
+export default {
+  data() {
+    return {
+      data: "",
+      receiverID: "",  //接收人ID
+      isShow: true,  //按钮是否显示
+      isMe: false,  //当前登陆用户是否在接收人名单中
+      // resultState: "",  //接口返回结果
+      state: "", //状态
+      currentPersonState: "",  //当前人的状态
+      theme: "",  //主题
+      receiverList: "",  //接收人
+      problem: "",  //问题描述
+      initiateTime: "",  //发起时间
+      initiator: "",  //发起人
+      problemType: "",  //问题类型
+      photoList: [],  //现场照片
+      eeadLine: "",  //整改截止时间
+      listViewpoints: [],  //视点
+      form: {
+        content:
+          "A1栋地下室地下室A1栋地下室地下室A1栋地下室地下室A1栋地下室地下室",
+        completeTime: "",
+        date: ""
+      },
+      riskForm:{
+        AuthTime: ""
+      },
+      dialogImageUrl1: "", //认证照片
+      dialogVisible1: false, //认证照片列表
+      riskid: "",  //风险问题ID
+      authPhotoList: [],  //认证照片
+      rules: {
+        AuthTime: [{ required: true, message: '请选择认证时间', trigger: 'blur' }]
+      }
+    };
+  },
+  created(){
+    this.riskid = this.$route.query.riskID;  //风险问题ID
+    this.state = this.$route.query.state;  //风险问题状态
+    if(this.riskid == ""){
+      this.$router.push({
+        path: "risk"
+      });
+    }
+    this.getBuildingData();
+    this.initModel()
+  },
+  methods: {
+    /**
+     * @name 加载模型
+     */
+    initModel(){
+      this.$nextTick(() => {
+        this.$util.getDomLocation(this, "modelContainer").then(res => {
+          // console.log(res)
+          this.modelBox({
+            isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+            isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+            top: res.top, //距离顶部距离‘px'
+            left: res.left, //距离左边距离‘px'
+            width: res.width, //模型宽‘px'
+            height: res.height, //模型高 ‘px'
+            zIndex: 100, //模型层级
+            background: "",
+            ElementIDs: [], // 所有要显示的构件数组，包括半隐藏构件
+            highLightElementIDs: [], // 高亮显示的构件
+            functionNumber: [] // 需要模型调用的函数编号数组
+          });
+        });
+      });
+    },
+    /**
+     * @name 根据风险问题ID获取详情信息（含照片）
+     * @param {integer} riskID 风险问题ID
+     */
+    getBuildingData(){
+      this.loading = true; //调用加载中蒙层
+      this.Request(
+        GetRiskInfoByID({riskID: this.riskid}),
+      ).then(data => {
+        if (data.StatusCode === 200) {
+          console.log("风险问题详情",data)
+          this.isMe = false;
+          data.Detiel[0].ReceiverList.forEach((element, index) => {
+            if (localStorage.getItem("userId") == element.UserID) {
+              this.isMe = true;
+              this.currentPersonState = element.Status
+              this.receiverID = element.ID
+            }
+          })
+          this.theme = data.Detiel[0].Risk.Subject;
+          this.problem = data.Detiel[0].Risk.Problem;
+          this.initiateTime = require('moment')(data.Detiel[0].Risk.InitiateTime).format('YYYY-MM-DD');
+          this.initiator = data.Detiel[0].Risk.Initiator;
+          this.problemType = data.Detiel[0].Risk.ProblemType;
+          this.photoList = data.Detiel[0].PhotoList;
+          this.listViewpoints = data.Detiel[0].listViewpoints;
+          this.receiverList = data.Detiel[0].ReceiverList;
+          this.eeadLine = data.Detiel[0].Risk.DeadLine.substring(0, data.Detiel[0].Risk.DeadLine.indexOf("T"));
+
+          if (typeof(data.Detiel[0].listViewpoints[0]) != "undefined") {
+            // console.log("定位视点", data, data.Detiel[0].listViewpoints[0].State)
+            this.modelBox({
+              isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+              isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+              zIndex: 100, //模型层级
+              background: "",
+              ElementIDs: [data.Detiel[0].listViewpoints[0].State], // 所有要显示的构件数组，包括半隐藏构件
+              highLightElementIDs: [], // 高亮显示的构件
+              functionNumber: [28] // 需要模型调用的函数编号数组
+            });
+          }else{
+            this.$message({
+              type: "warning",
+              message: "暂无视点",
+              center: "true"
+            });
+          }
+        } else {
+          this.$message({
+            type: "error",
+            message: data.Message,
+            center: "true"
+          });
+        }
+        this.loading = false; //关闭加载中蒙层
+      });
+    },
+    // 返回列表
+    goto() {
+      this.$router.go(-1);
+    },
+    /**[发起问题] */
+    onStartQuestion() {
+      this.$router.push({
+        path: "newQuestion"
+      });
+    },
+    // 认证照片
+    handleRemove1(file, fileList) {
+      //图标删除
+      console.log(file, fileList);
+    },
+    handlePictureCardPreview1(file) {
+      //认证照片列表
+      this.dialogImageUrl1 = file.url;
+      this.dialogVisible1 = true;
+    },
+    /**
+     * 上传：文件状态改变时的钩子，添加文件、上传成功和上传失败时都会被调用
+     */
+    async uploadPicture(file) {
+      let params = [
+        {
+          key: "files",
+          value: file.raw
+        }
+      ];
+      let data = await this.Request(UploadImages(params));
+      if (data.StatusCode == 200) {
+        if(data.Detiel.length > 0){
+          this.authPhotoList.push({
+            Id: data.Detiel[0].Id, //上传后的文件名
+            URL: data.Detiel[0].URL, //文件地址
+            smallPhotoURL: data.Detiel[0].smallPhotoURL, //如果存在小图则返回小图地址
+            Type: data.Detiel[0].Type, //文件类型
+            TokenUrL: data.Detiel[0].TokenUrL //域名地址
+          });
+        }else{
+          this.$message({
+            type: "error",
+            message: data.message ? data.message : "图片上传失败",
+            center: "true"
+          });
+        }
+      } else {
+        this.$message({
+          type: "error",
+          message: data.message ? data.message : "后台异常",
+          center: "true"
+        });
+      }
+    },
+    /**
+     * @name 点击视点照片切换视点模型
+     */
+    switchViewpoints(v){
+      this.modelBox({
+        isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+        isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+        zIndex: 100, //模型层级
+        background: "",
+        ElementIDs: [v], // 所有要显示的构件数组，包括半隐藏构件
+        highLightElementIDs: [], // 高亮显示的构件
+        functionNumber: [28] // 需要模型调用的函数编号数组
+      });
+    },
+    /**
+     * @name 操作
+     */
+    onSubmit(param){
+      switch (param) {
+        case 2:
+        case 3:
+          dotoRiskWork(this, DoRiskWork, param)
+          break;
+        case 4:
+          this.$refs['riskForm'].validate(valid => {
+            if (valid) {
+              dotoRiskWork(this, DoRiskWork, param)
+            }
+          })
+          break;
+        default:
+          break;
+      }
+      // if(this.resultState === 200){
+      //       this.$message({
+      //         type: "success",
+      //         message: "操作成功！",
+      //         center: "true"
+      //       });
+      //       this.$router.go(-1)
+      //     }else{
+      //       this.$message({
+      //         type: "error",
+      //         message: "操作失败",
+      //         center: "true"
+      //       });
+      //     }
+    },
+    ...mapMutations({
+      modelBox: "GET_MODEL_BOX"
+    })
+  },
+  computed: {
+    riskManageHeight(){
+      return {
+        height: (Number(document.documentElement.clientHeight) - 170) + 'px'
+      };
+    }
+  }
+};
+</script>
+<style lang='stylus' rel='stylesheet/stylus'>
+
+.container-risk2 {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.container-risk2 .title {
+  height: 40px;
+  position absolute 
+  z-index 110
+  width 100%
+}
+
+.container-risk2 .title .titleBox{
+  display: flex
+  justify-content space-between
+  padding 20px
+}
+
+.container-risk2 .el-form-item {
+  width: 100%;
+  height: auto !important;
+}
+
+.container-risk2 .title .el-button {
+  float: right;
+  width: 120px;
+  height: 40px;
+  line-height: 40px;
+  border: none !important;
+  padding: 0;
+  cursor: pointer;
+  background: #FDA143 !important;
+  color: #fff;
+  text-align: center;
+}
+
+.container-risk2 .title i {
+  float: left;
+  color: #FDA143;
+}
+
+.container-risk2 .avatar-uploader .el-upload {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.container-risk2 .el-upload--picture-card {
+  background: #F8F8F8 !important;
+}
+
+.container-risk2 .avatar-uploader .el-upload:hover {
+  border-color: #409EFF;
+}
+
+.container-risk2 .avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 145px;
+  height: auto;
+  text-align: center;
+}
+
+.container-risk2 .avatar {
+  width: 145px;
+  height: auto;
+  display: block;
+}
+
+.container-risk2 .el-form-item__content .tip {
+  color: #999999;
+  font-size: 18px;
+  padding-left: 10px;
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+.container-risk2 .upload {
+  display: inline-block;
+  text-align: center;
+}
+
+.container-risk2 .box {
+  float: left;
+  font-size: 18px
+}
+
+.container-risk2 .imgWrap {
+  float: left;
+  margin-right: 20px;
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+}
+
+.container-risk2 .imgWrap img {
+  width: 160px;
+  height: 120px;
+  display: block;
+}
+
+.container-risk2 .model {
+  width: 128px !important;
+  height: 100px !important;
+  display: block;
+  background: #F8F8F8;
+}
+
+.container-risk2 .model img {
+  width: 88px !important;
+  height: 89px !important;
+  display: block;
+  padding: 6px 20px 5px 20px;
+}
+
+.container-risk2 .el-input--prefix .el-input__inner {
+  padding-left: 15px !important;
+  padding-right: 15px !important;
+}
+
+.container-risk2 .el-upload--picture-card {
+  width: 145px;
+  height: 120px;
+  line-height: 120px;
+  display: block;
+}
+
+.container-risk2 .workflowBox {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  float: left;
+  margin: -20px 0 0 -80px;
+}
+
+.container-risk2 .info {
+  color: #333;
+  font-size: 18px;
+  float: left;
+}
+
+.container-risk2 .workflowBox .workflow1 {
+  width: 156px;
+  margin-right: 10px;
+}
+
+.container-risk2 .workflowBox .add {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #435089;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container-risk2 .workflowBox .add i {
+  color: #435089;
+  font-size: 18px;
+}
+
+.container-risk2 .el-date-editor--date {
+  width: 260px !important;
+}
+
+.container-risk2 .el-select .el-input__suffix {
+  width: 0.666667rem;
+  background: #435089;
+  border-radius: 0 0.066667rem 0.066667rem 0;
+  right: 0 !important;
+}
+
+.container-risk2 .el-select input {
+  background: #fff !important;
+}
+
+.container-risk2 .el-step.is-horizontal .el-step__line {
+  top: 0.25rem;
+  background: #E5E5E5;
+}
+
+.container-risk2 .el-step__title {
+  margin-top: 10px;
+  line-height: 0px;
+}
+
+.container-risk2 .el-steps--horizontal:first-child {
+  margin-left: -30px;
+}
+
+.container-risk2 .is-process .el-step__icon.is-text {
+  background: #FDA143;
+}
+
+.container-risk2 .el-step__main .is-process, .container-risk2 .el-step__main .el-step__title {
+  color: #333333;
+  font-weight: normal;
+}
+
+.container-risk2 .el-steps--horizontal .el-step {
+  flex-basis: 17% !important;
+}
+
+.container-risk2 .el-step__icon.is-text {
+  width: 12px;
+  height: 12px;
+  background: #999999;
+  border: none;
+}
+
+.container-risk2 .el-step__icon-inner {
+  visibility: hidden;
+}
+
+.container-risk2 .relevance {
+  width: 64px;
+  height: 40px;
+  border: 1px solid #E5E5E5;
+  background: #F8F8F8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container-risk2 .btn {
+  padding: 20px 20%;
+}
+
+.container-risk2 .el-step__icon .is-text {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #E5E5E5;
+  background: #F8F8F8;
+}
+
+.container-risk2 .el-step__main div {
+  color: #333 !important;
+}
+
+.container-risk2 .el-button {
+  width: 100px;
+  color: #fff;
+}
+
+.container-risk2 .el-button--default {
+  background: #999999;
+}
+
+.container-risk2 .el-button--default:focus, .container-risk2 .el-button--default:hover {
+  background: #999999;
+  color: #fff;
+}
+
+.container-risk2 .el-button--primary {
+  background: #4775CA;
+}
+
+.container-risk2 .el-button--primary:focus, .el-button--primary:hover {
+  background: #4775CA;
+  color: #fff;
+}
+
+// 图标颜色
+.container-risk2 .container-risk2.icon {
+  color: #ffa147;
+}
+
+.container-risk2 .titleBg {
+  background: #44508a;
+}
+
+.container-risk2 .riskManage {
+  margin-bottom: 26px;
+}
+
+.container-risk2 .el-row .el-col-24 {
+  font-size: 22px;
+  color: #28292b;
+}
+
+.container-risk2 .el-date-editor--date .el-input__prefix {
+  left: calc(100% - 30px) !important;
+}
+
+.container-risk2 .riskManage .el-row .el-col-24 {
+  margin: 20px 0px;
+}
+
+.container-risk2 .notice {
+  color: #fff;
+  font-size: 20px;
+  height: 40px;
+  line-height: 40px;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.container-risk2 .notice .el-button--default {
+  width: 130px;
+  height: 30px;
+  line-height: 30px;
+  position: absolute;
+  left: 15px;
+  border: none !important;
+  padding: 0;
+  margin: 5px 0;
+  cursor: pointer;
+  background: #FDA143;
+  color: #fff;
+  text-align: center;
+}
+
+.container-risk2 .el-form {
+  padding: 0 72px;
+}
+
+.container-risk2 .el-input {
+  width: 260px;
+  height: 40px;
+  line-height: 40px;
+}
+
+.container-risk2 .el-input input, .container-risk2 .el-textarea .el-textarea__inner {
+  background: #F8F8F8;
+  color: #666666;
+  font-size: 16px;
+}
+
+.container-risk2 .el-textarea .el-textarea__inner {
+  min-height: 120px !important;
+}
+
+.container-risk2 .el-form-item__label {
+  color: #333333;
+  font-size: 18px;
+}
+
+.container-risk2 .leftBox, .container-risk2 .rightBox {
+  width: 50%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  background: #f5f6fa;
+}
+
+.container-risk2 .leftBox {
+  left: 0;
+}
+
+.container-risk2 .rightBox {
+  right: 0;
+}
+
+.container-risk2 .leftBox .box-card {
+  width: calc(100% - 30px);
+  height: calc(100% - 42px);
+  margin: 20px 10px 20px 20px;
+  position relative
+}
+
+.container-risk2 .rightBox .box-card {
+  width: calc(100% - 30px);
+  height: calc(100% - 42px);
+  padding: 20px 20px 20px 10px;
+  background: #f5f6fa;
+  border: none;
+  box-shadow: none;
+  background: #fff;
+  overflow: auto;
+}
+
+/* 滚动条 begin */
+.container-risk2 .is-scrolling{
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+.container-risk2 .is-scrolling::-webkit-scrollbar {
+  width: 8px;
+  }
+.container-risk2 .is-scrolling::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+  border-radius: 10px;
+  background-color: #F5F5F5;
+} 
+
+/*定义滑块 内阴影+圆角*/
+.container-risk2 .is-scrolling::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3);
+  background-color: #555;
+}
+/* 滚动条 end */
+</style>
+<style scoped>
+.model-container {
+  width: 100%;
+  height: 100%;
+  padding: 0 !important;
+  z-index:100
+}
+</style>
+
+
+

@@ -1,0 +1,79 @@
+<div class="container-scope-detail">
+  <div class="content">
+    <el-form :model="filterForm">
+      <el-row>
+        <el-col :span="22">
+          <el-form-item label="采购批次">
+            <span style="width: 180px;margin-right: 18px;" class="code">{{data.Code}}</span>
+            <el-button v-if="WorkStatus == 3 && isMe" type="warning" :disabled="true" style="cursor: inherit;">有审核
+            </el-button>
+          </el-form-item>
+
+        </el-col>
+        <el-col :span='2'>
+          <el-button @click="goto()">返回列表</el-button>
+        </el-col>
+      </el-row>
+
+      <el-form-item>
+        <div class="flex">
+          <p style="margin-right: 30px;">{{ `申请人：${data.ApplyPersonName}` }}</p>
+          <p style="margin-right: 30px;">{{ `发起日期：${data.StartTime}` }}</p>
+          <p style="margin-right: 30px;">{{ `需要日期：${data.DemandTime}` }}</p>
+        </div>
+      </el-form-item>
+
+      <el-form-item label="采购审核">
+        <el-steps align-center :active="active">
+          <el-step v-for="(item,index) in data.listFlow" :title="item.DeptName" :description="item.PersonName"
+            :key="index"></el-step>
+        </el-steps>
+      </el-form-item>
+
+      <el-form-item label="现场照片:" v-if="isMe && WorkStatus == 3">
+        <div class="wrap">
+          <div class="upload" style="display: inline-block;">
+            <el-upload action list-type="picture-card" :on-preview="handlePictureCardPreview2"
+              :on-remove="handleRemove2" multiple :limit="3" :on-change="uploadPicture" :auto-upload="false">
+              <i class="el-icon-plus"></i>
+            </el-upload>
+          </div>
+          <el-dialog :modal="false" :visible.sync="dialogVisible2">
+            <img width="100%" :src="dialogImageUrl2" alt>
+          </el-dialog>
+          <span class="tip">(最多上传3张)</span>
+        </div>
+      </el-form-item>
+
+      <el-form-item class="select">
+        <el-select v-model="filterForm.BuildName" placeholder="请选择楼栋">
+          <el-option v-for="item in BuildNameList" :key="item.id" :label="item.text" :value="item.text"></el-option>
+        </el-select>
+      </el-form-item>
+
+      <el-form-item>
+        <div class="teble-wrapper">
+          <el-table :data="data.listItems" border>
+            <el-table-column label="楼栋" prop="BuildName"></el-table-column>
+            <el-table-column label="资源名称" prop="ResourseName"></el-table-column>
+            <el-table-column label="规格" prop="Spec"></el-table-column>
+            <el-table-column label="预算量" prop="AdjustBOQ"></el-table-column>
+            <el-table-column label="已采购" prop="PurchaseNum"></el-table-column>
+            <el-table-column label="本次采购" prop="ThisPurchaseNum"></el-table-column>
+          </el-table>
+        </div>
+      </el-form-item>
+
+      <el-form-item label-width="0" align="center" v-if="isMe && WorkStatus == 3">
+        <el-button type="primary" @click="onAudit">确认审核</el-button>
+      </el-form-item>
+
+      <el-form-item v-if="isMe && WorkStatus == 0">
+        <div class="btn">
+          <el-button @click="onReceive(2)">拒收</el-button>
+          <el-button type="primary" @click="onReceive(1)">接收</el-button>
+        </div>
+      </el-form-item>
+    </el-form>
+  </div>
+</div>

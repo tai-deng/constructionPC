@@ -1,0 +1,56 @@
+<div class="container-scope-detail">
+  <div class="content">
+    <el-form :model="filterForm" label-width="100px">
+      <el-form-item label="采购批次">
+        <span style="width: 180px;margin-right: 18px;" class="code">{{data.Code}}</span>
+        <el-button v-if="data.IsApprove == 1" type="warning" :disabled="true" style="cursor: inherit;">有审核</el-button>
+      </el-form-item>
+      <el-form-item label-width="40px">
+        <div class="flex-between">
+          <p>{{ `申请人：${data.ApplyPersonName}` }}</p>
+          <p>{{ `发起日期：${data.StartTime}` }}</p>
+          <p>{{ `需要日期：${data.DemandTime}` }}</p>
+        </div>
+      </el-form-item>
+      <el-form-item label="采购审核" v-if="data.IsApprove == 1">
+        <el-steps align-center :active="active">
+          <el-step v-for="(item,index) in data.listFlow" :title="item.DeptName" :description="item.PersonName"
+            :key="index"></el-step>
+        </el-steps>
+
+      </el-form-item>
+      <div class="flex">
+        <el-form-item label-width="40px" class="select">
+          <el-select v-model="filterForm.BuildName" placeholder="楼栋">
+            <el-option v-for="item in BuildNameList" :key="item.id" :label="item.text" :value="item.text"></el-option>
+          </el-select>
+        </el-form-item>
+        <!-- <el-form-item label-width="40px" class="select">
+          <el-select v-model="filterForm.Specialty" placeholder="专业">
+            <el-option v-for="item in SpecialtyList" :key="item.id" :label="item.text" :value="item.text"></el-option>
+          </el-select>
+        </el-form-item> -->
+        <!-- <el-form-item label-width="40px" class="select">
+          <el-select v-model="filterForm.Floor" placeholder="楼层">
+            <el-option v-for="item in FloorbyList" :key="item.id" :label="item.text" :value="item.text"></el-option>
+          </el-select>
+        </el-form-item> -->
+      </div>
+      <el-form-item label-width="40px">
+        <div class="teble-wrapper">
+          <el-table :data="data.listItems" border>
+            <el-table-column label="楼栋" prop="BuildName"></el-table-column>
+            <el-table-column label="资源名称" prop="ResourseName"></el-table-column>
+            <el-table-column label="规格" prop="Spec"></el-table-column>
+            <el-table-column label="预算量" prop="AdjustBOQ"></el-table-column>
+            <el-table-column label="已采购" prop="PurchaseNum"></el-table-column>
+            <el-table-column label="本次采购" prop="ThisPurchaseNum"></el-table-column>
+          </el-table>
+        </div>
+      </el-form-item>
+      <el-form-item label-width="0" align="center" v-if='data.IsApprove == 1'>
+        <el-button type="primary" @click="onAudit">确认审核</el-button>
+      </el-form-item>
+    </el-form>
+  </div>
+</div>

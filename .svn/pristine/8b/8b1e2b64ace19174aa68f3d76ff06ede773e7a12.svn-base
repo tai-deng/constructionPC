@@ -1,0 +1,131 @@
+<template>
+  <div class="container">
+    <gantt
+      class="left-container"
+      :tasks="tasks"
+      :changeDate="changeDate"
+      @delBtn="delBtn"
+      @deleteItem="onDeleteItem"
+      @updataGt="updataGt"
+      v-if="isShowGanttm"
+    ></gantt>
+    <!-- :deleteItem="del" -->
+  </div>
+</template>
+
+<script>
+import Gantt from "../components/gantt/planGantt";
+import { Get_JDGH_List } from "../../../../api/api.js";
+import { constants } from "fs";
+import { getDateFormatting } from "../base/util.js";
+
+export default {
+  name: "fiveD_modules",
+  components: { Gantt },
+  props: ["changeDate", "deleteItem", "isupdataGt"],
+  data() {
+    return {
+      updateTasks: false, // 是否更新数据
+      isShowGanttm: false,
+      tasks: {
+        data: [],
+        links: [
+          // { id: 1, source: "2", target: "3", type: "0" },
+          // { id: 2, source: "3", target: "4", type: "0" },
+        ]
+      }
+    };
+  },
+  mounted() {
+    this.getData();
+  },
+  computed: {
+    // del:{
+    //   get(){
+    //     return this.$props.deleteItem;
+    //   },
+    //   set(v){
+    //     console.log(v)
+    //   }
+    // }
+  },
+  methods: {
+    // 删除按钮
+    delBtn(v) {
+      this.$emit("delBtn", v);
+    },
+    // 删除事件还原
+    onDeleteItem(v) {
+      this.$emit("deleteItem", v);
+    },
+
+    // 获取列表
+    getData() {
+      let data = [];
+      this.load();
+      this.Request(
+        Get_JDGH_List({ ProjectID: localStorage.getItem("projectid") })
+      )
+        .then(res => {
+          this.$toast.clear();
+          if (res.StatusCode == 200 && res.Detiel.length > 0) {
+            res.Detiel.forEach((el, index) => {
+              data.push({
+                id: el.TaskId,
+                text: el.TaskName,
+                type: "task",
+                start_date: el.BaseStartTime,
+                duration: el.Duration,
+                parent: el.TaskParentId,
+                progress: el.PercenTage,
+                open: false
+              });
+              this.isShowGanttm = true;
+            });
+            this.tasks = { data, links: [] };
+            this.updateTasks = false;
+            this.$emit("onIsupdataGt", false);
+          } else {
+            this.$message({
+              type: "error",
+              message: e.Message,
+              center: "true"
+            });
+          }
+          this.$toast.clear();
+        })
+        .catch(e => {
+          this.$message({ type: "error", message: e.Message, center: "true" });
+          this.$toast.clear();
+        });
+    },
+
+    updataGt() {
+      this.updateTasks = true;
+    }
+  },
+  watch: {
+    isupdataGt(c, o) {
+      console.log(c);
+      this.updateTasks = c;
+    },
+    updateTasks(c, o) {
+      if (c) {
+        this.getData();
+      }
+    }
+  }
+};
+</script>
+
+<style>
+.container {
+  height: 88.6%;
+  width: 100%;
+  /* padding: 0 40px; */
+  background-color: #f0f2f5;
+}
+.left-container {
+  height: 100%;
+}
+</style>

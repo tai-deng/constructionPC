@@ -1,0 +1,233 @@
+<!-- 部门 department -->
+<template>
+  <div class="department-container">
+    <div class="d-title flex-row">
+      <div class="d-title-text">部门</div>
+      <div class="d-title-btn el-icon-menu" @click="onPopup"></div>
+    </div>
+    <div class="d-set-content-warp" v-loading="loading">
+      <div class="d-department-item"  v-for="(item, index) in department_s" :key="item.ID">
+        <div class="d-department-item-title flex-between" @click="onShowItem(index,item.ID)">
+        <!-- <div class="d-department-item-title flex-between"> -->
+          <div class="d-department-item-title-l">{{item.Name}}</div>
+          <div
+            class="d-department-item-title-r"
+            :class="item.isClick?'el-icon-caret-bottom':'el-icon-caret-top'"
+          ></div>
+        </div>
+        <template v-if="item.isClick">
+          <div
+            class="d-department-item-c flex-between"
+            :class="{'selClick': v.isClick}"
+            v-for="(v,inx) in item.DeptList"
+            :key="v.ID"
+            @click="onChooseItem(index,inx,v.OrgID,v.ID)"
+          >
+            <div class="d-department-item-c-l">{{v.cName}}</div>
+            <div class="d-department-item-c-r flex-row">
+              <div class="d-department-item-c-r-edit" @click.stop="onPopup(v)">编辑</div>
+              <div class="d-department-item-c-r-del" @click.stop="onDel(v)">删除</div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import {GetOrgDeptList,GetDeptList,GetUserListByDept,DeleteDept} from '@/api/api.js'
+import {infaces} from '../module/interfaces.js'
+import { Promise } from 'q';
+export default {
+  name: "departments",
+  props:['refreshOrgList'],
+  data() {
+    return {
+      department_s: null,
+      department_sel: "",
+      loading:true,//部门加载中
+    };
+  },
+  created(){
+    this._initData()
+  },
+  methods: {
+    async _initData(){
+      let list = await this.getOrgDept()
+      console.log(list)
+      // 获取第一个部门人员信息
+      this.$emit("get_department_sel", {
+        deptId: list[0].DeptList[0].ID,
+        orgId: list[0].DeptList[0].OrgID,
+        projectId: localStorage.getItem('projectid'),
+      });
+    },
+    getOrgDept(){
+      /**
+       * 获取公司及部门
+       */
+      return Promise(resolve=>{
+
+        let param = {
+          projectId:localStorage.getItem('projectid')
+        }
+        infaces(this,GetOrgDeptList,param).then(res=>{
+          res.Detiel.forEach(i=>{
+            i.isClick=true
+          })
+          this.department_s = res.Detiel
+          this.loading = false
+          resolve(res.Detiel)
+          console.log(res)
+        })
+      })
+    },
+    // 弹窗
+    onPopup(item) {
+      this.$emit("onPopup", "department",item);
+    },
+    // 编辑
+    onEdit(e) {
+      console.log(e);
+    },
+    //删除
+    onDel(e) {
+      console.log('删除部门',e);
+      this.$confirm('是否删除该部门?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          infaces(this,DeleteDept,{deptIds:e.ID}).then(res=>{
+            console.log(res)
+            this.$message({type:'success',message:'删除成功',center:'true'})
+            this.getOrgDept()
+          })
+        })
+      
+    },
+    // 展示隐藏
+    onShowItem(index,orgId) {
+      console.log(orgId)
+      this.department_s[index].isClick = !this.department_s[index].isClick;
+    },
+    // 点击公司下部门
+    onChooseItem(index, ind,orgId,deptId) {
+      // console.log(index, ind,ID,id)
+      // this.department_s.forEach((element, i) => {
+      //   element.d_item.forEach((e, inn) => {
+      //     e.isClick = false;
+      //   });
+      // });
+      // this.department_s[index].d_item[ind].isClick = true;
+      this.department_sel = {
+        projectId:localStorage.getItem('projectid'),
+        orgId,
+        deptId:Number(deptId)
+      }
+    },
+    
+  },
+  computed: {},
+  watch: {
+    department_sel(id, o) {
+      this.$emit("get_department_sel", id);
+    },
+    //通知部门子组件刷新列表
+    refreshOrgList(){
+      this.getOrgDept()
+    }
+  }
+};
+</script>
+
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.department-container {
+  width: 24.44%;
+  box-shadow: 0px 3px 7px 0px rgba(229, 229, 229, 1);
+  background-color: #fff;
+  position: relative;
+
+  .d-department-item {
+    .d-department-item-title {
+      height: 40px;
+      background: rgba(255, 255, 255, 1);
+      box-shadow: 0px 0px 7px 0px rgba(216, 223, 238, 1);
+      font-size: 16px;
+      font-family: SourceHanSansCN-Medium;
+      font-weight: 500;
+      color: rgba(51, 51, 51, 1);
+      padding: 0 20px;
+    }
+
+    .d-department-item-c {
+      height: 40px;
+      font-size: 18px;
+      font-family: SourceHanSansCN-Regular;
+      font-weight: 400;
+      background-color: rgba(244, 246, 255, 1);
+
+      .d-department-item-c-l {
+        color: rgba(51, 51, 51, 1);
+        margin-left: 54px;
+      }
+
+      .d-department-item-c-r {
+        color: rgba(69, 128, 255, 1);
+        margin-right: 20px;
+
+        .d-department-item-c-r-edit {
+          margin-right: 26px;
+        }
+      }
+    }
+  }
+
+  .d-set-content-warp {
+    padding-top: 50px;
+    height: 95.6%;
+    overflow-y: auto;
+  }
+
+  .d-title {
+    width: 100%;
+    height: 50px;
+    background: rgba(67, 80, 137, 1);
+    font-size: 20px;
+    font-family: SourceHanSansCN-Medium;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 1);
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+
+    .d-title-btn {
+      position: absolute;
+      top: 0;
+      right: 21px;
+      line-height: 50px;
+    }
+  }
+}
+</style>
+<style>
+.d-set-content-warp::-webkit-scrollbar{
+  /*滚动条整体样式*/
+  width: 8px !important; /*高宽分别对应横竖滚动条的尺寸*/
+  height: 1px;
+}
+.d-set-content-warp::-webkit-scrollbar-thumb{
+  /*滚动条里面小方块*/
+  border-radius: 0;
+  width: 5px;
+  -webkit-box-shadow: inset 0 0 3px rgba(49, 49, 49, 0.1) !important;
+  background: #ccc;
+}
+.d-set-content-warp::-webkit-scrollbar-track{
+  /*滚动条里面轨道*/
+  -webkit-box-shadow: inset 0 0 5px rgba(49, 49, 49, 0.1) !important;
+  border-radius: 0;
+  background: #ededed;
+}
+</style>

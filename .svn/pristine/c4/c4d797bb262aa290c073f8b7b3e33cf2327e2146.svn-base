@@ -1,0 +1,18 @@
+/* button begin */
+.my-button.el-button{
+    font-size: 16px
+}
+/* button end */
+
+/* collapse begin */
+.my-collapse .el-collapse-item__header{
+    height: 40px;
+    line-height: 40px;
+}
+/* collapse end */
+
+/* table begin */
+.my-table.el-table{
+    font-size: 18px;
+}
+/* table end */

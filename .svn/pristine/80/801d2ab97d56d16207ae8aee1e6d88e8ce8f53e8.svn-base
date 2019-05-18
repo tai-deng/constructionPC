@@ -1,0 +1,38 @@
+<!-- collaborativeSetting协同设定 -->
+<template>
+ <div class='container-collaborative-setting'>
+ <div class='wrapper'>
+   <organizational-unit></organizational-unit>
+   <organizationalPeople></organizationalPeople> 
+   
+ </div>
+ </div>
+</template>
+
+<script type='textecmascript-6'>
+import OrganizationalUnit from './collaborativeSetting_components/organizationalUnit'
+import organizationalPeople from './collaborativeSetting_components/organizationalPeople'
+
+export default {
+  data() {
+    return {
+      data: 'collaborativeSetting协同设定'
+    }
+  },
+  components:{
+    OrganizationalUnit,organizationalPeople
+  },
+
+}
+
+</script>
+<style lang='stylus' scoped rel='stylesheet/stylus'>
+.container-collaborative-setting
+  width 100%
+  height 15rem
+  background-color #F5F6FA
+  .wrapper
+    width 100%
+    height 100%
+
+</style>

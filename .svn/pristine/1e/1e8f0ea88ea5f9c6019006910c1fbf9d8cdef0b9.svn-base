@@ -1,0 +1,114 @@
+<!-- 采购详情 -->
+<template lang="html" src="./index.html"></template>
+<style lang="stylus" src="./index.styl" scoped></style>
+
+<script type='textecmascript-6'>
+import {
+  GetBuilding,
+  GetSpecialtybyBuilding,
+  GetFloorbyBuilding,
+  GetPurchaseRangeDetails
+} from "../../../../../../api/api.js";
+
+export default {
+  props:['purchaseDetailId'],
+  data() {
+    return {
+      projectid: localStorage.getItem("projectid"),
+      BuildNameList: [], // 楼栋下拉
+      SpecialtyList: [], // 专业下拉
+      FloorbyList: [], // 楼层下拉
+      paging: { page: 1, rows: 5 }, // [采购列表分页]
+      filterForm: {
+        BuildName: "", // 楼栋
+        Specialty: "", // 专业
+        Floor: "", // 楼层
+        Name: "" // 查询内容
+      },
+
+      form: {
+        name: "王xx",
+        time: "2019.03.04",
+        need_time: "2019.03.04"
+      },
+      data: [
+        {
+          loudong: "楼栋",
+          code: "项目编码",
+          name: "项目名称",
+          yusuan: "预算量",
+          yicaigou: "已采购",
+          bencicaigou: "本次采购"
+        }
+      ]
+    };
+  },
+  methods: {
+    // 楼层下拉
+    getFloorbySel(building, Specialty) {
+      GetFloorbyBuilding({
+        projectid: this.projectid,
+        building,
+        Specialty
+      }).then(res => {
+        if (res.StatusCode == 200) {
+          this.FloorbyList = res.Detiel;
+        }
+      });
+    },
+    // 专业下拉
+    getSpecialtySel(building) {
+      GetSpecialtybyBuilding({ projectid: this.projectid, building }).then(
+        res => {
+          if (res.StatusCode == 200) {
+            this.SpecialtyList = res.Detiel;
+          }
+        }
+      );
+    },
+    // 楼栋下拉
+    getBuildingSel() {
+      GetBuilding({ projectid: this.projectid }).then(res => {
+        if (res.StatusCode == 200) {
+          this.BuildNameList = res.Detiel;
+        }
+      });
+    },
+    // 详情列表
+    getPurchaseListDetil() {
+      GetPurchaseRangeDetails({ id: this.$props.purchaseDetailId }).then(res => {
+        if (res.StatusCode == 200) {
+          this.data = res.Result;
+        }
+      });
+    }
+  },
+  created() {
+    // 楼栋下拉
+    this.getBuildingSel();
+    // 获取采购列表详情
+    this.getPurchaseListDetil();
+  },
+  watch: {
+    filterForm: {
+      handler(val, oldval) {
+        // 获取采购列表详情
+        this.getPurchaseListDetil();
+      },
+      deep: true
+    },
+    // 专业
+    "filterForm.Specialty": {
+      handler(val, oldval) {
+        this.getFloorbySel(this.filterForm.BuildName, val);
+      }
+    },
+    // 楼栋
+    "filterForm.BuildName": {
+      handler(val, oldval) {
+        this.getSpecialtySel(val);
+      }
+    }
+  }
+};
+</script>

@@ -1,0 +1,252 @@
+import {
+  GetFiveDSchedulePlanList,
+  GetBuilding,
+  GetElementIDByInfo
+} from "../../../api/api";
+
+const projectid = localStorage.getItem("projectid");
+
+// 获取项目楼栋信息
+export const getBuil = that => {
+  that.load();
+  GetBuilding({ projectid }).then(res => {
+    that.$toast.clear();
+    if (res.StatusCode == 200) {
+      that.modeList = res.Detiel;
+    }
+  });
+};
+
+// 获取列表
+export const getFiveList = (that, init) => {
+  let par = {
+    ProjectID: projectid,
+    BuildingName: that.fiveList.modelName,
+    BaseStartTime: that.fiveList.date[0],
+    BaseFinishTime: that.fiveList.date[1]
+  };
+  // that.load();
+  GetFiveDSchedulePlanList(par).then(res => {
+    that.$toast.clear();
+    let data = [];
+    let links = [];
+    data.push(
+      {
+        id: 1,
+        text: "一级菜单",
+        type: "project",
+        progress: 0.4,
+        open: true,
+        start_date: "16-04-2018",
+        duration: 17,
+        parent: 0,
+        elements: [
+          "1595598878753632.10004",
+          "1595598878753632.10007",
+          "1595598878753632.10010",
+          "1595598878753632.10013",
+          "1595598878753632.10016",
+          "1595598878753632.10019",
+          "1595598878753632.10022"
+        ]
+      },
+      {
+        id: 2,
+        text: "一级菜单子菜单",
+        type: "project",
+        start_date: "02-06-2018 00:00",
+        duration: 5,
+        progress: 0.6,
+        parent: 0,
+        open: true,
+        elements: [
+          "1595598878753632.10052",
+          "1595598878753632.10055",
+          "1595598878753632.10058",
+          "1595598878753632.10061",
+          "1595598878753632.10064",
+          "1595598878753632.11363"
+        ]
+      },
+      {
+        id: 5,
+        text: "子菜单的子菜单",
+        type: "task",
+        start_date: "02-08-2018 00:00",
+        duration: 3,
+        parent: 0,
+        progress: 0.6,
+        open: true,
+        elements: [
+          "1595598878753632.11399",
+          "1595598878753632.11402",
+          "1595598878753632.11405",
+          "1595598878753632.11408",
+          "1595598878753632.11411",
+          "1595598878753632.11414"
+        ]
+      },
+      {
+        id: 6,
+        text: "Air conditioners check",
+        type: "task",
+        start_date: "05-10-2018 00:00",
+        duration: 2,
+        parent: 0,
+        progress: 0.29,
+        open: true,
+        elements: [
+          "1595598878753632.13434",
+          "1595598878753632.13442",
+          "1595598878753632.13450",
+          "1595598878753632.13458",
+          "1595598878753632.13466"
+        ]
+      },
+      {
+        id: 7,
+        text: "一级菜单子菜单",
+        type: "project",
+        start_date: "02-12-2018 00:00",
+        duration: 5,
+        progress: 0.6,
+        parent: 0,
+        open: true,
+        elements: [
+          "1595598878753632.8980",
+          "1595598878753632.8982",
+          "1595598878753632.8984",
+          "1595598878753632.8986",
+          "1595598878753632.8988",
+          "1595598878753632.8990",
+          "1595598878753632.8992"
+        ]
+      },
+      {
+        id: 8,
+        text: "一级菜单子菜单",
+        type: "project",
+        start_date: "02-02-2019 00:00",
+        duration: 5,
+        progress: 0.6,
+        parent: 0,
+        open: true,
+        elements: [
+          "1595598878753632.14214",
+          "1595598878753632.14226",
+          "1595598878753632.14234",
+          "1595598878753632.14246",
+          "1595598878753632.14257"
+        ]
+      },
+      {
+        id: 9,
+        text: "一级菜单子菜单",
+        type: "project",
+        start_date: "02-04-2019 00:00",
+        duration: 5,
+        progress: 0.6,
+        parent: 0,
+        open: true,
+        elements: [
+          "1595598878753632.8994",
+          "1595598878753632.8996",
+          "1595598878753632.8998",
+          "1595598878753632.9000",
+          "1595598878753632.9002"
+        ]
+      },
+      {
+        id: 10,
+        text: "一级菜单子菜单",
+        type: "project",
+        start_date: "02-06-2019 00:00",
+        duration: 5,
+        progress: 0.6,
+        parent: 0,
+        open: true,
+        elements: [
+          "1595598878753632.14265",
+          "1595598878753632.14277",
+          "1595598878753632.14285",
+          "1595598878753632.14297",
+          "1595598878753632.14308"
+        ]
+      }
+    );
+    init({ data, links });
+    return;
+    // if (res.StatusCode == 200 && res.Detiel.length > 0) {
+    //     res.Detiel.forEach((el, index) => {
+    //         data.push({
+    //             id: el.TaskId,
+    //             text: el.TaskName,
+    //             type: "task",
+    //             start_date: el.BaseStartTime,
+    //             // end_date:el.BaseFinishTime,  // 结束时间处理
+    //             duration: el.Duration,
+    //             parent: el.TaskParentId ? el.TaskParentId : 0,
+    //             progress: el.PercenTage,
+    //             open: false
+    //         });
+
+    //         if (el.PredecessorsId) {
+    //             links.push({
+    //                 id: links.length + 1,
+    //                 source: el.TaskId,
+    //                 target: el.PredecessorsId,
+    //                 type: "0"
+    //             });
+    //         }
+    //     });
+    //     init({ data, links })
+    // } else {
+    //     that.$message({
+    //         type: "warning",
+    //         message: res.Message,
+    //         center: "true"
+    //     });
+    // }
+  });
+};
+
+// 获取所有的构件ID
+export const getAllElementID = that => {
+  let par = { ProjectID: projectid };
+  GetElementIDByInfo(par).then(res => {
+    if (res.StatusCode == 200) {
+      that.allElementId = res.Detiel;
+    }
+  });
+};
+
+// 定位高亮
+export const onHandle = (that, elements) => {
+  if (!elements && that.allElementId) return;
+  that.elements = that.elements.concat(elements);
+  let currentElement = that.elements;
+  console.log(currentElement.length,that.allElementId.length)
+  that.modelBox({
+    isShowModel: true, //是否显示模型 true:显示模型，如果模型已加载，则显示  false:隐藏模型
+    isLoadModel: true, //是否加载模型  true：加载模型，如果已经加载，不会重新加载，  false:卸载模型
+    zIndex: 100, //模型层级
+    background: "",
+    ElementIDs: that.allElementId, // 所有要显示的构件数组，包括半隐藏构件
+    highLightElementIDs: currentElement, // 高亮显示的构件
+    functionNumber: [33] // 需要模型调用的函数编号数组
+  });
+};
+
+// 权限
+export const isPower = that => {
+  let isPower = true;
+  if (sessionStorage.getItem("menuType") !== "2") {
+    that.$message({
+      type: "warning",
+      message: "您没有权限操作",
+      center: "true"
+    });
+    isPower = false;
+  }
+  return isPower;
+};

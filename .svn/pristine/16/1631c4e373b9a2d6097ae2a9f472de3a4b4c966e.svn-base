@@ -1,0 +1,77 @@
+/**
+ * model.vue侦听器
+ */
+export default {
+  watch: {
+    /**
+     * 
+     * @param {侦听模型加载完成} isViewAdded 
+     */
+    isViewAdded(isViewAdded) {
+      if (isViewAdded) {
+        console.log('模型加载完成：', isViewAdded)
+        this.viewer3D.resize(this.widthAndHeight.width, this.widthAndHeight.height)
+      }
+    },
+    /**
+     * 侦听模型容器宽高变化，动太改变模型宽高
+     */
+    widthAndHeight(widthAndHeight) {
+      this.viewer3D.resize(widthAndHeight.width, widthAndHeight.height)
+    },
+    /**
+     * 侦听传入的序号以调用函数
+     */
+    functionNumber(arr) {
+      console.log('侦听传入的序号以调用函数', arr)
+      if (arr.indexOf(29) != -1) {
+        this.setCameraStatusAndElementIDs(this.ElementIDs)
+      }
+      if (arr.indexOf(30) != -1) {
+        this.positioningComponentsHidden(this.ElementIDs)
+      }
+      if (arr.indexOf(31) != -1) {
+        this.showComponentsById(this.ElementIDs)
+      }
+      if (arr.indexOf(32) != -1) {
+        this.showComponentsByIdAndColor(this.ElementIDs, this.highLightElementIDs)
+      }
+      if (arr.indexOf(33) != -1) {
+        this.positioningComponentsMakeOthers(this.ElementIDs, this.highLightElementIDs)
+      }
+      if (arr.indexOf(61) != -1) { //高亮楼层专用  61
+        this.setCameraStatusFloor(this.ElementIDs, this.highLightElementIDs)
+      }
+      if (arr.indexOf(34) != -1) {
+        this.showAllComponentss()
+      }
+      if (arr.indexOf(35) != -1) {
+        this.createViewer()
+      }
+      if (arr.indexOf(36) != -1) {
+        this.getCurrentStatee()
+      }
+      if (arr.indexOf(28) != -1) {
+        let viewer = JSON.parse(this.ElementIDs[0]).camera
+        console.log(viewer)
+        this.setCamera(JSON.stringify(viewer))
+
+      }
+      if (arr.indexOf(27) != -1) {
+        let positions = this.ElementIDs
+        this.set3DMarker(positions)
+      }
+      if (arr.indexOf(37) != -1) {
+        let ids = this.ElementIDs
+        this.setMarkerHide(ids)
+      }
+      if (arr.indexOf(38) != -1) {
+        let ids = this.ElementIDs
+        this.setMarkerShow(ids)
+      }
+      if (arr.indexOf(88) != -1) {
+        this.showComponentsByIdAndHighLightAndColor(this.ElementIDs, this.highLightElementIDs)
+      }
+    }
+  }
+}

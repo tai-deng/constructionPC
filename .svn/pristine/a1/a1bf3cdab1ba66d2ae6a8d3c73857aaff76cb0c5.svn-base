@@ -1,0 +1,11 @@
+/**
+ * 获取状态
+ */
+export default{
+    getElementIDs:state => state.ElementIDs,//获取模型所有构件ID数组
+    getModelBox: state => state.modelBox,//模型状态
+    getGanttState:state => state.ganttState, // gantt状态
+    getToPageNum:state => state.toPageNum,// 清单导入页面 跳转到哪个页面 0 --plan1 , 2 --plan2 ,  3-- plan3
+    getViewer3d:state => state.viewer3d,//获取模型实例
+    getIsViewAdded:state => state.isViewAdded,  //获取模型加载是否完成   true为已加载
+}
