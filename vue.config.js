@@ -32,8 +32,8 @@ module.exports = {
     // 设置代理
     proxy: {
       './api': {
-        // target: 'http://47.112.21.206:8006', // 正式接口地址
-        target: 'http://47.112.21.206:8017', // 测试接口地址
+        target: 'http://47.112.21.206:8006', // 正式接口地址
+        // target: 'http://47.112.21.206:8017', // 测试接口地址
         changeOrigin: true,
         ws: true,
         pathRewrite: {
